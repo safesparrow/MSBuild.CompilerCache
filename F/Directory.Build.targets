@@ -1,0 +1,8 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup Condition="'$(CoreCompileImport)' == ''">
+        <CoreCompileImport Condition="'$(MSBuildProjectExtension)' == '.csproj'">Our.CSharp.targets</CoreCompileImport>
+        <CoreCompileImport Condition="'$(MSBuildProjectExtension)' == '.fsproj'">Our.FSharp.targets</CoreCompileImport>
+    </PropertyGroup>
+    
+</Project>
