@@ -1,5 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <UsingTask TaskName="SimpleTask" AssemblyFile="C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll" />
+    <UsingTask TaskName="CacheTask" AssemblyFile="C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll" />
+    <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll" />
 
     <Target Name="CoreCompile"
             Inputs="$(MSBuildAllProjects);
@@ -27,7 +28,6 @@
                    @(CustomAdditionalCompileOutputs)"
             Returns="@(CscCommandLineArgs)"
             DependsOnTargets="$(CoreCompileDependsOn);_BeforeVBCSCoreCompile">
-        <SimpleTask Compile="@(Compile)" References="@(ReferencePathWithRefAssemblies)" />
         <!-- These two compiler warnings are raised when a reference is bound to a different version
          than specified in the assembly reference version number.  MSBuild raises the same warning in this case,
          so the compiler warning would be redundant. -->
@@ -50,15 +50,20 @@
         </PropertyGroup>
         
         <PropertyGroup>
-            <CanCache Condition="$(ProvideCommandLineArgs) != 'true' AND $(SkipCompilerExecution) != 'true'">true</CanCache>
+            <SupportedNETCoreSdkVersion>7.0.202</SupportedNETCoreSdkVersion>
+            <ForceDisableCache Condition="'$(ForceDisableCache)' == ''">false</ForceDisableCache>
+            <CanCache Condition="'$(ForceDisableCache)' != 'true' AND '$(NETCoreSdkVersion)' == '$(SupportedNETCoreSdkVersion)' AND '$(ProvideCommandLineArgs)' != 'true' AND '$(SkipCompilerExecution)' != 'true'">true</CanCache>
         </PropertyGroup>
         
-        <ItemGroup>
+        <ItemGroup Condition="'$(CanCache)' == 'true'">
             <FileInputs Include="@(AdditionalLibPaths)" />
             <FileInputs Include="@(AddModules)" />
             <FileInputs Include="@(AdditionalFiles)" />
             <PropertyInputs Include="$(AllowUnsafeBlocks)" />
-            <FileInputs Include="@(EditorConfigFiles)" />
+
+            <!-- The file here contains the path to the project. --> 
+<!--            <FileInputs Include="@(EditorConfigFiles)" />-->
+            
 <!--            Analyzers="@(Analyzer)"-->
 <!--            ApplicationConfiguration="$(AppConfigForCompiler)"-->
 <!--            BaseAddress="$(BaseAddress)"-->
@@ -136,8 +141,13 @@
 <!--            SourceLink="$(SourceLink)"-->
         </ItemGroup>
 
+        <CacheTask Condition="'$(CanCache)' == 'true'" FileInputs="@(FileInputs)" PropertyInputs="@(PropertyInputs)" BaseCacheDir="c:/projekty/zip/zip/zip/cache/">
+            <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
+            <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
+        </CacheTask>
+        
         <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
-        <Csc Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+        <Csc Condition="'$(CacheHit)' != 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
              AdditionalLibPaths="$(AdditionalLibPaths)"
              AddModules="@(AddModules)"
              AdditionalFiles="@(AdditionalFiles)"
@@ -219,6 +229,16 @@
              SourceLink="$(SourceLink)">
             <Output TaskParameter="CommandLineArgs" ItemName="CscCommandLineArgs" />
         </Csc>
+
+        
+        <ItemGroup Condition="'$(CanCache)' == 'true'">
+            <CompileOutputsToCache Include="@(IntermediateAssembly)" />
+            <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
+            <CompileOutputsToCache Include="$(PdbFile)" />
+<!--            <CompileOutputsToCache Include="sth else?" />-->
+        </ItemGroup>
+        
+        <UseOrPopulateCache Condition="'$(CanCache)' == 'true'" IntermediateOutputPath="$(IntermediateOutputPath)" OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" />
 
         <ItemGroup>
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
