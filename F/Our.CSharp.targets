@@ -231,7 +231,6 @@
             <Output TaskParameter="CommandLineArgs" ItemName="CscCommandLineArgs" />
         </Csc>
 
-
         <ItemGroup Condition="'$(CanCache)' == 'true'">
             <CompileOutputsToCache Include="@(IntermediateAssembly)" />
             <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />

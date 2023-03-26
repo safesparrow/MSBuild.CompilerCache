@@ -5,4 +5,6 @@
         <CoreCompileImport Condition="'$(MSBuildProjectExtension)' == '.fsproj'">Our.FSharp.targets</CoreCompileImport>
     </PropertyGroup>
     
+    <Import Project="$(CoreCompileImport)" />
+    
 </Project>

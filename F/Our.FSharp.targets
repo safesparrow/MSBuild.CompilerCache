@@ -74,9 +74,88 @@
             <FscOtherFlags Condition="'$(SimpleResolution)' != 'true'">$(OtherFlags)</FscOtherFlags>
         </PropertyGroup>
 
+        <PropertyGroup>
+            <SupportedNETCoreSdkVersion>7.0.202</SupportedNETCoreSdkVersion>
+            <ForceDisableCache Condition="'$(ForceDisableCache)' == ''">false</ForceDisableCache>
+            <CanCache Condition="'$(ForceDisableCache)' != 'true' AND '$(NETCoreSdkVersion)' == '$(SupportedNETCoreSdkVersion)' AND '$(ProvideCommandLineArgs)' != 'true' AND '$(SkipCompilerExecution)' != 'true'">true</CanCache>
+        </PropertyGroup>
+        
+        <ItemGroup Condition="'$(CanCache)' == 'true'">
+            <FileInputs Include="@(AdditionalLibPaths)" />
+            <FileInputs Include="@(AddModules)" />
+            <FileInputs Include="@(AdditionalFiles)" />
+            <PropertyInputs Include="$(AllowUnsafeBlocks)" />
+
+<!--              BaseAddress="$(BaseAddress)"-->
+<!--              ChecksumAlgorithm="$(PdbChecksumAlgorithm)"-->
+<!--              CodePage="$(CodePage)"-->
+<!--              CompilerTools="@(FscCompilerTools)"-->
+              <PropertyInputs Include="CompressMetadata=$(CompressMetadata)" />
+            <PropertyInputs Include="DebugSymbols=$(DebugSymbols)" />
+            <PropertyInputs Include="DebugType=$(DebugType)" />
+            <PropertyInputs Include="DefineConstants=$(DefineConstants)" />
+<!--              DelaySign="$(DelaySign)"-->
+            <PropertyInputs Include="Deterministic=$(Deterministic)" />
+            <PropertyInputs Include="DisabledWarnings=$(NoWarn)" />
+<!--              DocumentationFile="$(DocumentationFile)"-->
+            <PropertyInputs Include="DotnetFscCompilerPath=$(DotnetFscCompilerPath)" />
+<!--              EmbedAllSources="$(EmbedAllSources)"-->
+            <FileInputs Include="@(EmbeddedFiles)" />
+<!--              GenerateInterfaceFile="$(GenerateInterfaceFile)"-->
+<!--              HighEntropyVA="$(HighEntropyVA)"-->
+<!--              KeyFile="$(KeyOriginatorFile)"-->
+            <PropertyInputs Include="LangVersion=$(LangVersion)" />
+<!--              LCID="$(LCID)"-->
+<!--              NoFramework="true"-->
+            <PropertyInputs Include="NoInterfaceData=$(NoInterfaceData)" />
+            <PropertyInputs Include="NoOptimizationData=$(NoOptimizationData)" />
+            <PropertyInputs Include="Optimize=$(Optimize)" />
+            <PropertyInputs Include="ReflectionFree=$(ReflectionFree)" />
+            <PropertyInputs Include="OtherFlags=$(FscOtherFlags)" />
+<!--              OutputAssembly="@(IntermediateAssembly)"-->
+<!--              OutputRefAssembly="@(IntermediateRefAssembly)"-->
+<!--              PathMap="$(PathMap)"-->
+<!--              PdbFile="$(PdbFile)"-->
+            <PropertyInputs Include="Platform=$(PlatformTarget)" />
+            <PropertyInputs Include="Prefer32Bit=$(Actual32Bit)" />
+            <PropertyInputs Include="PreferredUILang=$(PreferredUILang)" />
+<!--              ProvideCommandLineArgs="$(ProvideCommandLineArgs)"-->
+<!--              PublicSign="$(PublicSign)"-->
+            <FileInputs Include="@(ReferencePathWithRefAssemblies)" />
+<!--              ReferencePath="$(ReferencePathWithRefAssemblies)"-->
+            <PropertyInputs Include="$(ProduceOnlyReferenceAssembly)" />
+            <FileInputs Include="@(ActualEmbeddedResources)" />
+<!--              SkipCompilerExecution="$(SkipCompilerExecution)"-->
+            <PropertyInputs SourceLink="$(SourceLink)" />
+            <FileInputs Include="@(CompileBefore);@(Compile);@(CompileAfter)" />
+            <PropertyInputs Include="SubsystemVersion=$(SubsystemVersion)" />
+            <PropertyInputs Include="Tailcalls=$(Tailcalls)" />
+            <PropertyInputs Include="TargetType=$(OutputType)" />
+            <PropertyInputs Include="TargetProfile=$(TargetProfile)" />
+            <PropertyInputs Include="ToolExe=$(FscToolExe)" />
+            <PropertyInputs Include="ToolPath=$(FscToolPath)" />
+            <PropertyInputs Include="TreatWarningsAsErrors=$(TreatWarningsAsErrors)" />
+            <PropertyInputs Include="useStandardResourceNames=$(UseStandardResourceNames)" />
+            <PropertyInputs Include="Utf8Output=$(Utf8Output)" />
+<!--              VersionFile="$(VersionFile)"-->
+            <PropertyInputs Include="VisualStudioStyleErrors=$(VisualStudioStyleErrors)" />
+            <PropertyInputs Include="WarningLevel=$(WarningLevel)" />
+            <PropertyInputs Include="WarningsAsErrors=$(WarningsAsErrors)" />
+            <PropertyInputs Include="WarningsNotAsErrors=$(WarningsNotAsErrors)" />
+            <PropertyInputs Include="WarnOn=$(WarnOn)" />
+<!--              Win32IconFile="$(ApplicationIcon)"-->
+<!--              Win32ManifestFile="$(Win32Manifest)"-->
+<!--              Win32ResourceFile="$(Win32Resource)"-->
+        </ItemGroup>
+
+        <CacheTask Condition="'$(CanCache)' == 'true'" FileInputs="@(FileInputs)" PropertyInputs="@(PropertyInputs)" BaseCacheDir="c:/projekty/zip/zip/zip/cache/">
+            <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
+            <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
+        </CacheTask>
+        
         <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
         <!-- NOTE: ManifestResourceWithNoCulture and ManifestNonResxWithNoCultureOnDisk are generated by Mono targets files -->
-        <Fsc  Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+        <Fsc  Condition="'$(CacheHit)' != 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
               BaseAddress="$(BaseAddress)"
               ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
               CodePage="$(CodePage)"
@@ -139,6 +218,15 @@
               Win32ResourceFile="$(Win32Resource)">
             <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
         </Fsc>
+        
+        <ItemGroup Condition="'$(CanCache)' == 'true'">
+            <CompileOutputsToCache Include="@(IntermediateAssembly)" />
+            <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
+            <CompileOutputsToCache Include="$(PdbFile)" />
+            <!--            <CompileOutputsToCache Include="sth else?" />-->
+        </ItemGroup>
+
+        <UseOrPopulateCache Condition="'$(CanCache)' == 'true'" IntermediateOutputPath="$(IntermediateOutputPath)" OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" />
 
         <ItemGroup>
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
