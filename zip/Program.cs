@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
+using ICSharpCode.Decompiler.CSharp.ProjectDecompiler;
 using Microsoft.Build.Framework;
 using Task = Microsoft.Build.Utilities.Task;
 
@@ -16,7 +17,14 @@ public record FullExtract(FileExtract[] files, string[] props);
 // <UseOrPopulateCache OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" />
 public static class Helpers
 {
-    public static string GetMarkerPath(string cacheDir) => Path.Combine(cacheDir, "marker.data");
+    public static string GetMarkerPath(string cacheDir)
+    {
+        var x = 3;
+        Console.WriteLine($"x = {x}");
+        var y = 12352;
+        Console.WriteLine($"y = {y}");
+        return Path.Combine(cacheDir, "marker.data");
+    }
 }
 
 public class UseOrPopulateCache : Task
@@ -97,6 +105,7 @@ public class CacheTask : Task
     public bool CacheHit { get; private set; }
     [Output]
     public string CacheDir { get; private set; }
+
 
     public override bool Execute()
     {

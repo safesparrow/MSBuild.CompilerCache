@@ -1,4 +1,5 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
     <UsingTask TaskName="CacheTask" AssemblyFile="C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll" />
     <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll" />
 
@@ -48,104 +49,104 @@
             <!-- If we are targeting winmdobj we want to specifically the pdbFile property since we do not want it to collide with the output of winmdexp-->
             <PdbFile Condition="'$(PdbFile)' == '' AND '$(OutputType)' == 'winmdobj' AND '$(_DebugSymbolsProduced)' == 'true'">$(IntermediateOutputPath)$(TargetName).compile.pdb</PdbFile>
         </PropertyGroup>
-        
+
         <PropertyGroup>
             <SupportedNETCoreSdkVersion>7.0.202</SupportedNETCoreSdkVersion>
             <ForceDisableCache Condition="'$(ForceDisableCache)' == ''">false</ForceDisableCache>
             <CanCache Condition="'$(ForceDisableCache)' != 'true' AND '$(NETCoreSdkVersion)' == '$(SupportedNETCoreSdkVersion)' AND '$(ProvideCommandLineArgs)' != 'true' AND '$(SkipCompilerExecution)' != 'true'">true</CanCache>
         </PropertyGroup>
-        
+
         <ItemGroup Condition="'$(CanCache)' == 'true'">
             <FileInputs Include="@(AdditionalLibPaths)" />
             <FileInputs Include="@(AddModules)" />
             <FileInputs Include="@(AdditionalFiles)" />
             <PropertyInputs Include="$(AllowUnsafeBlocks)" />
 
-            <!-- The file here contains the path to the project. --> 
-<!--            <FileInputs Include="@(EditorConfigFiles)" />-->
-            
-<!--            Analyzers="@(Analyzer)"-->
-<!--            ApplicationConfiguration="$(AppConfigForCompiler)"-->
-<!--            BaseAddress="$(BaseAddress)"-->
-<!--            CheckForOverflowUnderflow="$(CheckForOverflowUnderflow)"-->
-<!--            ChecksumAlgorithm="$(ChecksumAlgorithm)"-->
-<!--            CodeAnalysisRuleSet="$(ResolvedCodeAnalysisRuleSet)"-->
-<!--            CodePage="$(CodePage)"-->
-<!--            DebugType="$(DebugType)"-->
-<!--            DefineConstants="$(DefineConstants)"-->
-<!--            DelaySign="$(DelaySign)"-->
-<!--            DisabledWarnings="$(NoWarn)"-->
-<!--            DisableSdkPath="$(DisableSdkPath)"-->
-<!--            DocumentationFile="@(DocFileItem)"-->
-<!--            EmbedAllSources="$(EmbedAllSources)"-->
+            <!-- The file here contains the path to the project. -->
+            <!--            <FileInputs Include="@(EditorConfigFiles)" />-->
+
+            <!--            Analyzers="@(Analyzer)"-->
+            <!--            ApplicationConfiguration="$(AppConfigForCompiler)"-->
+            <!--            BaseAddress="$(BaseAddress)"-->
+            <!--            CheckForOverflowUnderflow="$(CheckForOverflowUnderflow)"-->
+            <!--            ChecksumAlgorithm="$(ChecksumAlgorithm)"-->
+            <!--            CodeAnalysisRuleSet="$(ResolvedCodeAnalysisRuleSet)"-->
+            <!--            CodePage="$(CodePage)"-->
+            <!--            DebugType="$(DebugType)"-->
+            <!--            DefineConstants="$(DefineConstants)"-->
+            <!--            DelaySign="$(DelaySign)"-->
+            <!--            DisabledWarnings="$(NoWarn)"-->
+            <!--            DisableSdkPath="$(DisableSdkPath)"-->
+            <!--            DocumentationFile="@(DocFileItem)"-->
+            <!--            EmbedAllSources="$(EmbedAllSources)"-->
             <FileInputs Include="@(EmbeddedFiles)" />
-<!--            EmitDebugInformation="$(DebugSymbols)"-->
-<!--            EnvironmentVariables="$(CscEnvironment)"-->
-<!--            ErrorEndLocation="$(ErrorEndLocation)"-->
-<!--            ErrorLog="$(ErrorLog)"-->
-<!--            ErrorReport="$(ErrorReport)"-->
-<!--            Features="$(Features)"-->
-<!--            FileAlignment="$(FileAlignment)"-->
-<!--            GeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"-->
-<!--            GenerateFullPaths="$(GenerateFullPaths)"-->
-<!--            HighEntropyVA="$(HighEntropyVA)"-->
-<!--            Instrument="$(Instrument)"-->
-<!--            KeyContainer="$(KeyContainerName)"-->
-<!--            KeyFile="$(KeyOriginatorFile)"-->
-<!--            LangVersion="$(LangVersion)"-->
-<!--            LinkResources="@(LinkResource)"-->
-<!--            MainEntryPoint="$(StartupObject)"-->
+            <!--            EmitDebugInformation="$(DebugSymbols)"-->
+            <!--            EnvironmentVariables="$(CscEnvironment)"-->
+            <!--            ErrorEndLocation="$(ErrorEndLocation)"-->
+            <!--            ErrorLog="$(ErrorLog)"-->
+            <!--            ErrorReport="$(ErrorReport)"-->
+            <!--            Features="$(Features)"-->
+            <!--            FileAlignment="$(FileAlignment)"-->
+            <!--            GeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"-->
+            <!--            GenerateFullPaths="$(GenerateFullPaths)"-->
+            <!--            HighEntropyVA="$(HighEntropyVA)"-->
+            <!--            Instrument="$(Instrument)"-->
+            <!--            KeyContainer="$(KeyContainerName)"-->
+            <!--            KeyFile="$(KeyOriginatorFile)"-->
+            <!--            LangVersion="$(LangVersion)"-->
+            <!--            LinkResources="@(LinkResource)"-->
+            <!--            MainEntryPoint="$(StartupObject)"-->
             <PropertyInputs Include="$(ModuleAssemblyName)" />
-<!--            NoConfig="true"-->
-<!--            NoLogo="$(NoLogo)"-->
-<!--            NoStandardLib="$(NoCompilerStandardLib)"-->
-<!--            NoWin32Manifest="$(NoWin32Manifest)"-->
-<!--            Nullable="$(Nullable)"-->
+            <!--            NoConfig="true"-->
+            <!--            NoLogo="$(NoLogo)"-->
+            <!--            NoStandardLib="$(NoCompilerStandardLib)"-->
+            <!--            NoWin32Manifest="$(NoWin32Manifest)"-->
+            <!--            Nullable="$(Nullable)"-->
             <PropertyInputs Include="$(Optimize)" />
             <PropertyInputs Include="$(Deterministic)" />
             <PropertyInputs Include="$(Deterministic)" />
-<!--            PublicSign="$(PublicSign)"-->
-<!--            OutputAssembly="@(IntermediateAssembly)"-->
-<!--            OutputRefAssembly="@(IntermediateRefAssembly)"-->
-<!--            PdbFile="$(PdbFile)"-->
+            <!--            PublicSign="$(PublicSign)"-->
+            <!--            OutputAssembly="@(IntermediateAssembly)"-->
+            <!--            OutputRefAssembly="@(IntermediateRefAssembly)"-->
+            <!--            PdbFile="$(PdbFile)"-->
             <PropertyInputs Include="$(PlatformTarget)" />
             <PropertyInputs Include="$(Prefer32Bit)" />
-<!--            PreferredUILang="$(PreferredUILang)"-->
-<!--            ProvideCommandLineArgs="$(ProvideCommandLineArgs)"-->
+            <!--            PreferredUILang="$(PreferredUILang)"-->
+            <!--            ProvideCommandLineArgs="$(ProvideCommandLineArgs)"-->
             <FileInputs Include="@(ReferencePathWithRefAssemblies)" />
-<!--            RefOnly="$(ProduceOnlyReferenceAssembly)"-->
-<!--            ReportAnalyzer="$(ReportAnalyzer)"-->
+            <!--            RefOnly="$(ProduceOnlyReferenceAssembly)"-->
+            <!--            ReportAnalyzer="$(ReportAnalyzer)"-->
             <FileInputs Include="@(_CoreCompileResourceInputs);@(CompiledLicenseFile)" />
-<!--            ResponseFiles="$(CompilerResponseFile)"-->
-<!--            RuntimeMetadataVersion="$(RuntimeMetadataVersion)"-->
-<!--            SharedCompilationId="$(SharedCompilationId)"-->
-<!--            SkipAnalyzers="$(_SkipAnalyzers)"-->
-<!--            SkipCompilerExecution="$(SkipCompilerExecution)"-->
+            <!--            ResponseFiles="$(CompilerResponseFile)"-->
+            <!--            RuntimeMetadataVersion="$(RuntimeMetadataVersion)"-->
+            <!--            SharedCompilationId="$(SharedCompilationId)"-->
+            <!--            SkipAnalyzers="$(_SkipAnalyzers)"-->
+            <!--            SkipCompilerExecution="$(SkipCompilerExecution)"-->
             <FileInputs Include="@(Compile)" />
-<!--            SubsystemVersion="$(SubsystemVersion)"-->
+            <!--            SubsystemVersion="$(SubsystemVersion)"-->
             <PropertyInputs Include="$(OutputType)" />
             <PropertyInputs Include="$(CscToolExe)" />
             <PropertyInputs Include="$(CscToolPath)" />
             <PropertyInputs Include="$(TreatWarningsAsErrors)" />
-<!--            UseHostCompilerIfAvailable="$(UseHostCompilerIfAvailable)"-->
-<!--            UseSharedCompilation="$(UseSharedCompilation)"-->
+            <!--            UseHostCompilerIfAvailable="$(UseHostCompilerIfAvailable)"-->
+            <!--            UseSharedCompilation="$(UseSharedCompilation)"-->
             <PropertyInputs Include="$(Utf8Output)" />
-<!--            VsSessionGuid="$(VsSessionGuid)"-->
+            <!--            VsSessionGuid="$(VsSessionGuid)"-->
             <PropertyInputs Include="$(WarningLevel)" />
             <PropertyInputs Include="$(WarningsAsErrors)" />
             <PropertyInputs Include="$(WarningsNotAsErrors)" />
             <PropertyInputs Include="$(ApplicationIcon)" />
-<!--            Win32Manifest="$(Win32Manifest)"-->
-<!--            Win32Resource="$(Win32Resource)"-->
-<!--            PathMap="$(PathMap)"-->
-<!--            SourceLink="$(SourceLink)"-->
+            <!--            Win32Manifest="$(Win32Manifest)"-->
+            <!--            Win32Resource="$(Win32Resource)"-->
+            <!--            PathMap="$(PathMap)"-->
+            <!--            SourceLink="$(SourceLink)"-->
         </ItemGroup>
 
         <CacheTask Condition="'$(CanCache)' == 'true'" FileInputs="@(FileInputs)" PropertyInputs="@(PropertyInputs)" BaseCacheDir="c:/projekty/zip/zip/zip/cache/">
             <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
             <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
         </CacheTask>
-        
+
         <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
         <Csc Condition="'$(CacheHit)' != 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
              AdditionalLibPaths="$(AdditionalLibPaths)"
@@ -230,14 +231,13 @@
             <Output TaskParameter="CommandLineArgs" ItemName="CscCommandLineArgs" />
         </Csc>
 
-        
         <ItemGroup Condition="'$(CanCache)' == 'true'">
             <CompileOutputsToCache Include="@(IntermediateAssembly)" />
             <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
             <CompileOutputsToCache Include="$(PdbFile)" />
-<!--            <CompileOutputsToCache Include="sth else?" />-->
+            <!--            <CompileOutputsToCache Include="sth else?" />-->
         </ItemGroup>
-        
+
         <UseOrPopulateCache Condition="'$(CanCache)' == 'true'" IntermediateOutputPath="$(IntermediateOutputPath)" OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" />
 
         <ItemGroup>
@@ -246,4 +246,5 @@
 
         <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
+
 </Project>

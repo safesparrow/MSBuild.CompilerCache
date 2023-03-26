@@ -7,9 +7,9 @@
         <Nullable>enable</Nullable>
         <DebugType>embedded</DebugType>
     </PropertyGroup>
-    
+
     <ItemGroup>
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     </ItemGroup>
 
 </Project>
