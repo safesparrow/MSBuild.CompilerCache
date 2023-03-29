@@ -1,1 +1,3 @@
-﻿Console.WriteLine("Test");
+﻿using System;
+
+Console.WriteLine("Test");

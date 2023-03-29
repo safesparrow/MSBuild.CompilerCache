@@ -9,6 +9,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SampleProjects", "SampleProjects", "{D3379A58-EEB2-49A2-B0E5-F8A44B9B2EB0}"
 	ProjectSection(SolutionItems) = preProject
 		SampleProjects\Directory.Build.targets = SampleProjects\Directory.Build.targets
+		SampleProjects\nuget.config = SampleProjects\nuget.config
+		SampleProjects\Directory.Build.props = SampleProjects\Directory.Build.props
+		SampleProjects\README.md = SampleProjects\README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp", "SampleProjects\CSharp.2\CSharp.csproj", "{8DACD3EA-A0A4-480B-BCCF-646C5083507C}"

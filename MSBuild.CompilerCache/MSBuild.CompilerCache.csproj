@@ -2,9 +2,16 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <PackageId>MSBuild.CompilerCache</PackageId>
+        <Version>0.0.1</Version>
+        <Authors>safesparrow</Authors>
+        <Description>Provides C# and F# compilation caching by extending the CoreCompile MSBuild target with custom tasks.</Description>
+        <ProjectUrl>https://github.com/safesparrow/dotnet_compiler_cache</ProjectUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>        
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,6 +19,10 @@
         <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.5.0" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.5.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
     </ItemGroup>
 
 </Project>

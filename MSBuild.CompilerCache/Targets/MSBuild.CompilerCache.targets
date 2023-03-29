@@ -1,8 +1,10 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <PropertyGroup>
-        <ForceDisableCompilationCache Condition="'$(ForceDisableCompilationCache)' == ''">false</ForceDisableCompilationCache>
         <CanCache>true</CanCache>
+        <ForceDisableCompilationCache Condition="'$(ForceDisableCompilationCache)' == ''">false</ForceDisableCompilationCache>
+        <!-- Can't cache without cache directory specified. -->
+        <CanCache Condition="'$(CompilationCacheBaseDir)' == ''">false</CanCache>        
         <!-- User requested to disable the cache. -->
         <CanCache Condition="'$(ForceDisableCompilationCache)' == 'true'">false</CanCache>
     </PropertyGroup>
@@ -25,7 +27,7 @@
     </PropertyGroup>
     
     <PropertyGroup Condition="'$(ShouldImportCacheTargets)' == 'true'">
-        <CacheTasksPath>$(MSBuildThisFileDirectory)..\bin\Debug\net7.0\MSBuild.CompilerCache.dll</CacheTasksPath>
+        <CacheTasksPath>$(MSBuildThisFileDirectory)..\lib\net6.0\MSBuild.CompilerCache.dll</CacheTasksPath>
     </PropertyGroup>
     
     <UsingTask TaskName="LocateCompilationCacheEntry" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
