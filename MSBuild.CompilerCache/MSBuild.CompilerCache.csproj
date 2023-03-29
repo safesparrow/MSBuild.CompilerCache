@@ -10,7 +10,7 @@
         <Version>0.0.1</Version>
         <Authors>safesparrow</Authors>
         <Description>Provides C# and F# compilation caching by extending the CoreCompile MSBuild target with custom tasks.</Description>
-        <ProjectUrl>https://github.com/safesparrow/dotnet_compiler_cache</ProjectUrl>
+        <ProjectUrl>https://github.com/safesparrow/MSBuild.CompilerCache</ProjectUrl>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>        
     </PropertyGroup>
 
