@@ -86,6 +86,7 @@
             - All other non-file inputs should be added to the PropertyInputs ItemGroup. The fingerprint will be based on the raw string values.
              -->
         <ItemGroup Condition="'$(CanCache)' == 'true'">
+            <PropertyInputs Include="$(AssemblyName)" />
             <FileInputs Include="@(AdditionalLibPaths)" />
             <FileInputs Include="@(AddModules)" />
             <FileInputs Include="@(AdditionalFiles)" />
@@ -153,7 +154,7 @@
 <!--              Win32ResourceFile="$(Win32Resource)"-->
         </ItemGroup>
 
-        <LocateCompilationCacheEntry Condition="'$(CanCache)' == 'true'" FileInputs="@(FileInputs)" PropertyInputs="@(PropertyInputs)" BaseCacheDir="c:/projekty/zip/zip/zip/cache/">
+        <LocateCompilationCacheEntry Condition="'$(CanCache)' == 'true'" FileInputs="@(FileInputs)" PropertyInputs="@(PropertyInputs)" BaseCacheDir="$(CompilationCacheBaseDir)">
             <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
             <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
         </LocateCompilationCacheEntry>

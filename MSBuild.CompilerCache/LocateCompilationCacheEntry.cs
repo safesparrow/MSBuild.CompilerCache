@@ -1,4 +1,6 @@
-﻿namespace MSBuild.CompilerCache;
+﻿using Newtonsoft.Json;
+
+namespace MSBuild.CompilerCache;
 
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
@@ -53,6 +55,9 @@ public class LocateCompilationCacheEntry : Task
         var markerPath = Helpers.GetMarkerPath(dir);
         if (!Directory.Exists(dir))
         {
+            Directory.CreateDirectory(dir);
+            var extractPath = Path.Combine(dir, "extract.json");
+            File.WriteAllText(extractPath, Newtonsoft.Json.JsonConvert.SerializeObject(extract, Formatting.Indented));
             Log.LogMessage(MessageImportance.High, $"{dir} does not exist");
             CacheHit = false;
         }
