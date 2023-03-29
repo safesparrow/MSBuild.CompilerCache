@@ -21,12 +21,14 @@ public record FullExtract(FileExtract[] files, string[] props);
 /// </summary>
 public class LocateCompilationCacheEntry : Task
 {
+#pragma warning disable CS8618
     [Required] public ITaskItem[] PropertyInputs { get; set; }
     [Required] public ITaskItem[] FileInputs { get; set; }
     [Required] public string BaseCacheDir { get; set; }
 
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheDir { get; private set; }
+#pragma warning restore CS8618
 
     public override bool Execute()
     {

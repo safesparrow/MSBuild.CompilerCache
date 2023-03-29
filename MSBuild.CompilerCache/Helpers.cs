@@ -6,7 +6,8 @@ public static class Helpers
 
     public static void CreateEmptyFile(string markerPath)
     {
-        // ReSharper disable once EmptyEmbeddedStatement
-        using (File.Create(markerPath)) ;
+        using (File.Create(markerPath))
+        {
+        }
     }
 }

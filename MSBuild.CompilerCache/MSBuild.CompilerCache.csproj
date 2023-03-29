@@ -7,11 +7,13 @@
         <Nullable>enable</Nullable>
 
         <PackageId>MSBuild.CompilerCache</PackageId>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
         <Authors>safesparrow</Authors>
         <Description>Provides C# and F# compilation caching by extending the CoreCompile MSBuild target with custom tasks.</Description>
-        <ProjectUrl>https://github.com/safesparrow/MSBuild.CompilerCache</ProjectUrl>
+        <PackageProjectUrl>https://github.com/safesparrow/MSBuild.CompilerCache</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,6 +32,10 @@
         <None Update="Targets\Cached.6.0.300.FSharp.targets">
           <Pack>True</Pack>
           <PackagePath>build\</PackagePath>
+        </None>
+        <None Include="NuGet.README.md">
+            <Pack>True</Pack>
+            <PackagePath>README.md</PackagePath>
         </None>
     </ItemGroup>
 

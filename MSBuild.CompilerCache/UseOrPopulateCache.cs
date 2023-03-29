@@ -10,10 +10,12 @@ using Task = Microsoft.Build.Utilities.Task;
 /// </summary>
 public class UseOrPopulateCache : Task
 {
+#pragma warning disable CS8618
     [Required] public ITaskItem[] OutputsToCache { get; set; }
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheDir { get; set; }
     [Required] public string IntermediateOutputPath { get; set; }
+#pragma warning restore CS8618
     // TODO Ignored for now
     public bool CheckCompileOutputAgainstCache { get; set; }
 
