@@ -1,0 +1,9 @@
+<Project>
+
+    <PropertyGroup>
+        <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
+    </PropertyGroup>
+    
+    <Import Project="$(MSBuildThisFileDirectory)..\MSBuild.CompilerCache\Targets\Cache.targets" />
+    
+</Project>

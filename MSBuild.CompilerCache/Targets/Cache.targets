@@ -14,19 +14,23 @@
         <CanCache Condition="'$(CompilationLanguage)' == ''">false</CanCache>
     </PropertyGroup>
     
+    <PropertyGroup>
+        <CanCache Condition="'$(CompilationLanguage)' == ''">false</CanCache>
+    </PropertyGroup>
+    
     <PropertyGroup Condition="'$(CanCache)' == 'true'">
-        <CoreCompileImport>$(MSBuildThisFileDirectory)Cached.$(NETCoreSdkVersion).targets.$(CompilationLanguage).targets</CoreCompileImport>
+        <CoreCompileImport>$(MSBuildThisFileDirectory)Cached.$(NETCoreSdkVersion).$(CompilationLanguage).targets</CoreCompileImport>
         <ShouldImportCacheTargets Condition="Exists('$(CoreCompileImport)')">true</ShouldImportCacheTargets>
         <CompileAndCheckAgainstCache Condition="'$(CompileAndCheckAgainstCache)' != ''">false</CompileAndCheckAgainstCache>
     </PropertyGroup>
     
-    <PropertyGroup Condition="'$(CanCache)' == 'true'">
-        <CacheTasksPath>C:\projekty\zip\zip\zip\bin\Debug\net7.0\zip.dll</CacheTasksPath>
+    <PropertyGroup Condition="'$(ShouldImportCacheTargets)' == 'true'">
+        <CacheTasksPath>$(MSBuildThisFileDirectory)..\bin\Debug\net7.0\MSBuild.CompilerCache.dll</CacheTasksPath>
     </PropertyGroup>
     
-    <UsingTask TaskName="CacheTask" AssemblyFile="$(CacheTaskPath)" Condition="$(ShouldImportCacheTargets)" />
-    <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="$(CacheTaskPath)" Condition="$(ShouldImportCacheTargets)" />
+    <UsingTask TaskName="LocateCompilationCacheEntry" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
+    <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
     
-    <Import Project="$(CoreCompileImport)" Condition="$(ShouldImportCacheTargets)" />
+    <Import Project="$(CoreCompileImport)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
 
 </Project>

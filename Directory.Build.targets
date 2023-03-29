@@ -1,9 +1,0 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-    <PropertyGroup>
-        <BaseCompilationCacheDir Condition="'$(BaseCompilationCacheDir)' == ''">c:/projekty/zip/zip/zip/cache/</BaseCompilationCacheDir>
-    </PropertyGroup>
-    
-    <Import Project="$(MSBuildThisFileDirectory)Targets\Cache.targets" />
-    
-</Project>

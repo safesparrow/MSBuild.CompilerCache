@@ -6,10 +6,17 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <DebugType>embedded</DebugType>
+        <RootNamespace>test</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Compile Include="..\CSharp.1\Program.cs">
+        <Link>Program.cs</Link>
+      </Compile>
     </ItemGroup>
 
 </Project>
