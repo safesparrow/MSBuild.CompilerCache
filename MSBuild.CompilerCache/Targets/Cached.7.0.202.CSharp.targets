@@ -1,4 +1,6 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<!-- Original SDK target can be found in Targets/CoreCompileCSharpSdk-7.0.202.targets -->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <Target Name="CoreCompile"
             Inputs="$(MSBuildAllProjects);
@@ -62,6 +64,7 @@
             - All other non-file inputs should be added to the PropertyInputs ItemGroup. The fingerprint will be based on the raw string values.
              -->
         <ItemGroup Condition="'$(CanCache)' == 'true'">
+            <PropertyInputs Include="$(AssemblyName)" />
             <FileInputs Include="@(AdditionalLibPaths)" />
             <FileInputs Include="@(AddModules)" />
             <FileInputs Include="@(AdditionalFiles)" />
@@ -111,9 +114,9 @@
             <PropertyInputs Include="$(Deterministic)" />
             <PropertyInputs Include="$(Deterministic)" />
             <!--            PublicSign="$(PublicSign)"-->
-            <!--            OutputAssembly="@(IntermediateAssembly)"-->
-            <!--            OutputRefAssembly="@(IntermediateRefAssembly)"-->
-            <!--            PdbFile="$(PdbFile)"-->
+            <PropertyInputs Include="@(IntermediateAssembly)" />
+            <PropertyInputs Include="@(IntermediateRefAssembly)" />
+            <PropertyInputs Include="$(PdbFile)" />
             <PropertyInputs Include="$(PlatformTarget)" />
             <PropertyInputs Include="$(Prefer32Bit)" />
             <!--            PreferredUILang="$(PreferredUILang)"-->
@@ -248,7 +251,7 @@
             <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
             <CompileOutputsToCache Include="$(PdbFile)" />
             <CompileOutputsToCache Include="$(DocFileItem)" />
-            <!-- <CompileOutputsToCache Include="sth else?" />-->
+            <!-- TODO: Something else? -->
         </ItemGroup>
 
         <UseOrPopulateCache

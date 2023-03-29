@@ -2,18 +2,18 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuild.CompilerCache", "MSBuild.CompilerCache\MSBuild.CompilerCache.csproj", "{D07FA8D3-8165-4DD0-B866-AC7C80D9AB49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp.1", "SampleProjects\CSharp.1\CSharp.1.csproj", "{BE3572BB-6875-4B75-A220-DB63F9CA4E2A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp.1", "SampleProjects\CSharp.1\CSharp.csproj", "{BE3572BB-6875-4B75-A220-DB63F9CA4E2A}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.1", "SampleProjects\FSharp.1\FSharp.1.fsproj", "{41720823-7F43-472B-9D32-A20BA6B23E1B}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.1", "SampleProjects\FSharp.1\FSharp.fsproj", "{41720823-7F43-472B-9D32-A20BA6B23E1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SampleProjects", "SampleProjects", "{D3379A58-EEB2-49A2-B0E5-F8A44B9B2EB0}"
 	ProjectSection(SolutionItems) = preProject
 		SampleProjects\Directory.Build.targets = SampleProjects\Directory.Build.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp.2", "SampleProjects\CSharp.2\CSharp.2.csproj", "{8DACD3EA-A0A4-480B-BCCF-646C5083507C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp", "SampleProjects\CSharp.2\CSharp.csproj", "{8DACD3EA-A0A4-480B-BCCF-646C5083507C}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.2", "SampleProjects\FSharp.2\FSharp.2.fsproj", "{865C0CCE-41C3-4019-B172-A1F1FF071A44}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.2", "SampleProjects\FSharp.2\FSharp.fsproj", "{865C0CCE-41C3-4019-B172-A1F1FF071A44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

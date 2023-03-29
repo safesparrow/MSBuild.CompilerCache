@@ -1,4 +1,6 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<!-- Original SDK target can be found in Targets/CoreCompileFSharpSdk-7.0.202.targets -->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <Target
             Name="CoreCompile"
@@ -118,8 +120,8 @@
             <PropertyInputs Include="Optimize=$(Optimize)" />
             <PropertyInputs Include="ReflectionFree=$(ReflectionFree)" />
             <PropertyInputs Include="OtherFlags=$(FscOtherFlags)" />
-<!--              OutputAssembly="@(IntermediateAssembly)"-->
-<!--              OutputRefAssembly="@(IntermediateRefAssembly)"-->
+            <PropertyInputs Include="@(IntermediateAssembly)" />
+            <PropertyInputs Include="@(IntermediateRefAssembly)" />
 <!--              PathMap="$(PathMap)"-->
 <!--              PdbFile="$(PdbFile)"-->
             <PropertyInputs Include="Platform=$(PlatformTarget)" />
@@ -229,7 +231,8 @@
             <CompileOutputsToCache Include="@(IntermediateAssembly)" />
             <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
             <CompileOutputsToCache Include="$(PdbFile)" />
-            <!--            <CompileOutputsToCache Include="sth else?" />-->
+            <CompileOutputsToCache Include="$(DocumentationFile)" />
+            <!-- TODO: Something else? -->
         </ItemGroup>
 
         <UseOrPopulateCache Condition="'$(CanCache)' == 'true'" IntermediateOutputPath="$(IntermediateOutputPath)" OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" />
