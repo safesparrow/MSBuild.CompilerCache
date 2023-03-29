@@ -1,5 +1,5 @@
 ﻿# What is this?
-MSBuild.CompilerCache is a package that provides caching of C# and F# project compilation.
+`MSBuild.CompilerCache` is a package that provides caching of C# and F# project compilation.
 
 It extends the `CoreCompile` targets from the SDK with caching steps and uses custom MSBuild tasks that perform the actual caching.
 
