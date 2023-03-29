@@ -8,7 +8,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.1", "SampleProjects\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SampleProjects", "SampleProjects", "{D3379A58-EEB2-49A2-B0E5-F8A44B9B2EB0}"
 	ProjectSection(SolutionItems) = preProject
-		SampleProjects\Directory.Build.targets = SampleProjects\Directory.Build.targets
 		SampleProjects\nuget.config = SampleProjects\nuget.config
 		SampleProjects\Directory.Build.props = SampleProjects\Directory.Build.props
 		SampleProjects\README.md = SampleProjects\README.md

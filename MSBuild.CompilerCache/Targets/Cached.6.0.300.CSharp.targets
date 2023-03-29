@@ -1,4 +1,4 @@
-﻿<!-- Original SDK target can be found in Targets/CoreCompileCSharpSdk-7.0.202.targets -->
+﻿<!-- Original SDK target can be found in Targets/CoreCompileCSharpSdk-6.0.300.targets -->
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
@@ -18,7 +18,6 @@
                   $(ResolvedCodeAnalysisRuleSet);
                   @(AdditionalFiles);
                   @(EmbeddedFiles);
-                  @(Analyzer);
                   @(EditorConfigFiles)"
             Outputs="@(DocFileItem);
                    @(IntermediateAssembly);
@@ -29,8 +28,8 @@
             Returns="@(CscCommandLineArgs)"
             DependsOnTargets="$(CoreCompileDependsOn);_BeforeVBCSCoreCompile">
         <!-- These two compiler warnings are raised when a reference is bound to a different version
-         than specified in the assembly reference version number.  MSBuild raises the same warning in this case,
-         so the compiler warning would be redundant. -->
+                 than specified in the assembly reference version number.  MSBuild raises the same warning in this case,
+                 so the compiler warning would be redundant. -->
         <PropertyGroup Condition="('$(TargetFrameworkVersion)' != 'v1.0') and ('$(TargetFrameworkVersion)' != 'v1.1')">
             <NoWarn>$(NoWarn);1701;1702</NoWarn>
         </PropertyGroup>
@@ -153,12 +152,11 @@
             <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
             <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
         </LocateCompilationCacheEntry>
-        
+
         <PropertyGroup>
             <DoInvokeCompilation Condition="'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'">true</DoInvokeCompilation>
         </PropertyGroup>
         <!-- END OF CACHING EXTENSION CODE -->
-        
 
         <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
         <Csc Condition="'$(DoInvokeCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
@@ -261,7 +259,7 @@
                 CacheHit="$(CacheHit)"
                 CacheDir="$(CacheDir)" />
         <!-- END OF CACHING EXTENSION CODE -->
-
+        
         <ItemGroup>
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
         </ItemGroup>

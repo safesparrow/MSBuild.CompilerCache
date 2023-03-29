@@ -1,34 +1,33 @@
-﻿<!-- Original SDK target can be found in Targets/CoreCompileFSharpSdk-7.0.202.targets -->
+﻿<!-- Original SDK target can be found in Targets/CoreCompileFSharpSdk-6.0.300.targets -->
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
     <Target
             Name="CoreCompile"
             Inputs="$(MSBuildAllProjects);
-                    @(CompileBefore);
-                    @(Compile);
-                    @(CompileAfter);
-                    @(FscCompilerTools);
-                    @(_CoreCompileResourceInputs);
-                    @(ManifestNonResxWithNoCultureOnDisk);
-                    $(ApplicationIcon);
-                    $(AssemblyOriginatorKeyFile);
-                    @(ReferencePathWithRefAssemblies);
-                    @(CompiledLicenseFile);
-                    @(EmbeddedDocumentation); 
-                    $(Win32Resource);
-                    $(Win32Manifest);
-                    @(CustomAdditionalCompileInputs);
-                    $(VersionFile);
-                    $(KeyOriginatorFile);
-                    $(UseSource);
-                    $(LoadSource)"
+                @(CompileBefore);
+                @(Compile);
+                @(CompileAfter);
+                @(FscCompilerTools);
+                @(_CoreCompileResourceInputs);
+                @(ManifestNonResxWithNoCultureOnDisk);
+                $(ApplicationIcon);
+                $(AssemblyOriginatorKeyFile);
+                @(ReferencePath);
+                @(CompiledLicenseFile);
+                @(EmbeddedDocumentation); 
+                $(Win32Resource);
+                $(Win32Manifest);
+                @(CustomAdditionalCompileInputs);
+                $(VersionFile);
+                $(KeyOriginatorFile);
+                $(UseSource);
+                $(LoadSource)"
             Outputs="@(DocFileItem);
-                     @(IntermediateAssembly);
-                     @(IntermediateRefAssembly);
-                     @(_DebugSymbolsIntermediatePath);
-                     $(NonExistentFile);
-                     @(CustomAdditionalCompileOutputs)"
+                 @(IntermediateAssembly);
+                 @(_DebugSymbolsIntermediatePath);
+                 $(NonExistentFile);
+                 @(CustomAdditionalCompileOutputs)"
             Returns="@(FscCommandLineArgs)"
             DependsOnTargets="$(CoreCompileDependsOn)"
     >
@@ -50,8 +49,8 @@
              correct list of resources based on the build system being used.
              This could be a bit simpler, but xbuild doesn't seem to support msbuild 4.0 'item functions'
              like Distinct().
-             Reference: https://github.com/dotnet/fsharp/pull/2595
-                        https://github.com/dotnet/fsharp/pull/2605
+             Reference: https://github.com/Microsoft/visualfsharp/pull/2595
+                        https://github.com/Microsoft/visualfsharp/pull/2605
         -->
         <ItemGroup>
             <ActualEmbeddedResources
@@ -90,12 +89,11 @@
         <ItemGroup Condition="'$(CanCache)' == 'true'">
             <!-- Not input for the compiler, but affects the cache. -->
             <PropertyInputs Include="$(AssemblyName)" />
-            
+
 <!--              BaseAddress="$(BaseAddress)"-->
 <!--              ChecksumAlgorithm="$(PdbChecksumAlgorithm)"-->
 <!--              CodePage="$(CodePage)"-->
 <!--              CompilerTools="@(FscCompilerTools)"-->
-              <PropertyInputs Include="CompressMetadata=$(CompressMetadata)" />
             <PropertyInputs Include="DebugSymbols=$(DebugSymbols)" />
             <PropertyInputs Include="DebugType=$(DebugType)" />
             <PropertyInputs Include="DefineConstants=$(DefineConstants)" />
@@ -112,13 +110,9 @@
             <PropertyInputs Include="LangVersion=$(LangVersion)" />
 <!--              LCID="$(LCID)"-->
 <!--              NoFramework="true"-->
-            <PropertyInputs Include="NoInterfaceData=$(NoInterfaceData)" />
-            <PropertyInputs Include="NoOptimizationData=$(NoOptimizationData)" />
             <PropertyInputs Include="Optimize=$(Optimize)" />
-            <PropertyInputs Include="ReflectionFree=$(ReflectionFree)" />
             <PropertyInputs Include="OtherFlags=$(FscOtherFlags)" />
             <PropertyInputs Include="@(IntermediateAssembly)" />
-            <PropertyInputs Include="@(IntermediateRefAssembly)" />
 <!--              PathMap="$(PathMap)"-->
 <!--              PdbFile="$(PdbFile)"-->
             <PropertyInputs Include="Platform=$(PlatformTarget)" />
@@ -126,9 +120,8 @@
             <PropertyInputs Include="PreferredUILang=$(PreferredUILang)" />
 <!--              ProvideCommandLineArgs="$(ProvideCommandLineArgs)"-->
 <!--              PublicSign="$(PublicSign)"-->
-            <FileInputs Include="@(ReferencePathWithRefAssemblies)" />
-<!--              ReferencePath="$(ReferencePathWithRefAssemblies)"-->
-            <PropertyInputs Include="$(ProduceOnlyReferenceAssembly)" />
+            <FileInputs Include="@(ReferencePath)" />
+<!--              ReferencePath="$(ReferencePath)"-->
             <FileInputs Include="@(ActualEmbeddedResources)" />
 <!--              SkipCompilerExecution="$(SkipCompilerExecution)"-->
             <PropertyInputs SourceLink="$(SourceLink)" />
@@ -157,15 +150,14 @@
             <Output TaskParameter="CacheDir" PropertyName="CacheDir" />
             <Output TaskParameter="CacheHit" PropertyName="CacheHit" />
         </LocateCompilationCacheEntry>
-        
+
         <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
         <!-- NOTE: ManifestResourceWithNoCulture and ManifestNonResxWithNoCultureOnDisk are generated by Mono targets files -->
-        <Fsc  Condition="'$(CacheHit)' != 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+        <Fsc  Condition="'$(DoInvokeCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
               BaseAddress="$(BaseAddress)"
               ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
               CodePage="$(CodePage)"
               CompilerTools="@(FscCompilerTools)"
-              CompressMetadata="$(CompressMetadata)"
               DebugSymbols="$(DebugSymbols)"
               DebugType="$(DebugType)"
               DefineConstants="$(DefineConstants)"
@@ -182,13 +174,9 @@
               LangVersion="$(LangVersion)"
               LCID="$(LCID)"
               NoFramework="true"
-              NoInterfaceData="$(NoInterfaceData)"
-              NoOptimizationData="$(NoOptimizationData)"
               Optimize="$(Optimize)"
-              ReflectionFree="$(ReflectionFree)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
-              OutputRefAssembly="@(IntermediateRefAssembly)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
@@ -196,9 +184,8 @@
               PreferredUILang="$(PreferredUILang)"
               ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
-              References="@(ReferencePathWithRefAssemblies)"
-              ReferencePath="$(ReferencePathWithRefAssemblies)"
-              RefOnly="$(ProduceOnlyReferenceAssembly)"
+              References="@(ReferencePath)"
+              ReferencePath="$(ReferencePath)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
@@ -227,7 +214,6 @@
         <!-- START OF CACHING EXTENSION CODE -->
         <ItemGroup Condition="'$(CanCache)' == 'true'">
             <CompileOutputsToCache Include="@(IntermediateAssembly)" />
-            <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
             <CompileOutputsToCache Include="$(PdbFile)" />
             <CompileOutputsToCache Include="$(DocFileItem)" />
             <!-- TODO: Something else? -->
@@ -241,7 +227,7 @@
                 CacheHit="$(CacheHit)"
                 CacheDir="$(CacheDir)" />
         <!-- END OF CACHING EXTENSION CODE -->
-        
+
         <ItemGroup>
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
         </ItemGroup>

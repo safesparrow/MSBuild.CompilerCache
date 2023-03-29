@@ -23,6 +23,14 @@
     
     <ItemGroup>
         <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
+        <None Update="Targets\Cached.6.0.300.CSharp.targets">
+          <Pack>True</Pack>
+          <PackagePath>build\</PackagePath>
+        </None>
+        <None Update="Targets\Cached.6.0.300.FSharp.targets">
+          <Pack>True</Pack>
+          <PackagePath>build\</PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>
