@@ -15,6 +15,8 @@ Caching works in commandline builds as well as in the IDE.
 3. If the file does not exist, we run compilation and then populate the cache.
 
 ## How can I use it?
+> :warning: The project is in an experimental phase. It is known to have issues, like limited debugging ability and potential incorrect cache hits. Please keep that in mind before using.
+
 To use the cache, add the following to your project file (or `Directory.Build.props` in your directory structure):
 ```xml
 <PropertyGroup>
@@ -36,6 +38,7 @@ This means that you could share the cache between multiple people.
 If you do, note that in many scenarios this is not secure enough, as it means that users can inject malicious dll files into a shared place, to be used by other users.
 
 ## Outstanding issues
+- Limited debugging ability - Dlls copied from the cache contain symbols with absolute paths to the source files from original compilation. This means that debugging the cached dlls will not work with source files in a different directory. This is a current limitation and should be fixed in upcoming versions.
 - Currently only selected .NET SDKs are supported. 
 - Some of the less common compilation inputs are currently ignored. This is easy to fix, but can currently lead to incorrectly reusing cached results when one of those inputs changes.
 - The cache mechanism is currently not safe for running multiple builds in parallel. If the same project is being built in two workspaces at the same time, there might be some undefined behaviour.
