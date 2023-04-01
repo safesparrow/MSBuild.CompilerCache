@@ -15,19 +15,34 @@ public record FileExtract(string Name, string Hash, long Length);
 [Serializable]
 public record FullExtract(FileExtract[] files, string[] props);
 
+
+
+/// <summary>
+/// Information about the environment that is not part of the compilation inputs,
+/// but could potentially cause difference in results,
+/// and can be recorded for investigation.
+/// </summary>
+public record PreCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc);
+
+public record PostCompilationMetadata(PreCompilationMetadata metadata, DateTime StopTimeUtc);
+
 // ReSharper disable once UnusedType.Global
 /// <summary>
 /// Hashes compilation inputs and checks if a cache entry with the given hash exists. 
 /// </summary>
+// ReSharper disable once ClassNeverInstantiated.Global
 public class LocateCompilationCacheEntry : Task
 {
 #pragma warning disable CS8618
+    // ReSharper disable UnusedAutoPropertyAccessor.Global
     [Required] public ITaskItem[] PropertyInputs { get; set; }
     [Required] public ITaskItem[] FileInputs { get; set; }
     [Required] public string BaseCacheDir { get; set; }
 
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheDir { get; private set; }
+    [Output] public DateTime PreCompilationTimeUtc { get; private set; }
+    // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
     public override bool Execute()
@@ -42,10 +57,7 @@ public class LocateCompilationCacheEntry : Task
                 throw new Exception($"File input does not exist: '{filepath}'");
             }
 
-            using var hash = SHA1.Create();
-            using var f = fileInfo.OpenRead();
-            var bytes = hash.ComputeHash(f);
-            var hashString = Convert.ToHexString(bytes);
+            var hashString = FileToSHA1String(fileInfo);
             return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
         }).ToArray();
             
@@ -74,7 +86,17 @@ public class LocateCompilationCacheEntry : Task
             CacheHit = true;
         }
 
+        PreCompilationTimeUtc = DateTime.UtcNow;
+
         return true;
+    }
+
+    public static string FileToSHA1String(FileInfo fileInfo)
+    {
+        using var hash = SHA1.Create();
+        using var f = fileInfo.OpenRead();
+        var bytes = hash.ComputeHash(f);
+        return Convert.ToHexString(bytes);
     }
 
     private static string HashExtractToString(FullExtract extract)

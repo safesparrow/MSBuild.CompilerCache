@@ -35,7 +35,7 @@ public class UseOrPopulateCache : Task
                     return new OutputFileMap(cachePath, outputPath);
                 }).ToArray();
 
-        if (CacheHit)
+        if (CacheHit && !CheckCompileOutputAgainstCache)
         {
             Log.LogMessage(MessageImportance.High, $"CacheHit - copying {outputsMap.Length} files from cache");
             // TODO Parallel
@@ -45,6 +45,36 @@ public class UseOrPopulateCache : Task
                 File.Delete(entry.OutputPath);
                 File.Copy(entry.CachePath, entry.OutputPath, true);
                 // TODO Set file timestamps - what timestamp to use? It should be compatible with the rest of the MSBuild build process.
+            }
+        }
+        else if (CacheHit && CheckCompileOutputAgainstCache)
+        {
+            Log.LogMessage(MessageImportance.High, $"CacheHit but '{nameof(CheckCompileOutputAgainstCache)}' enabled - verifying newly compiled outputs are same as in the cache.");
+            if (!dir.Exists)
+            {
+                Log.LogMessage(MessageImportance.High, $"CacheHit but cache directory does not exist.");
+            }
+            else
+            {
+                // TODO Parallel
+                foreach (var entry in outputsMap)
+                {
+                    if (!File.Exists(entry.CachePath))
+                        Log.LogMessage($"Despite cache hit, cache file does not exist: '{entry.CachePath}'.");
+                    else
+                    {
+                        var outputHash = LocateCompilationCacheEntry.FileToSHA1String(new FileInfo(entry.OutputPath));
+                        var cachedHash = LocateCompilationCacheEntry.FileToSHA1String(new FileInfo(entry.CachePath));
+                        if (outputHash != cachedHash)
+                        {
+                            Log.LogMessage(MessageImportance.High, $"Output hash != cache cache. Output ({entry.OutputPath}) = {outputHash}. Cache ({entry.CachePath}) = {cachedHash}");
+                        }
+                    }
+                }
+
+                var markerPath = Helpers.GetMarkerPath(CacheDir);
+                Log.LogMessage(MessageImportance.High, $"Creating marker {markerPath}");
+                Helpers.CreateEmptyFile(markerPath);
             }
         }
         else

@@ -1,6 +1,10 @@
 <Project>
 
     <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+    
+    <PropertyGroup>
         <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
     </PropertyGroup>
     

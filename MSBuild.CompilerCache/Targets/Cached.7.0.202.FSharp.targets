@@ -234,7 +234,7 @@
             <CompileOutputsToCache Include="@(IntermediateAssembly)" />
             <CompileOutputsToCache Include="@(IntermediateRefAssembly)" />
             <CompileOutputsToCache Include="$(PdbFile)" />
-            <CompileOutputsToCache Include="$(DocFileItem)" />
+            <CompileOutputsToCache Include="$(DocumentationFile)" />
             <!-- TODO: Something else? -->
         </ItemGroup>
 
