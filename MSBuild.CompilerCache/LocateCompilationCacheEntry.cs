@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.IO.Abstractions;
+using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -14,8 +15,6 @@ public record FileExtract(string Name, string Hash, long Length);
 // TODO add key=value
 [Serializable]
 public record FullExtract(FileExtract[] files, string[] props);
-
-
 
 /// <summary>
 /// Information about the environment that is not part of the compilation inputs,
@@ -45,7 +44,15 @@ public class LocateCompilationCacheEntry : Task
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
+    private static readonly IFileSystem RealFileSystem = new FileSystem();
+    
     public override bool Execute()
+    {
+        Execute(RealFileSystem);
+        return true;
+    }
+
+    internal void Execute(IFileSystem fs)
     {
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
         var fileExtracts = FileInputs.AsParallel().Select(file =>
@@ -60,7 +67,7 @@ public class LocateCompilationCacheEntry : Task
             var hashString = FileToSHA1String(fileInfo);
             return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
         }).ToArray();
-            
+
         var extract = new FullExtract(fileExtracts, props);
         var hashString = HashExtractToString(extract);
         var dir = Path.Combine(BaseCacheDir, hashString);
@@ -87,8 +94,6 @@ public class LocateCompilationCacheEntry : Task
         }
 
         PreCompilationTimeUtc = DateTime.UtcNow;
-
-        return true;
     }
 
     public static string FileToSHA1String(FileInfo fileInfo)
