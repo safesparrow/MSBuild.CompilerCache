@@ -33,6 +33,17 @@ While some tests might work that way, we might also perform tests on a higher le
 
 We will probably end up with some `dotnet build`-based tests and some tests that work with the `CoreCompile` target directly.
 
+## Capabilities required for high-level testing
+To perform relevant high-level tests, we will need the following capabilities:
+- Test different SDKs.
+- Run various `dotnet` commands (by spawning the `dotnet` process).
+- Generate MSBuild binary log and inspect it - to inspect values of certain properties, like `CanCache`.
+- Have a set of C# and F# sample projects.
+- Ability to copy a project to another directory, then build it in both directories. 
+- Compare results of build operations in two directories.
+- Update timestamps of all input files.
+- Provide input dlls that are different but have the same public API 
+
 ## Case: private changes to a project, incremental build, cache hit.
 1. A C# project was built previously.
 2. A change was made to implementation of a method.
