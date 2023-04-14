@@ -55,7 +55,7 @@ public sealed class BuildEnvironment : IDisposable
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.3-alpha-*" />
+        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.*-*" />
     </ItemGroup>
     
 </Project>
