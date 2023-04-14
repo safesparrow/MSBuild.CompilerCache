@@ -1,0 +1,29 @@
+name: Build and publish to NuGet.org
+
+on:
+  push:
+    branches: [ "release/*" ]
+
+jobs:
+  nuget-publish:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 200
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.NUGET_TOKEN}}
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    - name: Test
+      run: dotnet test --no-build --no-restore --configuration Release --verbosity normal
+    - name: Publish
+      run: dotnet nuget push "MSBuild.CompilerCache/bin/Release/*.nupkg" --skip-duplicate --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
