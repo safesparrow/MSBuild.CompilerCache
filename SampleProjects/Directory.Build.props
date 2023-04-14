@@ -2,6 +2,8 @@
 
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DebugType>Embedded</DebugType>
+        <Deterministic>true</Deterministic>
     </PropertyGroup>
     
     <PropertyGroup>

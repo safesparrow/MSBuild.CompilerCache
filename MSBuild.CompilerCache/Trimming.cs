@@ -1,4 +1,6 @@
-﻿namespace MSBuild.CompilerCache.Trimming;
+﻿using Mono.Cecil.Cil;
+
+namespace MSBuild.CompilerCache.Trimming;
 
 using Mono.Cecil;
 using System;
@@ -23,21 +25,52 @@ internal class Trimming
         method.Body.Variables.Clear();
     }
 
-    public void RemapDllSymbolPaths(string dllPath, string outputPath)
+    private bool ReallyHasSymbols(ModuleDefinition module)
     {
-        var p = new ReaderParameters()
+        try
         {
-            ReadSymbols = true
-        };
-        var module = ModuleDefinition.ReadModule(dllPath, p);
-
-        var methods = module.Types.SelectMany(t => t.Methods).ToArray();
-        foreach (var method in methods)
+            module.ReadSymbols();
+            return true;
+        }
+        catch
         {
-            RemapMethodSymbolUrls(method, @"test2\", @"test\");
+            return false;
+        }
+    }
+    
+    public void RemapDllSymbolPaths(string dllPath, string outputPath, string oldBaseDir, string newBaseDir)
+    {
+        var module = ModuleDefinition.ReadModule(dllPath);
+        var modulesCount = module.Assembly.Modules.Count;
+        if (modulesCount > 1)
+        {
+            throw new NotImplementedException(
+                $"{dllPath} is part of a multi-module assembly - only single-module assemblies are supported.");
         }
 
-        module.Write(outputPath);
+        if (ReallyHasSymbols(module))
+        {
+            module.ReadSymbols();
+            //module.SymbolReader.GetWriterProvider().
+            var typeMethods = module.Types.SelectMany(t => t.Methods);
+            typeMethods = module.EntryPoint != null ? typeMethods.Append(module.EntryPoint) : typeMethods;
+            var methods = typeMethods.ToArray();
+            // foreach (var method in methods)
+            // {
+            //     RemapMethodSymbolUrls(method, oldBaseDir, newBaseDir);
+            // }
+            
+            var p = new WriterParameters
+            {
+                WriteSymbols = true,
+                DeterministicMvid = true
+            };
+            module.Write(outputPath, p);
+        }
+        else
+        {
+            File.Copy(dllPath, outputPath);
+        }
     }
 
     public void RemapMethodSymbolUrls(MethodDefinition method, string oldBaseDir, string newBaseDir)
