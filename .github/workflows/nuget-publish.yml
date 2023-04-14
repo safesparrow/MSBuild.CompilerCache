@@ -2,7 +2,8 @@ name: Build and publish to NuGet.org
 
 on:
   push:
-    branches: [ "release/*" ]
+    branches:
+      - "release/**"
 
 jobs:
   nuget-publish:
