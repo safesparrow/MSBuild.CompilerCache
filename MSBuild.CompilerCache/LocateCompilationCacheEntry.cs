@@ -15,8 +15,6 @@ public record FileExtract(string Name, string Hash, long Length);
 [Serializable]
 public record FullExtract(FileExtract[] files, string[] props);
 
-
-
 /// <summary>
 /// Information about the environment that is not part of the compilation inputs,
 /// but could potentially cause difference in results,
@@ -47,6 +45,12 @@ public class LocateCompilationCacheEntry : Task
 
     public override bool Execute()
     {
+        ExecuteInner();
+        return true;
+    }
+
+    internal void ExecuteInner()
+    {
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
         var fileExtracts = FileInputs.AsParallel().Select(file =>
         {
@@ -60,7 +64,7 @@ public class LocateCompilationCacheEntry : Task
             var hashString = FileToSHA1String(fileInfo);
             return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
         }).ToArray();
-            
+
         var extract = new FullExtract(fileExtracts, props);
         var hashString = HashExtractToString(extract);
         var dir = Path.Combine(BaseCacheDir, hashString);
@@ -87,8 +91,6 @@ public class LocateCompilationCacheEntry : Task
         }
 
         PreCompilationTimeUtc = DateTime.UtcNow;
-
-        return true;
     }
 
     public static string FileToSHA1String(FileInfo fileInfo)

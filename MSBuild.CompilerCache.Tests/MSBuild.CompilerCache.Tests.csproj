@@ -13,4 +13,12 @@
       <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MSBuild.CompilerCache\MSBuild.CompilerCache.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Samples\CSharp.csproj" />
+    </ItemGroup>
+
 </Project>
