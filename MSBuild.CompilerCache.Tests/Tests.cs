@@ -252,7 +252,7 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        if (!RunProcess("dotnet.exe", "build", dir))
+        if (!RunProcess("dotnet", "build", dir))
         {
             throw new Exception($"Failed to build project in {dir.FullName}");
         }
