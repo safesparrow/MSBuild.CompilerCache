@@ -244,7 +244,7 @@ public class Class { }
             UseShellExecute = false,
             CreateNoWindow = false
         };
-        Console.WriteLine($"{name} {args}    in    {workingDir.FullName}");
+        Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
         var p = Process.Start(pi);
         p.WaitForExit();
         return p.ExitCode == 0;

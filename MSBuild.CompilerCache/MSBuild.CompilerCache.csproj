@@ -26,6 +26,12 @@
     </ItemGroup>
     
     <ItemGroup>
+        <None Include="..\version.json">
+            <Link>version.json</Link>
+        </None>
+    </ItemGroup>
+    
+    <ItemGroup>
         <None Include="Targets/MSBuild.CompilerCache.targets" Pack="True" PackagePath="build\MSBuild.CompilerCache.targets" />
         <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
         <None Include="NuGet.README.md">
