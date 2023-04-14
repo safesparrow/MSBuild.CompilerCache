@@ -1,6 +1,9 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+/// <summary>
+/// Courtesy of https://stackoverflow.com/questions/229565/what-is-a-good-pattern-for-using-a-global-mutex-in-c
+/// </summary>
 public class SingleGlobalInstance : IDisposable
 {
     //edit by user "jitbit" - renamed private fields to "_"
