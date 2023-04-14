@@ -182,10 +182,15 @@ public class EndToEndTests
     [Test]
     public void DummyTest()
     {
+#if DEBUG
+        var configuration = "Debug";
+#else
+        var configuration = "Release";
+#endif
         var nugetSourcePath =
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
-                @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
+                $@"..\..\..\..\MSBuild.CompilerCache\bin\{configuration}"
             );
         using var env = new BuildEnvironment(nugetSourcePath);
         var cache = new DirectoryInfo(Path.Combine(env.Dir.FullName, ".cache"));
