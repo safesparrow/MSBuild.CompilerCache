@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO.Abstractions;
-using MSBuild.CompilerCache.Trimming;
+using System.Reflection;
 
 namespace Tests;
 
@@ -11,18 +10,57 @@ public sealed class BuildEnvironment : IDisposable
 {
     public DirectoryInfo Dir { get; set; }
 
-    public BuildEnvironment()
+    public BuildEnvironment(string nugetSource)
     {
-        Dir = CreateTempDir();
+        Dir = CreateTempDir(nugetSource);
     }
 
-    public static DirectoryInfo CreateTempDir()
+    public static DirectoryInfo CreateTempDir(string nugetSource)
     {
         var tempFile = Path.GetTempFileName();
         File.Delete(tempFile);
         var dir = Directory.CreateDirectory(tempFile);
+        var props = Path.Combine(dir.FullName, "Directory.Build.props");
+        File.WriteAllText(props, PropsFile);
+        var nugetConfig = Path.Combine(dir.FullName, "nuget.config");
+        File.WriteAllText(nugetConfig, NugetConfig(nugetSource));
         return dir;
     }
+
+    private static string NugetConfig(string sourcePath) =>
+        $"""
+<?xml version="1.0" encoding="utf-8" ?> 
+<configuration>
+    <packageSources>
+        <add key="MyLocalSharedSource" value="{sourcePath}" /> 
+    </packageSources>
+    <config>
+        <add key="globalPackagesFolder" value="packages" />
+    </config>
+</configuration>
+""";
+    
+    private static readonly string PropsFile =
+        """
+<Project>
+
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DebugType>Embedded</DebugType>
+        <Deterministic>true</Deterministic>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.3-alpha-*" />
+    </ItemGroup>
+    
+</Project>
+
+""";
 
     public void Dispose()
     {
@@ -144,7 +182,12 @@ public class EndToEndTests
     [Test]
     public void DummyTest()
     {
-        using var env = new BuildEnvironment();
+        var nugetSourcePath =
+            Path.Combine(
+                Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
+                @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
+            );
+        using var env = new BuildEnvironment(nugetSourcePath);
         var cache = new DirectoryInfo(Path.Combine(env.Dir.FullName, ".cache"));
         var projDir1 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "1"));
         var projDir2 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "2"));
@@ -163,8 +206,6 @@ public class Class { }
         
         WriteProject(projDir1, proj);
         WriteProject(projDir2, proj);
-        
-        
         
         BuildProject(projDir1, proj);
         BuildProject(projDir2, proj);
@@ -215,31 +256,5 @@ public class Class { }
         {
             throw new Exception($"Failed to build project in {dir.FullName}");
         }
-    }
-
-    [Test]
-    public void TrimTest()
-    {
-        var original =
-            @"C:\projekty\fsharp\fsharp_main\artifacts\bin\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.dll";
-        var remapped =
-            @"C:\projekty\fsharp\fsharp_main\artifacts\bin\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.remapped.dll";
-        var originalPath = @"C:\projekty\fsharp\fsharp_main\";
-        var mappedPath = @"C:\projekty\fsharp\fsharp_main2\";
-        
-        // var remapped = @"C:\projekty\MSBuild.CompilerCache\MSBuild.CompilerCache\bin\Debug\net6.0\MSBuild.CompilerCache.remapped.dll";
-        // var original = @"C:\projekty\MSBuild.CompilerCache\MSBuild.CompilerCache\bin\Debug\net6.0\MSBuild.CompilerCache.dll";
-        // var originalPath = @"C:\projekty\MSBuild.CompilerCache\MSBuild.CompilerCache\";
-        // var mappedPath = @"C:\projekty\MSBuild.CompilerCache\MSBuild.CompilerCache2\";
-        var trimming = new Trimming();
-        var sw = Stopwatch.StartNew();
-        for (int i = 0; i < 1; i++)
-        {
-            trimming.RemapDllSymbolPaths(original,
-                remapped,
-                originalPath, mappedPath);
-            Console.WriteLine($"[{i}] {sw.ElapsedMilliseconds}ms");
-        }
-        trimming.RemapDllSymbolPaths(remapped, remapped.Replace(".remapped.", ".reback."), mappedPath, originalPath);
     }
 }

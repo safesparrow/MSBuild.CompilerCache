@@ -10,4 +10,9 @@
         <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
     </PropertyGroup>
     
+    <ItemGroup>
+        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.3-alpha-*" />
+        <!-- <PackageReference Include="MSBuild.CompilerCache" Version="0.0.2" /> -->
+    </ItemGroup>
+    
 </Project>

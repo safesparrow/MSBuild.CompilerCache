@@ -1,5 +1,4 @@
-﻿using System.IO.Abstractions;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -44,15 +43,13 @@ public class LocateCompilationCacheEntry : Task
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
-    private static readonly IFileSystem RealFileSystem = new FileSystem();
-    
     public override bool Execute()
     {
-        Execute(RealFileSystem);
+        ExecuteInner();
         return true;
     }
 
-    internal void Execute(IFileSystem fs)
+    internal void ExecuteInner()
     {
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
         var fileExtracts = FileInputs.AsParallel().Select(file =>
