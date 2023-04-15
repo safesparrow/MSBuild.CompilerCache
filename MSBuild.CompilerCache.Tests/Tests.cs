@@ -6,6 +6,7 @@ namespace Tests;
 
 using NUnit.Framework;
 
+
 public sealed class BuildEnvironment : IDisposable
 {
     public DirectoryInfo Dir { get; set; }
@@ -234,25 +235,9 @@ public class Class { }
         }
     }
 
-    private static bool RunProcess(string name, string args, DirectoryInfo workingDir)
-    {
-        var pi = new ProcessStartInfo(name, args)
-        {
-            WorkingDirectory = workingDir.FullName,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
-            UseShellExecute = false,
-            CreateNoWindow = false
-        };
-        Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
-        var p = Process.Start(pi);
-        p.WaitForExit();
-        return p.ExitCode == 0;
-    }
-
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        if (!RunProcess("dotnet", "build", dir))
+        if (!Utils.RunProcess("dotnet", "build", dir))
         {
             throw new Exception($"Failed to build project in {dir.FullName}");
         }
