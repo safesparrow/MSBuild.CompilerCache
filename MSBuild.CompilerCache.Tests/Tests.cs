@@ -45,7 +45,7 @@ public sealed class BuildEnvironment : IDisposable
 """;
 
     private static readonly string PropsFile =
-        """
+        $"""
 <Project>
 
     <PropertyGroup>
@@ -59,11 +59,10 @@ public sealed class BuildEnvironment : IDisposable
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="0.3.*-*" />
+        <PackageReference Include="MSBuild.CompilerCache" Version="{ThisAssembly.AssemblyInformationalVersion}" />
     </ItemGroup>
     
 </Project>
-
 """;
 
     public void Dispose()
@@ -241,7 +240,12 @@ public class Class { }
         var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
         WriteProject(projDir3, projModified);
         BuildProject(projDir3, projModified);
-        Assert.That(DllFile(projDir3, proj).LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
+        void Print(FileInfo file) => Console.WriteLine($"{file.FullName} - Exists={file.Exists} - LastWriteTime={file.LastWriteTime}");
+        var dll3 = DllFile(projDir3, proj);
+        Print(dll1);
+        Print(dll2);
+        Print(dll3);
+        Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
     }
 
     private static void WriteProject(DirectoryInfo dir, ProjectFileBuilder project)
