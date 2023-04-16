@@ -56,7 +56,12 @@ public class TargetsExtraction
         File.WriteAllText(Path.Combine(dir.Dir.FullName, "global.json"), GlobalJson(sdk));
         File.WriteAllText(Path.Combine(dir.Dir.FullName, $"project.{LanguageProjExtension(language)}"), ProjFile);
         Utils.RunProcess("dotnet", "msbuild /pp:targets.xml", dir.Dir);
-        File.Copy(Path.Combine(dir.Dir.FullName, "targets.xml"), outputPath, overwrite: true);
+        var targetsPath = Path.Combine(dir.Dir.FullName, "targets.xml");
+        if (File.Exists(targetsPath) == false)
+        {
+            throw new Exception("FOO");
+        }
+        File.Copy(targetsPath, outputPath, overwrite: true);
     }
 
     private static readonly string[] UseCacheConditions =
@@ -173,6 +178,29 @@ public class TargetsExtraction
         InputFiles("Win32Manifest"),
         InputFiles("Win32Resource"),
         new Attr("PathMap", AttrType.PathMap),
+        // FSharp 7.0.202 - ones that were not in CSharp
+        Prop("CompilerTools"),
+        Prop("CompressMetadata"),
+        Prop("DebugSymbols"),
+        Unsup("DotnetFscCompilerPath"),
+        InputFiles("Embed"),
+        Unsup("GenerateInterfaceFile"),
+        Prop("LCID"),
+        Prop("NoFramework"),
+        Prop("NoInterfaceData"),
+        Prop("NoOptimizationData"),
+        Prop("ReflectionFree"),
+        Prop("OtherFlags"),
+        new Attr("ReferencePath", AttrType.References),
+        Prop("Tailcalls"),
+        Prop("TargetProfile"),
+        Prop("UseStandardResourceNames"),
+        Unsup("VersionFile"), // ??
+        Prop("VisualStudioStyleErrors"),
+        Prop("WarnOn"),
+        InputFiles("Win32IconFile"),
+        InputFiles("Win32ManifestFile"),
+        InputFiles("Win32ResourceFile")
     };
 
     [Test]
@@ -180,14 +208,15 @@ public class TargetsExtraction
     {
         var sdks = new[]
         {
-            new SDKVersion("7.0.202")
+            new SDKVersion("7.0.202"),
+            new SDKVersion("6.0.300")
         };
         foreach (var sdk in sdks)
         {
-            foreach (var lang in new[] { SupportedLanguage.CSharp /*, SupportedLanguage.FSharp */ })
+            foreach (var lang in new[] { SupportedLanguage.CSharp, SupportedLanguage.FSharp })
             {
                 var allTargetsPath = $"Targets.{sdk}.{lang}.xml";
-                //GenerateAllTargets(sdk, lang, allTargetsPath);
+                GenerateAllTargets(sdk, lang, allTargetsPath);
                 var coreCompilePath = $"CoreCompile.{sdk}.{lang}.targets";
                 var cachedPath = $"Cached.CoreCompile.{sdk}.{lang}.targets";
                 var allTargets = XDocument.Load(allTargetsPath);

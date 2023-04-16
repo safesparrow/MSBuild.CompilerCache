@@ -4,7 +4,7 @@ namespace Tests;
 
 internal static class Utils
 {
-    public static bool RunProcess(string name, string args, DirectoryInfo workingDir)
+    public static void RunProcess(string name, string args, DirectoryInfo workingDir)
     {
         var pi = new ProcessStartInfo(name, args)
         {
@@ -17,6 +17,9 @@ internal static class Utils
         Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
         var p = Process.Start(pi);
         p.WaitForExit();
-        return p.ExitCode == 0;
+        if (p.ExitCode != 0)
+        {
+            throw new Exception($"Running process failed with non-zero exit code.");
+        }
     }
 }

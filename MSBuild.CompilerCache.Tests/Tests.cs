@@ -237,9 +237,6 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        if (!Utils.RunProcess("dotnet", "build", dir))
-        {
-            throw new Exception($"Failed to build project in {dir.FullName}");
-        }
+        Utils.RunProcess("dotnet", "build", dir);
     }
 }
