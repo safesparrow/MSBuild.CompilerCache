@@ -21,13 +21,4 @@
       <Content Include="Samples\CSharp.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="Extraction\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Extraction\CSharp\" />
-      <Folder Include="Extraction\FSharp\" />
-    </ItemGroup>
-
 </Project>
