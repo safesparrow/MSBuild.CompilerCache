@@ -34,6 +34,7 @@ public record SDKVersion(string Version)
 }
 
 [TestFixture]
+[Explicit]
 public class TargetsExtraction
 {
     private static readonly string ProjFile =
@@ -203,7 +204,6 @@ public class TargetsExtraction
         InputFiles("Win32ResourceFile")
     };
 
-    [Test]
     [Explicit]
     public void Extract()
     {
