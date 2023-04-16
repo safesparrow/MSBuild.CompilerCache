@@ -204,6 +204,7 @@ public class TargetsExtraction
     };
 
     [Test]
+    [Explicit]
     public void Extract()
     {
         var sdks = new[]

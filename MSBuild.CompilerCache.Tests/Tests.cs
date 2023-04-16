@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace Tests;
@@ -59,11 +60,18 @@ public sealed class BuildEnvironment : IDisposable
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="{ThisAssembly.AssemblyInformationalVersion}" />
+        <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
     </ItemGroup>
     
 </Project>
 """;
+
+    private static string NuGetVersion()
+    {
+        var v = ThisAssembly.AssemblyInformationalVersion;
+        var r = Regex.Replace(v, "\\+([0-9a-zA-Z]+)$", "+g$1");
+        return r;
+    }
 
     public void Dispose()
     {
