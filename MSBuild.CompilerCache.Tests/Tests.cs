@@ -276,8 +276,8 @@ public class Class { }
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
         Utils.RunProcess("dotnet", "--list-sdks", dir);
-        // Utils.RunProcess("dotnet", "--info", dir);
-        // Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
+        Utils.RunProcess("dotnet", "--info", dir);
+        Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
         Utils.RunProcess("dotnet", "build", dir);
     }
 }
