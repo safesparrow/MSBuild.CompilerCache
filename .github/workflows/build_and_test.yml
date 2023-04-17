@@ -13,6 +13,7 @@ jobs:
   build:
     env:
       MSBuildSdksPath: ""
+      MSBUILDDISABLENODEREUSE: 1
     runs-on: ubuntu-latest
 
     steps:
@@ -33,7 +34,7 @@ jobs:
     - name: cleanup
       run: dotnet build-server shutdown
     - name: print
-      run: echo $MSBuildSdksPath
+      run: echo $MSBUILDDISABLENODEREUSE
     - name: Test
       run: dotnet test --no-build --verbosity normal
       
