@@ -33,8 +33,8 @@ public record SDKVersion(string Version)
     public override string ToString() => Version;
 }
 
-[TestFixture]
-[Explicit]
+// [TestFixture]
+// [Explicit]
 public class TargetsExtraction
 {
     private static readonly string ProjFile =
@@ -204,7 +204,7 @@ public class TargetsExtraction
         InputFiles("Win32ResourceFile")
     };
 
-    [Explicit]
+    // [Explicit]
     public void Extract()
     {
         var sdks = new[]
