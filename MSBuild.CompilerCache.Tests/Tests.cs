@@ -201,14 +201,13 @@ public class EndToEndTests
     public static readonly SDKVersion[] SDKs = new[]
     {
         new SDKVersion("6.0.300"),
-        // new SDKVersion("7.0.202")
+        new SDKVersion("7.0.202")
     };
         
-    // [TestCaseSource(nameof(SDKs))]
+    [TestCaseSource(nameof(SDKs))]
     [Test]
-    public void CompileTwoIdenticalProjectsAssertDllReused()
+    public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
     {
-        var sdk = new SDKVersion("6.0.300");
         var nugetSourcePath =
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
