@@ -9,8 +9,8 @@ internal static class Utils
         var pi = new ProcessStartInfo(name, args)
         {
             WorkingDirectory = workingDir.FullName,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = false
         };
