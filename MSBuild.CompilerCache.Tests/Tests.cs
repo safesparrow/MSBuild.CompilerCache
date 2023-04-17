@@ -273,6 +273,8 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
+        Utils.RunProcess("dotnet", "--list-sdks", dir);
+        Utils.RunProcess("dotnet", "--version", dir);
         Utils.RunProcess("dotnet", "build", dir);
     }
 }
