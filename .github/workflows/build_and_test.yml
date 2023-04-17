@@ -11,7 +11,8 @@ on:
 
 jobs:
   build:
-
+    env:
+      MSBuildSdksPath: ""
     runs-on: ubuntu-latest
 
     steps:
@@ -29,5 +30,10 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: cleanup
+      run: dotnet build-server shutdown
+    - name: print
+      run: echo $MSBuildSdksPath
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      
