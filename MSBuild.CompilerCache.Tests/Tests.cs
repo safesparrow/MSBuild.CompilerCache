@@ -23,12 +23,15 @@ public sealed class BuildEnvironment : IDisposable
     {
         var tempFile = Path.GetTempFileName();
         File.Delete(tempFile);
-        var dir = Directory.CreateDirectory(tempFile);
+        var dir = Directory.CreateDirectory(tempFile + "d");
         File.WriteAllText(Path.Combine(dir.FullName, "global.json"), GlobalJson(sdk));
         var props = Path.Combine(dir.FullName, "Directory.Build.props");
         File.WriteAllText(props, PropsFile);
         var nugetConfig = Path.Combine(dir.FullName, "nuget.config");
         File.WriteAllText(nugetConfig, NugetConfig(nugetSource));
+        
+        
+        Console.WriteLine($"CreateTempDir = '{dir}', sdk={sdk}'");
         return dir;
     }
 
