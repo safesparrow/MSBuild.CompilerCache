@@ -62,10 +62,6 @@ public sealed class BuildEnvironment : IDisposable
         <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
     </PropertyGroup>
     
-    <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
-    </ItemGroup>
-
     <Target Name="Foo" BeforeTargets="_CollectTargetFrameworkForTelemetry">
         <Message Text="NETCoreSdkVersion = $(NETCoreSdkVersion)" Importance="high" />
     </Target>
