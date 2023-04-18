@@ -279,14 +279,14 @@ public class Class { }
     {
         Console.WriteLine($"CurrentDirectory='{Environment.CurrentDirectory}'");
         Utils.RunProcess("printenv","", dir);
-        Utils.RunProcess("dotnet", "--list-sdks", dir);
-        Utils.RunProcess("dotnet", "--info", dir);
-        Utils.RunProcess("printenv","", dir);
-        Utils.RunProcess("dotnet", "restore", dir);
         Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
         Console.WriteLine("MSBuildExtensionsPath = " + Environment.GetEnvironmentVariable("MSBuildExtensionsPath"));
         Environment.SetEnvironmentVariable("MSBuildSdksPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
+        Utils.RunProcess("dotnet", "--list-sdks", dir);
+        Utils.RunProcess("dotnet", "--info", dir);
+        Utils.RunProcess("printenv","", dir);
+        Utils.RunProcess("dotnet", "restore", dir);
         //var path = Path.Combine(Environment.CurrentDirectory, "../../../../build.binlog");
         try
         {
