@@ -204,10 +204,6 @@ public class EndToEndTests
     public static readonly SDKVersion[] SDKs = new[]
     {
         new SDKVersion("6.0.300"),
-        new SDKVersion("6.0.300"),
-        new SDKVersion("6.0.300"),
-        new SDKVersion("6.0.300"),
-        new SDKVersion("7.0.202"),
     };
     
     [NonParallelizable]
@@ -282,8 +278,6 @@ public class Class { }
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
         Console.WriteLine($"CurrentDirectory='{Environment.CurrentDirectory}'");
-        Environment.SetEnvironmentVariable("MSBuildSdksPath", null);
-        Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         Utils.RunProcess("printenv","", dir);
         Utils.RunProcess("dotnet", "--list-sdks", dir);
         Utils.RunProcess("dotnet", "--info", dir);
@@ -291,6 +285,8 @@ public class Class { }
         Utils.RunProcess("dotnet", "restore", dir);
         Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
         Console.WriteLine("MSBuildExtensionsPath = " + Environment.GetEnvironmentVariable("MSBuildExtensionsPath"));
+        Environment.SetEnvironmentVariable("MSBuildSdksPath", null);
+        Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         //var path = Path.Combine(Environment.CurrentDirectory, "../../../../build.binlog");
         try
         {

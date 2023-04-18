@@ -4,19 +4,13 @@
 name: .NET
 
 env:
-  MSBuildSdksPath: ""
-  MSBuildExtensionsPath: ""
-
+  MSBUILDDISABLENODEREUSE: 1
 on:
   push:
   pull_request:
 
 jobs:
   build:
-    env:
-      MSBuildSdksPath: ""
-      MSBUILDDISABLENODEREUSE: 1
-      MSBuildExtensionsPath: ""
     runs-on: ubuntu-latest
 
     steps:
@@ -39,22 +33,9 @@ jobs:
       run: dotnet build --no-restore
       env:
         MSBuildSdksPath: ""
-    - name: cleanup
-      run: dotnet build-server shutdown
-      env:
-        MSBuildSdksPath: ""
-    - name: print
-      run: |
-        echo "REUSE = $MSBUILDDISABLENODEREUSE"
-        echo "MSBuildExtensionsPath = $MSBuildExtensionsPath"
-      env:
-        MSBuildSdksPath: ""
         MSBuildExtensionsPath: ""
     - name: Test
       run: dotnet test --no-build --verbosity normal
-      env:
-        MSBuildSdksPath: ""
-        MSBuildExtensionsPath: ""
     - uses: actions/upload-artifact@v3
       with:
         name: binlog
