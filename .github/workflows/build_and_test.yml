@@ -5,6 +5,7 @@ name: .NET
 
 env:
   MSBuildSdksPath: ""
+  MSBuildExtensionsPath: ""
 
 on:
   push:
@@ -17,6 +18,7 @@ jobs:
     env:
       MSBuildSdksPath: ""
       MSBUILDDISABLENODEREUSE: 1
+      MSBuildExtensionsPath: ""
     runs-on: ubuntu-latest
 
     steps:
@@ -44,11 +46,15 @@ jobs:
       env:
         MSBuildSdksPath: ""
     - name: print
-      run: echo $MSBUILDDISABLENODEREUSE
+      run: |
+        echo "REUSE = $MSBUILDDISABLENODEREUSE"
+        echo "MSBuildExtensionsPath = $MSBuildExtensionsPath"
       env:
         MSBuildSdksPath: ""
+        MSBuildExtensionsPath: ""
     - name: Test
       run: dotnet test --no-build --verbosity normal
       env:
         MSBuildSdksPath: ""
+        MSBuildExtensionsPath: ""
       
