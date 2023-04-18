@@ -208,7 +208,7 @@ public class EndToEndTests
     [Test]
     public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
     {
-        var nugetSourcePath =
+        var nugetSourcePath = 
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
                 @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
