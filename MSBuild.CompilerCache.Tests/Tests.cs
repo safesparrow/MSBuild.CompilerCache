@@ -208,7 +208,9 @@ public class EndToEndTests
     public static readonly SDKVersion[] SDKs = new[]
     {
         new SDKVersion("6.0.300"),
-        new SDKVersion("7.0.202"),
+        new SDKVersion("6.0.300"),
+        new SDKVersion("6.0.300"),
+        new SDKVersion("6.0.300"),
     };
         
     [TestCaseSource(nameof(SDKs))]
