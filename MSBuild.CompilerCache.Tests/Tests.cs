@@ -68,12 +68,8 @@ public sealed class BuildEnvironment : IDisposable
 
     private static string NuGetVersion()
     {
-        Console.WriteLine($"ThisAssembly.AssemblyInformationalVersion = {ThisAssembly.AssemblyInformationalVersion}");
-        Console.WriteLine($"ThisAssembly.AssemblyFileVersion = {ThisAssembly.AssemblyFileVersion}");
-        Console.WriteLine($"ThisAssembly.AssemblyVersion = {ThisAssembly.AssemblyVersion}");
         var v = ThisAssembly.AssemblyInformationalVersion;
         var r = Regex.Replace(v, "\\+([0-9a-zA-Z]+)$", "-g$1");
-        Console.WriteLine($"v = {v} ; r = {r}");
         return r;
     }
 

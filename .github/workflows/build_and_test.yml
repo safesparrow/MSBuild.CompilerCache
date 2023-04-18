@@ -3,10 +3,6 @@
 
 name: .NET
 
-env:
-  MSBuildSdksPath: ""
-  MSBuildExtensionsPath: ""
-
 on:
   push:
     branches: [ "main" ]
@@ -15,10 +11,6 @@ on:
 
 jobs:
   build:
-    env:
-      MSBuildSdksPath: ""
-      MSBUILDDISABLENODEREUSE: 1
-      MSBuildExtensionsPath: ""
     runs-on: ubuntu-latest
 
     steps:
@@ -31,34 +23,11 @@ jobs:
         dotnet-version: |
           6.0.300
           7.0.202
-      env:
-        MSBuildSdksPath: ""
     - name: Restore dependencies
-      env:
-        MSBuildSdksPath: ""
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-      env:
-        MSBuildSdksPath: ""
     - name: cleanup
       run: dotnet build-server shutdown
-      env:
-        MSBuildSdksPath: ""
-    - name: print
-      run: |
-        echo "REUSE = $MSBUILDDISABLENODEREUSE"
-        echo "MSBuildExtensionsPath = $MSBuildExtensionsPath"
-      env:
-        MSBuildSdksPath: ""
-        MSBuildExtensionsPath: ""
     - name: Test
       run: dotnet test --no-build --verbosity normal
-      env:
-        MSBuildSdksPath: ""
-        MSBuildExtensionsPath: ""
-    - uses: actions/upload-artifact@v3
-      with:
-        name: binlog
-        path: build.binlog
-      
