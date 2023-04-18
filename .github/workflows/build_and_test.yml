@@ -23,17 +23,14 @@ jobs:
         dotnet-version: |
           6.0.300
           7.0.202
-      env:
-        MSBuildSdksPath: ""
+    - name: print
+      run: |
+        echo "REUSE = $MSBUILDDISABLENODEREUSE"
+        echo "MSBuildExtensionsPath = $MSBuildExtensionsPath"
     - name: Restore dependencies
-      env:
-        MSBuildSdksPath: ""
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-      env:
-        MSBuildSdksPath: ""
-        MSBuildExtensionsPath: ""
     - name: Test
       run: dotnet test --no-build --verbosity normal
     - uses: actions/upload-artifact@v3
