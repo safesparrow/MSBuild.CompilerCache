@@ -281,9 +281,10 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        Console.WriteLine(Environment.CurrentDirectory);
+        Console.WriteLine($"CurrentDirectory='{Environment.CurrentDirectory}'");
         Environment.SetEnvironmentVariable("MSBuildSdksPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
+        Utils.RunProcess("printenv","", dir);
         Utils.RunProcess("dotnet", "--list-sdks", dir);
         Utils.RunProcess("dotnet", "--info", dir);
         Utils.RunProcess("printenv","", dir);
