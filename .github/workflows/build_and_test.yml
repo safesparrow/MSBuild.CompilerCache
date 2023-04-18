@@ -29,7 +29,6 @@ jobs:
         dotnet-version: |
           6.0.300
           7.0.202
-          env:
       env:
         MSBuildSdksPath: ""
     - name: Restore dependencies
