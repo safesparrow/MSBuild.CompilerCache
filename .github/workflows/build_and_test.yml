@@ -3,6 +3,9 @@
 
 name: .NET
 
+env:
+  MSBuildSdksPath: ""
+
 on:
   push:
     branches: [ "main" ]
@@ -26,15 +29,27 @@ jobs:
         dotnet-version: |
           6.0.300
           7.0.202
-        
+          env:
+      env:
+        MSBuildSdksPath: ""
     - name: Restore dependencies
+      env:
+        MSBuildSdksPath: ""
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+      env:
+        MSBuildSdksPath: ""
     - name: cleanup
       run: dotnet build-server shutdown
+      env:
+        MSBuildSdksPath: ""
     - name: print
       run: echo $MSBUILDDISABLENODEREUSE
+      env:
+        MSBuildSdksPath: ""
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      env:
+        MSBuildSdksPath: ""
       
