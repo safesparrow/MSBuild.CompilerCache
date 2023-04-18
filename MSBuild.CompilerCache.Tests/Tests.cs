@@ -1,25 +1,30 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using NUnit.Framework;
 
 namespace Tests;
 
-using NUnit.Framework;
-
 public sealed class BuildEnvironment : IDisposable
 {
+    public SDKVersion SdkVersion { get; }
     public DirectoryInfo Dir { get; set; }
 
-    public BuildEnvironment(string nugetSource)
+    public BuildEnvironment(string nugetSource, SDKVersion sdkVersion)
     {
-        Dir = CreateTempDir(nugetSource);
+        SdkVersion = sdkVersion;
+        Dir = CreateTempDir(nugetSource, sdkVersion);
     }
 
-    public static DirectoryInfo CreateTempDir(string nugetSource)
+    private static string GlobalJson(SDKVersion sdk) =>
+        "{\"sdk\": {\"version\": \"" + sdk + "\", \"rollForward\": \"disable\"}}";
+    
+    public static DirectoryInfo CreateTempDir(string nugetSource, SDKVersion sdk)
     {
         var tempFile = Path.GetTempFileName();
         File.Delete(tempFile);
         var dir = Directory.CreateDirectory(tempFile);
+        File.WriteAllText(Path.Combine(dir.FullName, "global.json"), GlobalJson(sdk));
         var props = Path.Combine(dir.FullName, "Directory.Build.props");
         File.WriteAllText(props, PropsFile);
         var nugetConfig = Path.Combine(dir.FullName, "nuget.config");
@@ -39,9 +44,9 @@ public sealed class BuildEnvironment : IDisposable
     </config>
 </configuration>
 """;
-    
+
     private static readonly string PropsFile =
-        """
+        $"""
 <Project>
 
     <PropertyGroup>
@@ -55,12 +60,18 @@ public sealed class BuildEnvironment : IDisposable
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.*-*" />
+        <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
     </ItemGroup>
-    
-</Project>
 
+</Project>
 """;
+
+    private static string NuGetVersion()
+    {
+        var v = ThisAssembly.AssemblyInformationalVersion;
+        var r = Regex.Replace(v, "\\+([0-9a-zA-Z]+)$", "-g$1");
+        return r;
+    }
 
     public void Dispose()
     {
@@ -68,8 +79,16 @@ public sealed class BuildEnvironment : IDisposable
     }
 }
 
-public enum OutputType { Exe, Library }
-public enum DebugType { Embedded }
+public enum OutputType
+{
+    Exe,
+    Library
+}
+
+public enum DebugType
+{
+    Embedded
+}
 
 public static class StringExtensions
 {
@@ -91,7 +110,7 @@ public record ProjectFileRaw
     public IReadOnlyCollection<Item> Items { get; init; } = ImmutableArray<Item>.Empty;
 
     private string ItemToXml(Item item) => $"<{item.ItemType.ToString()} Include=\"{item.Include}\" />";
-    
+
     public string ToXml()
     {
         var properties =
@@ -103,7 +122,7 @@ public record ProjectFileRaw
             Items
                 .Select(item => $"        {ItemToXml(item)}")
                 .StringsJoin(Environment.NewLine);
-        
+
         return $"""
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
@@ -134,7 +153,7 @@ public record ProjectFileBuilder
     public IReadOnlyCollection<SourceFile> Embeds { get; init; } = ImmutableArray<SourceFile>.Empty;
 
     public ProjectFileBuilder WithSource(SourceFile source) => this with { Sources = Sources.Append(source).ToList() };
-    
+
     public ProjectFileRaw ToRaw() =>
         new()
         {
@@ -167,7 +186,7 @@ public record ProjectFileBuilder
 
         AddIfNotNull("AssemblyName", AssemblyName);
         AddIfNotNull("CompilationCacheBaseDir", CompilationCacheBaseDir);
-        
+
         return properties;
     }
 
@@ -179,18 +198,26 @@ public record SourceFile(string Path, string Text);
 [TestFixture]
 public class EndToEndTests
 {
-    [Test]
-    public void DummyTest()
+    public static readonly SDKVersion[] SDKs = new[]
     {
-        var nugetSourcePath =
+        new SDKVersion("6.0.300"),
+        new SDKVersion("7.0.202")
+    };
+        
+    [TestCaseSource(nameof(SDKs))]
+    [Test]
+    public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
+    {
+        var nugetSourcePath = 
             Path.Combine(
                 Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
                 @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
             );
-        using var env = new BuildEnvironment(nugetSourcePath);
+        using var env = new BuildEnvironment(nugetSourcePath, sdk);
         var cache = new DirectoryInfo(Path.Combine(env.Dir.FullName, ".cache"));
         var projDir1 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "1"));
         var projDir2 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "2"));
+        var projDir3 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "3"));
         cache.Create();
         projDir1.Create();
         var source = new SourceFile("Library.cs", """
@@ -199,24 +226,35 @@ public class Class { }
 """);
         var proj =
             new ProjectFileBuilder("C.csproj")
-            {
-                CompilationCacheBaseDir = cache.FullName
-            }
+                {
+                    CompilationCacheBaseDir = cache.FullName
+                }
                 .WithSource(source);
-        
+
         WriteProject(projDir1, proj);
         WriteProject(projDir2, proj);
-        
+
         BuildProject(projDir1, proj);
         BuildProject(projDir2, proj);
 
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
-            new FileInfo(Path.Combine(projDir.FullName, "obj", "debug", "net6.0", $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
+            new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
+                $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
 
         var dll1 = DllFile(projDir1, proj);
         var dll2 = DllFile(projDir2, proj);
-        
+
         Assert.That(dll1.LastWriteTime, Is.EqualTo(dll2.LastWriteTime));
+
+        var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
+        WriteProject(projDir3, projModified);
+        BuildProject(projDir3, projModified);
+        void Print(FileInfo file) => Console.WriteLine($"{file.FullName} - Exists={file.Exists} - LastWriteTime={file.LastWriteTime}");
+        var dll3 = DllFile(projDir3, proj);
+        Print(dll1);
+        Print(dll2);
+        Print(dll3);
+        Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
     }
 
     private static void WriteProject(DirectoryInfo dir, ProjectFileBuilder project)
@@ -234,27 +272,10 @@ public class Class { }
         }
     }
 
-    private static bool RunProcess(string name, string args, DirectoryInfo workingDir)
-    {
-        var pi = new ProcessStartInfo(name, args)
-        {
-            WorkingDirectory = workingDir.FullName,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
-            UseShellExecute = false,
-            CreateNoWindow = false
-        };
-        Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
-        var p = Process.Start(pi);
-        p.WaitForExit();
-        return p.ExitCode == 0;
-    }
-
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        if (!RunProcess("dotnet", "build", dir))
-        {
-            throw new Exception($"Failed to build project in {dir.FullName}");
-        }
+        Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
+        Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
+        Utils.RunProcess("dotnet", $"build", dir);
     }
 }
