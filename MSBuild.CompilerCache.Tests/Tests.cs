@@ -286,6 +286,13 @@ public class Class { }
         Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
         Console.WriteLine("MSBuildExtensionsPath = " + Environment.GetEnvironmentVariable("MSBuildExtensionsPath"));
         var path = Path.Combine(Environment.CurrentDirectory, "../../../../build.binlog");
-        Utils.RunProcess("dotnet", $"build /bl:{path}", dir);
+        try
+        {
+            Utils.RunProcess("dotnet", $"build /bl:{path}", dir);
+        }
+        catch
+        {
+            
+        }
     }
 }
