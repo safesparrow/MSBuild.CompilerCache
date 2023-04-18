@@ -11,8 +11,8 @@ internal static class Utils
             WorkingDirectory = workingDir.FullName,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            WindowStyle = ProcessWindowStyle.Hidden;
-            , CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            CreateNoWindow = true,
         };
         
         Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
