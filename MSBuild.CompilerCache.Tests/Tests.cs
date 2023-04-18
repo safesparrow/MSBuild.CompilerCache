@@ -62,6 +62,10 @@ public sealed class BuildEnvironment : IDisposable
     <ItemGroup>
         <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
     </ItemGroup>
+
+    <Target Name="Foo" BeforeTargets="_CollectTargetFrameworkForTelemetry">
+        <Message Text="NETCoreSdkVersion = $(NETCoreSdkVersion)" Importance="high" />
+    </Target>
     
 </Project>
 """;

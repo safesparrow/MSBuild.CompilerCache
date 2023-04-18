@@ -23,7 +23,9 @@
 <!--        <PackageReference PrivateAssets="all" Include="Microsoft.Build.Utilities.Core" Version="17.3.2" />-->
         <PackageReference PrivateAssets="all" Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
-
+    <Target Name="Foo" BeforeTargets="_CollectTargetFrameworkForTelemetry">
+        <Message Text="NETCoreSdkVersion = $(NETCoreSdkVersion)" Importance="high" />
+    </Target>
     <PropertyGroup>
         <!-- This target will run when MSBuild is collecting the files to be packaged, and we'll implement it below. This property controls the dependency list for this packaging process, so by adding our custom property we hook ourselves into the process in a supported way. -->
         <TargetsForTfmSpecificBuildOutput>
