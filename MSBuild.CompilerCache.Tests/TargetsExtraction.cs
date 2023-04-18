@@ -372,16 +372,5 @@ public class TargetsExtraction
                 File.WriteAllText(cachedPath, xml);
             }
         }
-
-        // Prepare a project that uses a specific SDK
-        // Use MSBuild's /p switch to dump all targets
-        // Extract the CoreCompile target using XML queries
-        // Save that target in a file
-        // Decompose the target:
-        // - inputs, outputs, other attributes - want to keep those intact
-        // - Keep Csc/Fsc task intact, except adding a "cache miss" condition
-        // - Keep the rest before/after Csc/Fsc intact
-        // - Collect all inputs
-        // Construct cached target
     }
 }
