@@ -19,7 +19,7 @@ internal static class Utils
         p.WaitForExit();
         if (p.ExitCode != 0)
         {
-            //throw new Exception($"Running process failed with non-zero exit code.");
+            throw new Exception($"Running process failed with non-zero exit code.");
         }
     }
 }
