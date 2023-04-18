@@ -211,8 +211,10 @@ public class EndToEndTests
         new SDKVersion("6.0.300"),
         new SDKVersion("6.0.300"),
         new SDKVersion("6.0.300"),
+        new SDKVersion("7.0.202"),
     };
-        
+    
+    [NonParallelizable]
     [TestCaseSource(nameof(SDKs))]
     [Test]
     public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
