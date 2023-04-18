@@ -75,7 +75,7 @@ public class LocateCompilationCacheEntry : Task
         {
             Directory.CreateDirectory(dir);
             var extractPath = Path.Combine(dir, "extract.json");
-            File.WriteAllText(extractPath, Newtonsoft.Json.JsonConvert.SerializeObject(extract, Formatting.Indented));
+            File.WriteAllText(extractPath, JsonConvert.SerializeObject(extract, Formatting.Indented));
             Log.LogMessage(MessageImportance.High, $"{dir} does not exist");
             CacheHit = false;
         }
