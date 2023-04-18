@@ -15,7 +15,7 @@ internal static class Utils
             CreateNoWindow = true,
         };
         
-        Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
+        Console.WriteLine($"RunProcess '{name} {args}' in {workingDir.FullName}");
         var p = Process.Start(pi);
         
         var outputTask = Task.Run(() => p.StandardOutput.ReadToEnd());
@@ -23,7 +23,9 @@ internal static class Utils
         p.WaitForExit();
         
         Console.WriteLine($"outputTask:{outputTask.Result}");
+        Console.WriteLine($"------------------------------------------");
         Console.WriteLine($"errorTask:{errorTask.Result}");
+        Console.WriteLine($"------------------------------------------");
         if (p.ExitCode != 0)
         {
             throw new Exception($"Running process failed with non-zero exit code.");
