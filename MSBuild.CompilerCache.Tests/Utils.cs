@@ -9,14 +9,21 @@ internal static class Utils
         var pi = new ProcessStartInfo(name, args)
         {
             WorkingDirectory = workingDir.FullName,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
-            UseShellExecute = false,
-            CreateNoWindow = false
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            WindowStyle = ProcessWindowStyle.Hidden;
+            , CreateNoWindow = true,
         };
+        
         Console.WriteLine($"'{name} {args}' in {workingDir.FullName}");
         var p = Process.Start(pi);
+        
+        var outputTask = Task.Run(() => p.StandardOutput.ReadToEnd());
+        var errorTask = Task.Run(() => p.StandardError.ReadToEnd());
         p.WaitForExit();
+        
+        Console.WriteLine($"outputTask:{outputTask.Result}");
+        Console.WriteLine($"errorTask:{errorTask.Result}");
         if (p.ExitCode != 0)
         {
             throw new Exception($"Running process failed with non-zero exit code.");
