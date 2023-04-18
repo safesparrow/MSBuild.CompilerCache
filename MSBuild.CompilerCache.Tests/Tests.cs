@@ -63,10 +63,6 @@ public sealed class BuildEnvironment : IDisposable
         <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
     </ItemGroup>
 
-    <Target Name="Foo" BeforeTargets="_CollectTargetFrameworkForTelemetry">
-        <Message Text="NETCoreSdkVersion = $(NETCoreSdkVersion)" Importance="high" />
-    </Target>
-    
 </Project>
 """;
 
@@ -236,29 +232,29 @@ public class Class { }
                 .WithSource(source);
 
         WriteProject(projDir1, proj);
-        // WriteProject(projDir2, proj);
+        WriteProject(projDir2, proj);
 
         BuildProject(projDir1, proj);
-        // BuildProject(projDir2, proj);
+        BuildProject(projDir2, proj);
 
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
                 $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
 
         var dll1 = DllFile(projDir1, proj);
-        // var dll2 = DllFile(projDir2, proj);
+        var dll2 = DllFile(projDir2, proj);
 
-        // Assert.That(dll1.LastWriteTime, Is.EqualTo(dll2.LastWriteTime));
+        Assert.That(dll1.LastWriteTime, Is.EqualTo(dll2.LastWriteTime));
 
         var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
-        // WriteProject(projDir3, projModified);
-        // BuildProject(projDir3, projModified);
+        WriteProject(projDir3, projModified);
+        BuildProject(projDir3, projModified);
         void Print(FileInfo file) => Console.WriteLine($"{file.FullName} - Exists={file.Exists} - LastWriteTime={file.LastWriteTime}");
         var dll3 = DllFile(projDir3, proj);
         Print(dll1);
-        // Print(dll2);
-        // Print(dll3);
-        // Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
+        Print(dll2);
+        Print(dll3);
+        Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
     }
 
     private static void WriteProject(DirectoryInfo dir, ProjectFileBuilder project)
@@ -278,14 +274,8 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        Console.WriteLine(Environment.CurrentDirectory);
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
-        Utils.RunProcess("dotnet", "--list-sdks", dir);
-        Utils.RunProcess("dotnet", "--info", dir);
-        Console.WriteLine("MSBuildSdksPath = " + Environment.GetEnvironmentVariable("MSBuildSdksPath"));
-        Console.WriteLine("MSBuildExtensionsPath = " + Environment.GetEnvironmentVariable("MSBuildExtensionsPath"));
-        var path = Path.Combine(Environment.CurrentDirectory, "../../../../build.binlog");
-        Utils.RunProcess("dotnet", $"build /bl:{path}", dir);
+        Utils.RunProcess("dotnet", $"build", dir);
     }
 }
