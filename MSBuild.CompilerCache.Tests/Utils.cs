@@ -14,6 +14,8 @@ internal static class Utils
             WindowStyle = ProcessWindowStyle.Hidden,
             CreateNoWindow = true,
         };
+
+        pi.EnvironmentVariables["MSBuildSdksPath"] = "";
         
         Console.WriteLine($"RunProcess '{name} {args}' in {workingDir.FullName}");
         var p = Process.Start(pi);
