@@ -162,7 +162,8 @@ public record ProjectFileBuilder
             ["DebugType"] = DebugType.ToString(),
             ["GenerateDocumentationFile"] = GenerateDocumentationFile.ToString(),
             ["ProduceReferenceAssembly"] = ProduceReferenceAssembly.ToString(),
-            ["TargetFramework"] = TargetFramework
+            ["TargetFramework"] = TargetFramework,
+            ["NoWarn"] = "CS1591"
         };
 
         void AddIfNotNull(string name, string? value)
