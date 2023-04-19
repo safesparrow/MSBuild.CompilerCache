@@ -188,8 +188,7 @@ public record SourceFile(string Path, string Text);
 [TestFixture]
 public class EndToEndTests
 {
-    public static readonly SDKVersion[] SDKs = new[]
-    {
+    public static readonly SDKVersion[] SDKs = {
         new SDKVersion("6.0.300"),
         new SDKVersion("7.0.202")
     };
@@ -261,7 +260,6 @@ public class Class { }
     {
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
-        Utils.RunProcess("ls", $"{NugetSourcePath}", dir);
         Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --source {NugetSourcePath} --prerelease", dir);
         Utils.RunProcess("dotnet", $"build", dir);
     }
