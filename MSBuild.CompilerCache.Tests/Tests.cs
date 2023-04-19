@@ -195,7 +195,7 @@ public class EndToEndTests
 
     private static readonly string NugetSourcePath = Path.Combine(
         Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
-        @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
+        Path.Combine("MSBuild.CompilerCache", "bin", "Debug", "..", "..", "..", "..")
     );
 
     [TestCaseSource(nameof(SDKs))]
@@ -258,9 +258,9 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
-        Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --source {NugetSourcePath} --prerelease", dir);
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
+        Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --source {NugetSourcePath} --prerelease", dir);
         Utils.RunProcess("dotnet", $"build", dir);
     }
 }
