@@ -229,20 +229,16 @@ public class TargetsExtraction
                 var allTargets = XDocument.Load(allTargetsPath);
                 string nmsp = "http://schemas.microsoft.com/developer/msbuild/2003";
                 XName Name(string localName) => XName.Get(localName, nmsp);
-                var root = allTargets.Root;
+                var root = allTargets.Root!;
                 root.Name = Name("Project");
                 var allTargetsList = allTargets.Root!.Descendants(Name("Target"));
                 var coreCompileTargetNode = allTargetsList
                     .Single(n => n.Attribute("Name")?.Value == "CoreCompile");
-                //coreCompileTargetNode.Name = .Get("Target");
                 
                 var nodes = root.Nodes().ToImmutableArray();
-                foreach (var e in nodes)
+                foreach (var e in nodes.Where(e => e != coreCompileTargetNode))
                 {
-                    if (e != coreCompileTargetNode)
-                    {
-                        e.Remove();
-                    }
+                    e.Remove();
                 }
 
                 {
@@ -388,16 +384,10 @@ public class TargetsExtraction
                         new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
                     allTargets.Save(writer);
                 }
-                {
-                    var x = XDocument.Load(cachedPath);
-                    var target = x.Root!.Descendants(Name("Target")).Single();
-                    target.Name = XName.Get("Target");
-                    using var writer = XmlWriter.Create(cachedPath,
-                        new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
-                    x.Save(writer);
-                }
+
                 xml = File.ReadAllText(cachedPath);
                 xml = xml.Replace("&#xD;&#xA;", Environment.NewLine);
+                xml = xml.Replace("xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"", "");
                 File.WriteAllText(cachedPath, xml);
             }
         }
