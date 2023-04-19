@@ -260,6 +260,7 @@ public class Class { }
     {
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
+        Utils.RunProcess("ls", $"{NugetSourcePath}", dir);
         Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --source {NugetSourcePath} --prerelease", dir);
         Utils.RunProcess("dotnet", $"build", dir);
     }
