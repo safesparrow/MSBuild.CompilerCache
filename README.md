@@ -24,7 +24,7 @@ To use the cache, add the following to your project file (or `Directory.Build.pr
 </PropertyGroup>
 
 <ItemGroup>
-    <PackageReference Include="MSBuild.CompilerCache" Version="0.0.2" />
+    <PackageReference Include="MSBuild.CompilerCache" Version="0.3.4" />
 </ItemGroup>
 ```
 The above code does two things:

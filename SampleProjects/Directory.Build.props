@@ -11,7 +11,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="0.1.*-*" />
+        <PackageReference Include="MSBuild.CompilerCache" Version="0.3.4" />
     </ItemGroup>
     
 </Project>
