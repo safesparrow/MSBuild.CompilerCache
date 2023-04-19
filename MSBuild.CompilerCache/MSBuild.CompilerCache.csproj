@@ -19,6 +19,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="MSBuild.CompilerCache.Tests" />
+        <PackageReference Include="JetBrains.Refasmer" Version="1.0.32" />
         <PackageReference ExcludeAssets="Runtime" PrivateAssets="all" Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
         <PackageReference PrivateAssets="all" Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
@@ -34,14 +35,10 @@
     </PropertyGroup>
 
     <!-- This is the target we defined above. It's purpose is to add all of our PackageReference and ProjectReference's runtime assets to our package output.  -->
-    <Target
-            Name="CopyProjectReferencesToPackage"
-            DependsOnTargets="ResolveReferences">
+    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
             <!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
-            <BuildOutputInPackage
-                    Include="@(ReferenceCopyLocalPaths)"
-                    TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
+            <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
         </ItemGroup>
     </Target>
 

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+============================================================================================================================================
+C:\Users\janus\AppData\Local\Temp\tmpF3A0.tmp\project.csproj
+============================================================================================================================================
+-->
+<Project
+  DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target
+    Name="CoreCompile"
+    Inputs="$(MSBuildAllProjects);&#xD;&#xA;                  @(Compile);&#xD;&#xA;                  @(_CoreCompileResourceInputs);&#xD;&#xA;                  $(ApplicationIcon);&#xD;&#xA;                  $(KeyOriginatorFile);&#xD;&#xA;                  @(ReferencePathWithRefAssemblies);&#xD;&#xA;                  @(CompiledLicenseFile);&#xD;&#xA;                  @(LinkResource);&#xD;&#xA;                  @(EmbeddedDocumentation);&#xD;&#xA;                  $(Win32Resource);&#xD;&#xA;                  $(Win32Manifest);&#xD;&#xA;                  @(CustomAdditionalCompileInputs);&#xD;&#xA;                  $(ResolvedCodeAnalysisRuleSet);&#xD;&#xA;                  @(AdditionalFiles);&#xD;&#xA;                  @(EmbeddedFiles);&#xD;&#xA;                  @(EditorConfigFiles)"
+    Outputs="@(DocFileItem);&#xD;&#xA;                   @(IntermediateAssembly);&#xD;&#xA;                   @(IntermediateRefAssembly);&#xD;&#xA;                   @(_DebugSymbolsIntermediatePath);&#xD;&#xA;                   $(NonExistentFile);&#xD;&#xA;                   @(CustomAdditionalCompileOutputs)"
+    Returns="@(CscCommandLineArgs)"
+    DependsOnTargets="$(CoreCompileDependsOn);_BeforeVBCSCoreCompile"

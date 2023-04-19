@@ -21,7 +21,7 @@
     </PropertyGroup>
     
     <PropertyGroup Condition="'$(CanCache)' == 'true'">
-        <CoreCompileImport>$(MSBuildThisFileDirectory)Cached.$(NETCoreSdkVersion).$(CompilationLanguage).targets</CoreCompileImport>
+        <CoreCompileImport>$(MSBuildThisFileDirectory)Cached.CoreCompile.$(NETCoreSdkVersion).$(CompilationLanguage).targets</CoreCompileImport>
         <ShouldImportCacheTargets Condition="Exists('$(CoreCompileImport)')">true</ShouldImportCacheTargets>
         <CompileAndCheckAgainstCache Condition="'$(CompileAndCheckAgainstCache)' != ''">false</CompileAndCheckAgainstCache>
     </PropertyGroup>
