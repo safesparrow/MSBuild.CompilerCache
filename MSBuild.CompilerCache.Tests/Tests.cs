@@ -195,7 +195,7 @@ public class EndToEndTests
 
     private static readonly string NugetSourcePath = Path.Combine(
         Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
-        Path.Combine("MSBuild.CompilerCache", "bin", "Debug", "..", "..", "..", "..")
+        Path.Combine("..", "..", "..", "..", "MSBuild.CompilerCache", "bin", "Debug")
     );
 
     [TestCaseSource(nameof(SDKs))]
