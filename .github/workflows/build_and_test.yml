@@ -23,6 +23,12 @@ jobs:
         dotnet-version: |
           6.0.300
           7.0.202
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      with:
+        setAllVars: true
+    - name: print
+      run: printenv
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
