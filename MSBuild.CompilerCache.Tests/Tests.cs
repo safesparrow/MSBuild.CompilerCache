@@ -37,7 +37,7 @@ public sealed class BuildEnvironment : IDisposable
 <?xml version="1.0" encoding="utf-8" ?> 
 <configuration>
     <packageSources>
-        <add key="MyLocalSharedSource" value="{sourcePath}" /> 
+        <add key="LocalTestSource" value="{sourcePath}" /> 
     </packageSources>
     <config>
         <add key="globalPackagesFolder" value="packages" />
@@ -58,20 +58,9 @@ public sealed class BuildEnvironment : IDisposable
     <PropertyGroup>
         <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
     </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="MSBuild.CompilerCache" Version="{NuGetVersion()}" />
-    </ItemGroup>
 
 </Project>
 """;
-
-    private static string NuGetVersion()
-    {
-        var v = ThisAssembly.AssemblyInformationalVersion;
-        var r = Regex.Replace(v, "\\+([0-9a-zA-Z]+)$", "-g$1");
-        return r;
-    }
 
     public void Dispose()
     {
@@ -203,17 +192,17 @@ public class EndToEndTests
         new SDKVersion("6.0.300"),
         new SDKVersion("7.0.202")
     };
-        
+
+    private static readonly string NugetSourcePath = Path.Combine(
+        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
+        @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
+    );
+
     [TestCaseSource(nameof(SDKs))]
     [Test]
     public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
     {
-        var nugetSourcePath = 
-            Path.Combine(
-                Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
-                @"..\..\..\..\MSBuild.CompilerCache\bin\Debug"
-            );
-        using var env = new BuildEnvironment(nugetSourcePath, sdk);
+        using var env = new BuildEnvironment(NugetSourcePath, sdk);
         var cache = new DirectoryInfo(Path.Combine(env.Dir.FullName, ".cache"));
         var projDir1 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "1"));
         var projDir2 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "2"));
@@ -233,27 +222,22 @@ public class Class { }
 
         WriteProject(projDir1, proj);
         WriteProject(projDir2, proj);
+        var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
+        WriteProject(projDir3, projModified);
 
         BuildProject(projDir1, proj);
         BuildProject(projDir2, proj);
-
+        BuildProject(projDir3, projModified);
+        
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
                 $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
 
         var dll1 = DllFile(projDir1, proj);
         var dll2 = DllFile(projDir2, proj);
+        var dll3 = DllFile(projDir3, proj);
 
         Assert.That(dll1.LastWriteTime, Is.EqualTo(dll2.LastWriteTime));
-
-        var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
-        WriteProject(projDir3, projModified);
-        BuildProject(projDir3, projModified);
-        void Print(FileInfo file) => Console.WriteLine($"{file.FullName} - Exists={file.Exists} - LastWriteTime={file.LastWriteTime}");
-        var dll3 = DllFile(projDir3, proj);
-        Print(dll1);
-        Print(dll2);
-        Print(dll3);
         Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
     }
 
@@ -274,6 +258,7 @@ public class Class { }
 
     private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
+        Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --source {NugetSourcePath} --prerelease", dir);
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         Utils.RunProcess("dotnet", $"build", dir);
