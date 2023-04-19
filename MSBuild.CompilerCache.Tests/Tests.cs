@@ -192,10 +192,17 @@ public class EndToEndTests
         new SDKVersion("6.0.300"),
         new SDKVersion("7.0.202")
     };
+    
+    private const string Configuration =
+#if DEBUG
+        "Debug";
+#else
+        "Release";
+#endif
 
     private static readonly string NugetSourcePath = Path.Combine(
         Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!,
-        Path.Combine("..", "..", "..", "..", "MSBuild.CompilerCache", "bin", "Debug")
+        Path.Combine("..", "..", "..", "..", "MSBuild.CompilerCache", "bin", Configuration)
     );
 
     [TestCaseSource(nameof(SDKs))]
@@ -230,7 +237,7 @@ public class Class { }
         BuildProject(projDir3, projModified);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
-            new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
+            new FileInfo(Path.Combine(projDir.FullName, "obj", Configuration, "net6.0",
                 $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
 
         var dll1 = DllFile(projDir1, proj);
