@@ -237,7 +237,7 @@ public class Class { }
         BuildProject(projDir3, projModified);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
-            new FileInfo(Path.Combine(projDir.FullName, "obj", Configuration, "net6.0",
+            new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
                 $"{Path.GetFileNameWithoutExtension(proj.Name)}.dll"));
 
         var dll1 = DllFile(projDir1, proj);
