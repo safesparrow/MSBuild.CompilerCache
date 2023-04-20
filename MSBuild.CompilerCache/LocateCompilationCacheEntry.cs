@@ -9,7 +9,7 @@ using Task = Microsoft.Build.Utilities.Task;
 
 // TODO Replace time+Length with contents hash
 [Serializable]
-public record FileExtract(string Name, string Hash, long Length);
+public record FileExtract(string Name, string Hash, long Length, bool Trimmed = false);
 
 // TODO add key=value
 [Serializable]
@@ -52,6 +52,17 @@ public class LocateCompilationCacheEntry : Task
 
     internal void ExecuteInner()
     {
+        var refCachePath = Path.Combine(BaseCacheDir, ".refs");
+        var refCache = new RefCache(new DirectoryInfo(refCachePath));
+        var refTrimming = new RefTrimming(refCache);
+        var refsPaths =
+            References
+                .Select(r => r.ItemSpec)
+                .ToArray();
+        Log.LogMessage(MessageImportance.High, $"Trimming {refsPaths} Reference files using ref cache path {refCachePath}.");
+        var refs = refTrimming.TrimReferences(refsPaths);
+        Log.LogMessage(MessageImportance.High, $"Finished trimming.");
+        
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
         var fileExtracts = FileInputs.Union(References).AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
         {
