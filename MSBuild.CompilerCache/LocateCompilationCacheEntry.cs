@@ -36,6 +36,7 @@ public class LocateCompilationCacheEntry : Task
     [Required] public ITaskItem[] PropertyInputs { get; set; }
     [Required] public ITaskItem[] FileInputs { get; set; }
     [Required] public string BaseCacheDir { get; set; }
+    [Required] public ITaskItem[] References { get; set; }
 
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheDir { get; private set; }
@@ -52,7 +53,7 @@ public class LocateCompilationCacheEntry : Task
     internal void ExecuteInner()
     {
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
-        var fileExtracts = FileInputs.AsParallel().Select(file =>
+        var fileExtracts = FileInputs.Union(References).AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
         {
             var filepath = file.ItemSpec;
             var fileInfo = new FileInfo(filepath);
