@@ -62,8 +62,11 @@ public class TargetsExtraction
         {
             throw new Exception("Targets file does not exist after generation.");
         }
+
+        var text = File.ReadAllText(targetsPath);
+        var text2 = text.Replace(Path.GetTempPath(), "%TempPath%" + Path.DirectorySeparatorChar);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        File.Copy(targetsPath, outputPath, overwrite: true);
+        File.WriteAllText(outputPath, text2);
     }
 
     private static readonly string[] UseCacheConditions =
@@ -229,6 +232,10 @@ public class TargetsExtraction
                 var allTargets = XDocument.Load(allTargetsPath);
                 string nmsp = "http://schemas.microsoft.com/developer/msbuild/2003";
                 XName Name(string localName) => XName.Get(localName, nmsp);
+                foreach (var commentNode in allTargets.Nodes().Where(n => n.NodeType == XmlNodeType.Comment))
+                {
+                    commentNode.Remove();
+                }
                 var root = allTargets.Root!;
                 root.Name = Name("Project");
                 var allTargetsList = allTargets.Root!.Descendants(Name("Target"));

@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-============================================================================================================================================
-C:\Users\janus\AppData\Local\Temp\tmp6AFA.tmp\project.csproj
-============================================================================================================================================
--->
 <Project
-  DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  DefaultTargets="Build" >
   <Target
     Name="CoreCompile"
     Inputs="$(MSBuildAllProjects);
@@ -32,7 +27,7 @@ C:\Users\janus\AppData\Local\Temp\tmp6AFA.tmp\project.csproj
                    $(NonExistentFile);
                    @(CustomAdditionalCompileOutputs)"
     Returns="@(CscCommandLineArgs)"
-    DependsOnTargets="$(CoreCompileDependsOn);_BeforeVBCSCoreCompile" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    DependsOnTargets="$(CoreCompileDependsOn);_BeforeVBCSCoreCompile" >
     <!-- These two compiler warnings are raised when a reference is bound to a different version
              than specified in the assembly reference version number.  MSBuild raises the same warning in this case,
              so the compiler warning would be redundant. -->

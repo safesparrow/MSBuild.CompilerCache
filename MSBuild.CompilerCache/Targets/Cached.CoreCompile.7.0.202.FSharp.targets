@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-============================================================================================================================================
-C:\Users\janus\AppData\Local\Temp\tmp6C91.tmp\project.fsproj
-============================================================================================================================================
--->
 <Project
-  DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  DefaultTargets="Build" >
   <Target
     Name="CoreCompile"
     Inputs="$(MSBuildAllProjects);
@@ -34,7 +29,7 @@ C:\Users\janus\AppData\Local\Temp\tmp6C91.tmp\project.fsproj
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
     Returns="@(FscCommandLineArgs)"
-    DependsOnTargets="$(CoreCompileDependsOn)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    DependsOnTargets="$(CoreCompileDependsOn)" >
     <Error
       Condition="'$(SilverlightVersion)' != '' and '$(SilverlightVersion)' != 'v5.0'"
       Text="In this version of Visual Studio, F# for Silverlight can only target Silverlight v5.0. Use a prior version of Visual Studio to target previous versions of Silverlight with F#." />
