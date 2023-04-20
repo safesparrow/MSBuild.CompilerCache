@@ -12,9 +12,5 @@
     <ItemGroup>
         <Compile Include="Library.fs" />
     </ItemGroup>
-    <Target BeforeTargets="CoreCompile" Name="Foo">
-        <Message Text="A = @(ReferencePathWithRefAssemblies)" Importance="high" />
-        
-    </Target>
 
 </Project>
