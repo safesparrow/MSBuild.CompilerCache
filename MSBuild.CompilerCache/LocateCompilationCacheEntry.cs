@@ -64,7 +64,7 @@ public class LocateCompilationCacheEntry : Task
         Log.LogMessage(MessageImportance.High, $"Finished trimming.");
         
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
-        var fileExtracts = FileInputs.Union(References).AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
+        var fileExtracts = FileInputs.AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
         {
             var filepath = file.ItemSpec;
             var fileInfo = new FileInfo(filepath);
