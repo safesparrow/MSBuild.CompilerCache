@@ -59,7 +59,7 @@ public class LocateCompilationCacheEntry : Task
             References
                 .Select(r => r.ItemSpec)
                 .ToArray();
-        Log.LogMessage(MessageImportance.High, $"Trimming {refsPaths} Reference files using ref cache path {refCachePath}.");
+        Log.LogMessage(MessageImportance.High, $"Trimming {refsPaths.Length} Reference files using ref cache path {refCachePath}.");
         var refs = refTrimming.TrimReferences(refsPaths);
         Log.LogMessage(MessageImportance.High, $"Finished trimming.");
         
