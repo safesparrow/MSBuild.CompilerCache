@@ -37,6 +37,7 @@ public class LocateCompilationCacheEntry : Task
     [Required] public ITaskItem[] FileInputs { get; set; }
     [Required] public string BaseCacheDir { get; set; }
     [Required] public ITaskItem[] References { get; set; }
+    public bool UseRefasmerForReferences { get; set; } = false;
 
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheDir { get; private set; }
@@ -52,19 +53,12 @@ public class LocateCompilationCacheEntry : Task
 
     internal void ExecuteInner()
     {
-        var refCachePath = Path.Combine(BaseCacheDir, ".refs");
-        var refCache = new RefCache(new DirectoryInfo(refCachePath));
-        var refTrimming = new RefTrimming(refCache);
-        var refsPaths =
-            References
-                .Select(r => r.ItemSpec)
-                .ToArray();
-        Log.LogMessage(MessageImportance.High, $"Trimming {refsPaths.Length} Reference files using ref cache path {refCachePath}.");
-        var refs = refTrimming.TrimReferences(refsPaths);
-        Log.LogMessage(MessageImportance.High, $"Finished trimming.");
-        
+        var fileInputs =
+            UseRefasmerForReferences
+                ? FileInputs
+                : new[] { FileInputs, References }.SelectMany(x => x);
         var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
-        var fileExtracts = FileInputs.AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
+        var fileExtracts = fileInputs.AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
         {
             var filepath = file.ItemSpec;
             var fileInfo = new FileInfo(filepath);
@@ -76,6 +70,19 @@ public class LocateCompilationCacheEntry : Task
             var hashString = FileToSHA1String(fileInfo);
             return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
         }).ToArray();
+        
+        if (UseRefasmerForReferences)
+        {
+            var refCachePath = Path.Combine(BaseCacheDir, ".refs");
+            var refCache = new RefCache(new DirectoryInfo(refCachePath));
+            var refTrimming = new RefTrimming(refCache);
+            var refsPaths =
+                References
+                    .Select(r => r.ItemSpec)
+                    .ToArray();
+            var refsExtracts = refTrimming.TrimReferences(refsPaths);
+            fileExtracts = new[] { fileExtracts, refsExtracts }.SelectMany(x => x).ToArray();
+        }
 
         var extract = new FullExtract(fileExtracts, props);
         var hashString = HashExtractToString(extract);
