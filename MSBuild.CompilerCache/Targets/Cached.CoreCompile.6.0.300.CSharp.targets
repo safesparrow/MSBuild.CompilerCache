@@ -218,7 +218,7 @@ AND
       Win32Icon="$(ApplicationIcon)"
       Win32Manifest="$(Win32Manifest)"
       Win32Resource="$(Win32Resource)"
-      PathMap="$(PathMap)"
+      PathMap="$(MSBuildProjectDirectory)=/__nonexistent__directory__"
       SourceLink="$(SourceLink)">
       <Output
         TaskParameter="CommandLineArgs"

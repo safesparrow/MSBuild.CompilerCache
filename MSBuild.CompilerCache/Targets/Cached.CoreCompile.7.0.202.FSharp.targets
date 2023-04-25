@@ -178,7 +178,7 @@ AND
       OtherFlags="$(FscOtherFlags)"
       OutputAssembly="@(IntermediateAssembly)"
       OutputRefAssembly="@(IntermediateRefAssembly)"
-      PathMap="$(PathMap)"
+      PathMap="$(MSBuildProjectDirectory)=/__nonexistent__directory__"
       PdbFile="$(PdbFile)"
       Platform="$(PlatformTarget)"
       Prefer32Bit="$(Actual32Bit)"
