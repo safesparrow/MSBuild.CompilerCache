@@ -328,11 +328,6 @@ public class TargetsExtraction
                 var itemgroup = Name("ItemGroup");
                 var itemGroupElement = new XElement(itemgroup, canCacheCondition);
 
-                var sourcesValue =
-                    relevantAttributes
-                        .Single(x => x.KnownAttr!.Type == AttrType.Sources)
-                        .Value;
-                
                 var inputFiles =
                     relevantAttributes
                         .Where(x => new[]{AttrType.Sources, AttrType.InputFiles}.Contains(x.KnownAttr!.Type))
@@ -386,6 +381,9 @@ public class TargetsExtraction
 
                 compilationTask.AddAfterSelf(startComment, outputsGroup, useOrPopulateCacheElement, endComment);
 
+                var p = compilationTask.Attribute("PathMap");
+                p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";
+                
                 {
                     using var writer = XmlWriter.Create(cachedPath,
                         new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
