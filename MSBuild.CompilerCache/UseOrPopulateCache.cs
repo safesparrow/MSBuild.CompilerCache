@@ -1,17 +1,18 @@
-﻿namespace MSBuild.CompilerCache;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace MSBuild.CompilerCache;
 
 using Microsoft.Build.Framework;
-using Task = Microsoft.Build.Utilities.Task;
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
 /// Either use results from an existing cache entry, or populate it with newly compiled outputs.
 /// Example usage: <UseOrPopulateCache OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" IntermediateOutputPath="..." />
 /// </summary>
-public class UseOrPopulateCache : Task
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+public class UseOrPopulateCache : BaseTask
 {
 #pragma warning disable CS8618
-    [Required] public ITaskItem[] OutputsToCache { get; set; }
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheDir { get; set; }
     [Required] public string IntermediateOutputPath { get; set; }
@@ -27,9 +28,8 @@ public class UseOrPopulateCache : Task
 
         var outputsMap =
             OutputsToCache
-                .Select(o =>
+                .Select(outputPath =>
                 {
-                    var outputPath = o.ItemSpec!;
                     var relativePath = Path.GetRelativePath(IntermediateOutputPath, outputPath);
                     var cachePath = Path.Combine(CacheDir, relativePath);
                     return new OutputFileMap(cachePath, outputPath);
