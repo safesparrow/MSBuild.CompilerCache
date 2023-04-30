@@ -340,17 +340,28 @@ public class TargetsExtraction
                 itemGroupElement.Add(inputFileItems);
                 compilationTask.AddBeforeSelf(itemGroupElement);
 
+                var outputsGroup = new XElement(itemgroup, canCacheCondition);
+                var outputItems =
+                    relevantAttributes
+                        .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
+                        .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value), new XAttribute("Name", x.LocalName)))
+                        .ToImmutableArray();
+                outputsGroup.Add(outputItems);
+                compilationTask.AddBeforeSelf(outputsGroup);
+                
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
                     new XAttribute("FileInputs", "@(FileInputs)"),
                     new XAttribute("PropertyInputs", "@(PropertyInputs)"),
                     new XAttribute("References", refs),
+                    new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
                     new XAttribute("BaseCacheDir", "$(CompilationCacheBaseDir)"),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheDir"),
                         new XAttribute("PropertyName", "CacheDir")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
                         new XAttribute("PropertyName", "CacheHit"))
                 );
+                
                 compilationTask.AddBeforeSelf(locateElement);
 
                 var gElement = new XElement(propertygroup,
@@ -361,13 +372,6 @@ public class TargetsExtraction
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
                 compilationTask.AddBeforeSelf(endComment);
 
-                var outputsGroup = new XElement(itemgroup, canCacheCondition);
-                var outputItems =
-                    relevantAttributes
-                        .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
-                        .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value)))
-                        .ToImmutableArray();
-                outputsGroup.Add(outputItems);
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
@@ -379,7 +383,7 @@ public class TargetsExtraction
                         new XAttribute("CacheDir", "$(CacheDir)")
                     );
 
-                compilationTask.AddAfterSelf(startComment, outputsGroup, useOrPopulateCacheElement, endComment);
+                compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
 
                 var p = compilationTask.Attribute("PathMap");
                 p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";

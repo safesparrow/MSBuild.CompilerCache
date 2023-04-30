@@ -228,13 +228,17 @@ AND
     <ItemGroup
       Condition="'$(CanCache)' == 'true'">
       <CompileOutputsToCache
-        Include="@(DocFileItem)" />
+        Include="@(DocFileItem)"
+        Name="DocumentationFile" />
       <CompileOutputsToCache
-        Include="@(IntermediateAssembly)" />
+        Include="@(IntermediateAssembly)"
+        Name="OutputAssembly" />
       <CompileOutputsToCache
-        Include="@(IntermediateRefAssembly)" />
+        Include="@(IntermediateRefAssembly)"
+        Name="OutputRefAssembly" />
       <CompileOutputsToCache
-        Include="$(PdbFile)" />
+        Include="$(PdbFile)"
+        Name="PdbFile" />
     </ItemGroup>
     <UseOrPopulateCache
       Condition="'$(CanCache)' == 'true'"

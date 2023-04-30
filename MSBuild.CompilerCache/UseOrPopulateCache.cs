@@ -14,20 +14,29 @@ public record UseOrPopulateInputs(
     bool CheckCompileOutputAgainstCache
 );
 
+public record UseOrPopulateResult(
+);
+
 public class UserOrPopulator
 {
-    public void UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
+    public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
+        var postCompilationTimeUtc = DateTime.UtcNow;
         var dir = new DirectoryInfo(inputs.CacheDir);
+
+        var originalHash = Path.GetFileName(Path.TrimEndingDirectorySeparator(inputs.CacheDir));
+        var recalculatedExtract = Locator.CalculateCacheExtract(inputs.Inputs);
+        var recalculatedHash = Utils.ObjectToSHA256Hex(recalculatedExtract);
+        var hashesMatch = originalHash == recalculatedHash;
 
         var outputsMap =
             inputs.Inputs.OutputsToCache
                 .Select(outputPath =>
                 {
-                    var relativePath = Path.GetRelativePath(inputs.IntermediateOutputPath, outputPath);
-                    var cachePath = Path.Combine(inputs.CacheDir, relativePath);
-                    return new OutputFileMap(cachePath, outputPath);
+                    var cachePath = Path.Combine(inputs.CacheDir, outputPath.Name);
+                    return new OutputFileMap(cachePath, outputPath.Path);
                 }).ToArray();
+
 
         if (inputs.CacheHit && !inputs.CheckCompileOutputAgainstCache)
         {
@@ -38,6 +47,7 @@ public class UserOrPopulator
                 log.LogMessage(MessageImportance.High, $"Copy {entry.CachePath} -> {entry.OutputPath}");
                 File.Delete(entry.OutputPath);
                 File.Copy(entry.CachePath, entry.OutputPath, true);
+                File.SetLastWriteTimeUtc(entry.OutputPath, postCompilationTimeUtc);
                 // TODO Set file timestamps - what timestamp to use? It should be compatible with the rest of the MSBuild build process.
             }
         }
@@ -46,7 +56,7 @@ public class UserOrPopulator
             log.LogMessage(MessageImportance.High, $"CacheHit but '{nameof(inputs.CheckCompileOutputAgainstCache)}' enabled - verifying newly compiled outputs are same as in the cache.");
             if (!dir.Exists)
             {
-                log.LogMessage(MessageImportance.High, $"CacheHit but cache directory does not exist.");
+                throw new Exception($"CacheHit but cache directory {dir} does not exist.");
             }
             else
             {
@@ -90,6 +100,8 @@ public class UserOrPopulator
             log.LogMessage(MessageImportance.High, $"Creating marker {markerPath}");
             Helpers.CreateEmptyFile(markerPath);
         }
+
+        return new UseOrPopulateResult();
     }
 
     public record OutputFileMap(string CachePath, string OutputPath);
@@ -125,7 +137,7 @@ public class UseOrPopulateCache : BaseTask
             Inputs: GatherInputs(),
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache
         );
-        _userOrPopulator.UseOrPopulate(inputs, Log);
+        var results = _userOrPopulator.UseOrPopulate(inputs, Log);
         return true;
     }
 }

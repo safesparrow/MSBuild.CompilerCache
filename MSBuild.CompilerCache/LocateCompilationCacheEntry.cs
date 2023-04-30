@@ -13,7 +13,7 @@ public record BaseTaskInputs(
     string[] PropertyInputs,
     string[] FileInputs,
     string[] References,
-    string[] OutputsToCache
+    OutputItem[] OutputsToCache
 );
 
 public static class Utils
@@ -40,21 +40,28 @@ public static class Utils
     }
 }
 
+public record OutputItem(string Name, string Path);
+
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public abstract class BaseTask : Task
 {
     [Required] public string[] PropertyInputs { get; set; }
     [Required] public string[] FileInputs { get; set; }
     [Required] public string[] References { get; set; }
-    [Required] public string[] OutputsToCache { get; set; }
+    [Required] public ITaskItem[] OutputsToCache { get; set; }
 
     protected BaseTaskInputs GatherInputs() =>
         new(
             PropertyInputs: PropertyInputs,
             FileInputs: FileInputs,
             References: References,
-            OutputsToCache: OutputsToCache
+            OutputsToCache: OutputsToCache.Select(ParseOutputToCache).ToArray()
         );
+
+    private static OutputItem ParseOutputToCache(ITaskItem arg)
+    {
+        return new OutputItem(Name: arg.GetMetadata("Name"), Path: arg.ItemSpec);
+    }
 }
 
 public record LocateResult(
@@ -67,7 +74,7 @@ public class Locator
 {
     public LocateResult Locate(BaseTaskInputs inputs, string BaseCacheDir, TaskLoggingHelper log)
     {
-        var extract = CalculateExtract(inputs);
+        var extract = CalculateCacheExtract(inputs);
         var hashString = Utils.ObjectToSHA256Hex(extract);
         var cacheDir = Path.Combine(BaseCacheDir, hashString);
 
@@ -99,7 +106,7 @@ public class Locator
         );
     }
 
-    public static FullExtract CalculateExtract(BaseTaskInputs baseTaskInputs)
+    public static FullExtract CalculateCacheExtract(BaseTaskInputs baseTaskInputs)
     {
         var allFileInputs = baseTaskInputs.FileInputs.Union(baseTaskInputs.References);
         var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().Select(file =>
@@ -114,7 +121,28 @@ public class Locator
             return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
         }).ToArray();
 
-        var extract = new FullExtract(fileExtracts, baseTaskInputs.PropertyInputs);
+        var outputNames = baseTaskInputs.OutputsToCache.Select(o => o.Name).ToArray();
+        var extract = new FullExtract(fileExtracts, baseTaskInputs.PropertyInputs, outputNames);
+        return extract;
+    }
+    
+    public static LocalInputs CalculateLocalInputs(BaseTaskInputs inputs)
+    {
+        var allFileInputs = inputs.FileInputs.Union(inputs.References);
+        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().Select(file =>
+        {
+            var fileInfo = new FileInfo(file);
+            if (!fileInfo.Exists)
+            {
+                throw new Exception($"File input does not exist: '{file}'");
+            }
+
+            var hashString = Utils.FileToSHA256String(fileInfo);
+            return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        }).ToArray();
+
+        var outputNames = inputs.OutputsToCache.Select(o => o.Name).ToArray();
+        var extract = new LocalInputs(fileExtracts, inputs.PropertyInputs, outputNames);
         return extract;
     }
 }

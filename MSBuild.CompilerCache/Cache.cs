@@ -52,9 +52,9 @@ public record FileExtract(string Name, string Hash, long Length);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
-public record FullExtract(FileExtract[] Files, string[] Props);
+public record FullExtract(FileExtract[] Files, string[] Props, string[] OutputFiles);
 
-public record LocalFileExtract(string Path, string Hash, long Length, DateTime ModificationTime)
+public record LocalFileExtract(string Path, string Hash, long Length, DateTime LastWriteTimeUtc)
 {
     public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
 }
@@ -63,11 +63,11 @@ public record LocalFileExtract(string Path, string Hash, long Length, DateTime M
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
-public record LocalInputs(LocalFileExtract[] Files, string[] Props)
+public record LocalInputs(LocalFileExtract[] Files, string[] Props, string[] OutputFiles, string WorkingDir)
 {
     public FullExtract ToFullExtract()
     {
-        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props);
+        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props, OutputFiles: OutputFiles);
     }
 }
 
