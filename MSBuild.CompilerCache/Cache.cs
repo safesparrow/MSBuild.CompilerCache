@@ -36,6 +36,50 @@ public record RelativePath(string Path)
  * 
  */
 
+[Serializable]
+public record FileExtract(string Name, string Hash, long Length);
+
+// TODO Use a dictionary to disambiguate files in different Item lists 
+[Serializable]
+public record FullExtract(FileExtract[] Files, string[] Props, string[] OutputFiles);
+
+[Serializable]
+public record LocalFileExtract(string Path, string Hash, long Length, DateTime LastWriteTimeUtc)
+{
+    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
+}
+
+/// <summary>
+/// Information about the environment that is not part of the compilation inputs,
+/// but could potentially cause difference in results,
+/// and can be recorded for investigation.
+/// </summary>
+[Serializable]
+public record PreCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, string WorkingDirectory);
+
+[Serializable]
+public record PostCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, DateTime StopTimeUtc);
+
+[Serializable]
+public record OutputItem(string Name, string Path);
+
+/// <summary>
+/// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
+/// Used only for debugging purposes, stored alongside cache items.
+/// </summary>
+[Serializable]
+public record LocalInputs(LocalFileExtract[] Files, string[] Props, OutputItem[] OutputFiles)
+{
+    public FullExtract ToFullExtract()
+    {
+        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props, OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
+    }
+}
+
+[Serializable]
+public record AllCompilationMetadata(PostCompilationMetadata Metadata, LocalInputs LocalInputs);
+
+
 public record CacheKey(string Key)
 {
     public static implicit operator string(CacheKey key) => key.Key;
@@ -44,40 +88,29 @@ public record CacheKey(string Key)
 public interface ICache
 {
     bool Exists(CacheKey key);
-    void Set(CacheKey key, FullExtract extract, PostCompilationMetadata metadata);
+    void Set(CacheKey key, AllCompilationMetadata metadata);
 }
 
-[Serializable]
-public record FileExtract(string Name, string Hash, long Length);
-
-// TODO Use a dictionary to disambiguate files in different Item lists 
-[Serializable]
-public record FullExtract(FileExtract[] Files, string[] Props, string[] OutputFiles);
-
-public record LocalFileExtract(string Path, string Hash, long Length, DateTime LastWriteTimeUtc)
+public class Cache : ICache
 {
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
-}
+    private readonly string _baseCacheDir;
 
-/// <summary>
-/// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
-/// Used only for debugging purposes, stored alongside cache items.
-/// </summary>
-public record LocalInputs(LocalFileExtract[] Files, string[] Props, string[] OutputFiles, string WorkingDir)
-{
-    public FullExtract ToFullExtract()
+    public Cache(string baseCacheDir)
     {
-        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props, OutputFiles: OutputFiles);
+        _baseCacheDir = baseCacheDir;
+    }
+    
+    private string CacheDir(string key) => Path.Combine(_baseCacheDir, key);
+    private string MarkerPath(string key) => Path.Combine(CacheDir(key), "extract.json");
+    
+    public bool Exists(CacheKey key)
+    {
+        var markerPath = MarkerPath(key);
+        return File.Exists(markerPath);
+    }
+
+    public void Set(CacheKey key, AllCompilationMetadata metadata)
+    {
+        throw new NotImplementedException();
     }
 }
-
-public record AllCompilationMetadata(PostCompilationMetadata Metadata, LocalInputs LocalInputs);
-
-/// <summary>
-/// Information about the environment that is not part of the compilation inputs,
-/// but could potentially cause difference in results,
-/// and can be recorded for investigation.
-/// </summary>
-public record PreCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc);
-
-public record PostCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, DateTime StopTimeUtc);

@@ -40,7 +40,6 @@ public static class Utils
     }
 }
 
-public record OutputItem(string Name, string Path);
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public abstract class BaseTask : Task
@@ -67,6 +66,7 @@ public abstract class BaseTask : Task
 public record LocateResult(
     bool CacheHit,
     string CacheDir,
+    string LocalInputsHash,
     DateTime PreCompilationTimeUtc
 );
 
@@ -74,7 +74,8 @@ public class Locator
 {
     public LocateResult Locate(BaseTaskInputs inputs, string BaseCacheDir, TaskLoggingHelper log)
     {
-        var extract = CalculateCacheExtract(inputs);
+        var localInputs = CalculateLocalInputs(inputs);
+        var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
         var cacheDir = Path.Combine(BaseCacheDir, hashString);
 
@@ -99,9 +100,12 @@ public class Locator
             cacheHit = true;
         }
 
+        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+
         return new LocateResult(
             CacheHit: cacheHit,
             CacheDir: cacheDir,
+            LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: DateTime.UtcNow
         );
     }
@@ -141,10 +145,16 @@ public class Locator
             return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
         }).ToArray();
 
-        var outputNames = inputs.OutputsToCache.Select(o => o.Name).ToArray();
-        var extract = new LocalInputs(fileExtracts, inputs.PropertyInputs, outputNames);
-        return extract;
+        return new LocalInputs(fileExtracts, inputs.PropertyInputs, inputs.OutputsToCache);
     }
+
+    public static PreCompilationMetadata GetPreCompilationMetadata() =>
+        new(
+            Hostname: Environment.MachineName,
+            Username: Environment.UserName,
+            StartTimeUtc: DateTime.UtcNow,
+            WorkingDirectory: Environment.CurrentDirectory
+        );
 }
 
 // ReSharper disable once UnusedType.Global

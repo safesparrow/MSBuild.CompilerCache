@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
 using Microsoft.Build.Utilities;
 
 namespace MSBuild.CompilerCache;
@@ -19,6 +20,11 @@ public record UseOrPopulateResult(
 
 public class UserOrPopulator
 {
+    private void UseCacheResult(OutputItem[] cachedOutputs, string cacheZipPath)
+    {
+        System.IO.Compression.ZipFile.ExtractToDirectory(cacheZipPath);
+    }
+    
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
