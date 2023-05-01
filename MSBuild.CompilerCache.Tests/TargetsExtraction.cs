@@ -2,26 +2,10 @@ using System.Collections.Immutable;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Linq;
+using MSBuild.CompilerCache;
 using NUnit.Framework;
 
 namespace Tests;
-
-public class DisposableDir : IDisposable
-{
-    public DisposableDir()
-    {
-        var tempFile = Path.GetTempFileName();
-        File.Delete(tempFile);
-        Dir = Directory.CreateDirectory(tempFile);
-    }
-
-    public DirectoryInfo Dir { get; set; }
-
-    public void Dispose()
-    {
-        Dir.Delete(recursive: true);
-    }
-}
 
 public enum SupportedLanguage
 {

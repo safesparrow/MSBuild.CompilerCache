@@ -61,7 +61,7 @@ public record PreCompilationMetadata(string Hostname, string Username, DateTime 
 public record PostCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, DateTime StopTimeUtc);
 
 [Serializable]
-public record OutputItem(string Name, string Path);
+public record OutputItem(string Name, string LocalPath);
 
 /// <summary>
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.

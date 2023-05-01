@@ -59,7 +59,7 @@ public abstract class BaseTask : Task
 
     private static OutputItem ParseOutputToCache(ITaskItem arg)
     {
-        return new OutputItem(Name: arg.GetMetadata("Name"), Path: arg.ItemSpec);
+        return new OutputItem(Name: arg.GetMetadata("Name"), LocalPath: arg.ItemSpec);
     }
 }
 
@@ -133,19 +133,21 @@ public class Locator
     public static LocalInputs CalculateLocalInputs(BaseTaskInputs inputs)
     {
         var allFileInputs = inputs.FileInputs.Union(inputs.References);
-        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().Select(file =>
-        {
-            var fileInfo = new FileInfo(file);
-            if (!fileInfo.Exists)
-            {
-                throw new Exception($"File input does not exist: '{file}'");
-            }
-
-            var hashString = Utils.FileToSHA256String(fileInfo);
-            return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
-        }).ToArray();
+        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().Select(GetLocalFileExtract).ToArray();
 
         return new LocalInputs(fileExtracts, inputs.PropertyInputs, inputs.OutputsToCache);
+    }
+
+    public static LocalFileExtract GetLocalFileExtract(string filepath)
+    {
+        var fileInfo = new FileInfo(filepath);
+        if (!fileInfo.Exists)
+        {
+            throw new Exception($"File does not exist: '{filepath}'");
+        }
+
+        var hashString = Utils.FileToSHA256String(fileInfo);
+        return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
     }
 
     public static PreCompilationMetadata GetPreCompilationMetadata() =>

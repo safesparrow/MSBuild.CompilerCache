@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using Microsoft.Build.Utilities;
+using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -18,11 +19,50 @@ public record UseOrPopulateInputs(
 public record UseOrPopulateResult(
 );
 
+public static class DirectoryInfoExtensions
+{
+    public static string Combine(this DirectoryInfo dir, string suffix) => Path.Combine(dir.FullName, suffix);
+
+    public static FileInfo CombineAsFile(this DirectoryInfo dir, string suffix) =>
+        new FileInfo(Path.Combine(dir.FullName, suffix));
+    
+    public static DirectoryInfo CombineAsDir(this DirectoryInfo dir, string suffix) =>
+        new DirectoryInfo(Path.Combine(dir.FullName, suffix));
+}
+
 public class UserOrPopulator
 {
     private void UseCacheResult(OutputItem[] cachedOutputs, string cacheZipPath)
     {
-        System.IO.Compression.ZipFile.ExtractToDirectory(cacheZipPath);
+        // System.IO.Compression.ZipFile.ExtractToDirectory(cacheZipPath);
+    }
+
+    public static FileInfo BuildOutputsZip(DirectoryInfo baseDir, OutputItem[] items, AllCompilationMetadata metadata)
+    {
+        var outputsDir = baseDir.CreateSubdirectory("outputs");
+        
+        var outputExtracts =
+            items.Select(item =>
+            {
+                var tempPath = outputsDir.CombineAsFile(item.Name);
+                File.Copy(item.LocalPath, tempPath.FullName);
+                return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
+            }).ToArray();
+
+        var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
+
+        var outputsExtractJson = Newtonsoft.Json.JsonConvert.SerializeObject(outputExtracts, Formatting.Indented);
+        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json");
+        File.WriteAllText(outputsExtractJsonPath.FullName, outputsExtractJson);
+        
+        var metaJson = Newtonsoft.Json.JsonConvert.SerializeObject(metadata, Formatting.Indented);
+        var metaPath = outputsDir.CombineAsFile("__inputs.json");
+        File.WriteAllText(metaPath.FullName, metaJson);
+
+        var tempZipPath = baseDir.CombineAsFile($"{hashForFileName}.zip");
+        System.IO.Compression.ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
+            CompressionLevel.NoCompression, includeBaseDirectory: false);
+        return tempZipPath;
     }
     
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
@@ -40,7 +80,7 @@ public class UserOrPopulator
                 .Select(outputPath =>
                 {
                     var cachePath = Path.Combine(inputs.CacheDir, outputPath.Name);
-                    return new OutputFileMap(cachePath, outputPath.Path);
+                    return new OutputFileMap(cachePath, outputPath.LocalPath);
                 }).ToArray();
 
 
