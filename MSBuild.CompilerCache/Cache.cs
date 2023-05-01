@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Newtonsoft.Json;
+
 namespace MSBuild.CompilerCache;
 using CompilationOutputs = ImmutableArray<RelativePath>;
 
@@ -77,7 +79,7 @@ public record LocalInputs(LocalFileExtract[] Files, string[] Props, OutputItem[]
 }
 
 [Serializable]
-public record AllCompilationMetadata(PostCompilationMetadata Metadata, LocalInputs LocalInputs);
+public record AllCompilationMetadata(PreCompilationMetadata Metadata, LocalInputs LocalInputs);
 
 
 public record CacheKey(string Key)
@@ -88,7 +90,8 @@ public record CacheKey(string Key)
 public interface ICache
 {
     bool Exists(CacheKey key);
-    void Set(CacheKey key, AllCompilationMetadata metadata);
+    void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip);
+    string Get(CacheKey key);
 }
 
 public class Cache : ICache
@@ -101,16 +104,106 @@ public class Cache : ICache
     }
     
     private string CacheDir(string key) => Path.Combine(_baseCacheDir, key);
-    private string MarkerPath(string key) => Path.Combine(CacheDir(key), "extract.json");
+    private string ExtractPath(string key) => Path.Combine(CacheDir(key), "extract.json");
     
     public bool Exists(CacheKey key)
     {
-        var markerPath = MarkerPath(key);
+        var markerPath = ExtractPath(key);
         return File.Exists(markerPath);
     }
 
-    public void Set(CacheKey key, AllCompilationMetadata metadata)
+    public static void AtomicCopy(string source, string destination)
     {
-        throw new NotImplementedException();
+        var dir = Path.GetDirectoryName(destination)!;
+        var tmpDestination = Path.Combine(dir, Guid.NewGuid().ToString());
+        File.Copy(source, tmpDestination);
+        try
+        {
+            File.Move(tmpDestination, destination, true);
+        }
+        finally
+        {
+            File.Delete(tmpDestination);
+        }
+    }
+
+    public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
+    {
+        var dir = new DirectoryInfo(CacheDir(key));
+        if (!dir.Exists)
+        {
+            dir.Create();
+        }
+
+        var extractPath = ExtractPath(key);
+
+        var outputPath = Path.Combine(dir.FullName, resultZip.Name);
+        if (!File.Exists(outputPath))
+        {
+            AtomicCopy(resultZip.FullName, outputPath);
+        }
+        
+        if (!File.Exists(extractPath))
+        {
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
+            using var tmpFile = new TempFile();
+            File.WriteAllText(tmpFile.FullName, json);
+            AtomicCopy(tmpFile.FullName, extractPath);
+        }
+    }
+
+    public string? Get(CacheKey key)
+    {
+        var dir = new DirectoryInfo(CacheDir(key));
+        if (dir.Exists)
+        {
+            var extractPath = ExtractPath(key);
+            if (File.Exists(extractPath))
+            {
+                var outputVersionsZips = GetOutputVersions(key);
+                if (outputVersionsZips.Length == 0)
+                {
+                    throw new Exception($"[Cache key={key}] Extract file exists, but no output files found.");
+                } else if (outputVersionsZips.Length > 1)
+                {
+                    throw new Exception(
+                        $"[Cache key={key}] Found {outputVersionsZips.Length} different outputs. Unable to pick one.");
+                }
+                else
+                {
+                    var tmpPath = Path.GetTempFileName();
+                    File.Copy(outputVersionsZips[0], tmpPath);
+                    return tmpPath;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public int OutputVersionsCount(string key)
+    {
+        return GetOutputVersions(key).Count();
+    }
+
+    private string[] GetOutputVersions(string key)
+    {
+        return Directory.EnumerateFiles(CacheDir(key), "*.zip", SearchOption.TopDirectoryOnly).ToArray();
+    }
+}
+
+public class TempFile : IDisposable
+{
+    public FileInfo File { get; }
+    public string FullName => File.FullName;
+    
+    public TempFile()
+    {
+        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+    }
+    
+    public void Dispose()
+    {
+        File.Delete();
     }
 }

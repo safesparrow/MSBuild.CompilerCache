@@ -32,11 +32,13 @@ public static class DirectoryInfoExtensions
 
 public class UserOrPopulator
 {
-    private void UseCacheResult(OutputItem[] cachedOutputs, string cacheZipPath)
+    private readonly ICache _cache;
+    
+    public UserOrPopulator(ICache cache)
     {
-        // System.IO.Compression.ZipFile.ExtractToDirectory(cacheZipPath);
+        _cache = cache;
     }
-
+    
     public static FileInfo BuildOutputsZip(DirectoryInfo baseDir, OutputItem[] items, AllCompilationMetadata metadata)
     {
         var outputsDir = baseDir.CreateSubdirectory("outputs");
@@ -65,8 +67,31 @@ public class UserOrPopulator
         return tempZipPath;
     }
     
+    public static void UseCachedOutputs(string outputsZipPath, OutputItem[] items, DateTime postCompilationTimeUtc)
+    {
+        var tempPath = Path.GetTempFileName();
+        File.Copy(outputsZipPath, tempPath);
+        try
+        {
+            var a = ZipFile.OpenRead(tempPath);
+            foreach (var entry in a.Entries)
+            {
+                var outputItem =
+                    items.SingleOrDefault(it => it.Name == entry.Name)
+                    ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
+                entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
+                File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
+            }
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+    
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
+        using var tmpDir = new DisposableDir();
         var postCompilationTimeUtc = DateTime.UtcNow;
         var dir = new DirectoryInfo(inputs.CacheDir);
 
@@ -75,76 +100,33 @@ public class UserOrPopulator
         var recalculatedHash = Utils.ObjectToSHA256Hex(recalculatedExtract);
         var hashesMatch = originalHash == recalculatedHash;
 
-        var outputsMap =
-            inputs.Inputs.OutputsToCache
-                .Select(outputPath =>
-                {
-                    var cachePath = Path.Combine(inputs.CacheDir, outputPath.Name);
-                    return new OutputFileMap(cachePath, outputPath.LocalPath);
-                }).ToArray();
+        var compilationHappened =
+            !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
-
-        if (inputs.CacheHit && !inputs.CheckCompileOutputAgainstCache)
+        var outputs = inputs.Inputs.OutputsToCache;
+        var cacheKey = new CacheKey(originalHash);
+        if (!compilationHappened)
         {
-            log.LogMessage(MessageImportance.High, $"CacheHit - copying {outputsMap.Length} files from cache");
-            // TODO Parallel
-            foreach (var entry in outputsMap)
+            log.LogMessage(MessageImportance.High, $"CacheHit - copying {outputs.Length} files from cache");
+
+            var cachedOutputTmpZip = _cache.Get(cacheKey);
+            try
             {
-                log.LogMessage(MessageImportance.High, $"Copy {entry.CachePath} -> {entry.OutputPath}");
-                File.Delete(entry.OutputPath);
-                File.Copy(entry.CachePath, entry.OutputPath, true);
-                File.SetLastWriteTimeUtc(entry.OutputPath, postCompilationTimeUtc);
-                // TODO Set file timestamps - what timestamp to use? It should be compatible with the rest of the MSBuild build process.
+                UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
+            }
+            finally
+            {
+                File.Delete(cachedOutputTmpZip);
             }
         }
-        else if (inputs.CacheHit && inputs.CheckCompileOutputAgainstCache)
+        else // populate the cache
         {
-            log.LogMessage(MessageImportance.High, $"CacheHit but '{nameof(inputs.CheckCompileOutputAgainstCache)}' enabled - verifying newly compiled outputs are same as in the cache.");
-            if (!dir.Exists)
-            {
-                throw new Exception($"CacheHit but cache directory {dir} does not exist.");
-            }
-            else
-            {
-                // TODO Parallel
-                foreach (var entry in outputsMap)
-                {
-                    if (!File.Exists(entry.CachePath))
-                        log.LogMessage($"Despite cache hit, cache file does not exist: '{entry.CachePath}'.");
-                    else
-                    {
-                        var outputHash = Utils.FileToSHA256String(new FileInfo(entry.OutputPath));
-                        var cachedHash = Utils.FileToSHA256String(new FileInfo(entry.CachePath));
-                        if (outputHash != cachedHash)
-                        {
-                            log.LogMessage(MessageImportance.High, $"Output hash != cache cache. Output ({entry.OutputPath}) = {outputHash}. Cache ({entry.CachePath}) = {cachedHash}");
-                        }
-                    }
-                }
-
-                var markerPath = Helpers.GetMarkerPath(inputs.CacheDir);
-                log.LogMessage(MessageImportance.High, $"Creating marker {markerPath}");
-                Helpers.CreateEmptyFile(markerPath);
-            }
-        }
-        else
-        {
-            log.LogMessage(MessageImportance.High, $"CacheMiss - copying {outputsMap.Length} files from output to cache");
-            if (!dir.Exists) dir.Create();
-            // TODO Parallel
-            foreach (var entry in outputsMap)
-            {
-                if (File.Exists(entry.CachePath))
-                    throw new Exception($"Despite cache miss, cache file exists: '{entry.CachePath}'.");
-                var fileDir = Path.GetDirectoryName((string?)entry.CachePath)!;
-                Directory.CreateDirectory(fileDir);
-                log.LogMessage(MessageImportance.High, $"Copy {entry.OutputPath} -> {entry.CachePath}");
-                File.Copy(entry.OutputPath, entry.CachePath, true);
-            }
-
-            var markerPath = Helpers.GetMarkerPath(inputs.CacheDir);
-            log.LogMessage(MessageImportance.High, $"Creating marker {markerPath}");
-            Helpers.CreateEmptyFile(markerPath);
+            log.LogMessage(MessageImportance.High, $"CacheMiss - copying {outputs.Length} files from output to cache");
+            var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
+            var pre = Locator.GetPreCompilationMetadata();
+            var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
+            var outputZip = BuildOutputsZip(dir, outputs, stuff);
+            _cache.Set(cacheKey, recalculatedExtract, outputZip);
         }
 
         return new UseOrPopulateResult();
