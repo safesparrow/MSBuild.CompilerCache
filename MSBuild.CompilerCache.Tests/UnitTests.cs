@@ -17,11 +17,11 @@ public class UnitTests
             new OutputItem("foo", foo.FullName)
         };
         var metadata = new AllCompilationMetadata(
-            Metadata: new PostCompilationMetadata(
+            Metadata: new PreCompilationMetadata(
                 Hostname: "A",
                 Username: "B",
                 StartTimeUtc: DateTime.Today,
-                StopTimeUtc: DateTime.UtcNow),
+                WorkingDirectory: "e:/foo"),
             LocalInputs:
             new LocalInputs(
                 Files: new LocalFileExtract[] { },

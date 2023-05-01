@@ -11,8 +11,6 @@ public record UseOrPopulateInputs(
     BaseTaskInputs Inputs,
     bool CacheHit,
     string CacheDir,
-    string IntermediateOutputPath,
-    // TODO Ignored for now
     bool CheckCompileOutputAgainstCache
 );
 
@@ -99,7 +97,8 @@ public class UserOrPopulator
         var recalculatedExtract = Locator.CalculateCacheExtract(inputs.Inputs);
         var recalculatedHash = Utils.ObjectToSHA256Hex(recalculatedExtract);
         var hashesMatch = originalHash == recalculatedHash;
-
+        // TODO check hashes
+        
         var compilationHappened =
             !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
@@ -131,8 +130,6 @@ public class UserOrPopulator
 
         return new UseOrPopulateResult();
     }
-
-    public record OutputFileMap(string CachePath, string OutputPath);
 }
 
 // ReSharper disable once UnusedType.Global
@@ -147,13 +144,14 @@ public class UseOrPopulateCache : BaseTask
 #pragma warning disable CS8618
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheDir { get; set; }
+    // TODO Unused - remove.
     [Required] public string IntermediateOutputPath { get; set; }
 #pragma warning restore CS8618
     public bool CheckCompileOutputAgainstCache { get; set; }
 
     public UseOrPopulateCache()
     {
-        _userOrPopulator = new UserOrPopulator();
+        _userOrPopulator = new UserOrPopulator(new Cache(Path.GetDirectoryName(CacheDir)!));
     }
 
     public override bool Execute()
@@ -161,7 +159,6 @@ public class UseOrPopulateCache : BaseTask
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
             CacheDir: CacheDir,
-            IntermediateOutputPath: IntermediateOutputPath,
             Inputs: GatherInputs(),
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache
         );
