@@ -103,8 +103,8 @@ public class Cache : ICache
         _baseCacheDir = baseCacheDir;
     }
     
-    private string CacheDir(string key) => Path.Combine(_baseCacheDir, key);
-    private string ExtractPath(string key) => Path.Combine(CacheDir(key), "extract.json");
+    private string CacheDir(CacheKey key) => Path.Combine(_baseCacheDir, key);
+    private string ExtractPath(CacheKey key) => Path.Combine(CacheDir(key), "extract.json");
     
     public bool Exists(CacheKey key)
     {
@@ -145,7 +145,7 @@ public class Cache : ICache
         
         if (!File.Exists(extractPath))
         {
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
             using var tmpFile = new TempFile();
             File.WriteAllText(tmpFile.FullName, json);
             AtomicCopy(tmpFile.FullName, extractPath);
@@ -172,7 +172,7 @@ public class Cache : ICache
                 else
                 {
                     var tmpPath = Path.GetTempFileName();
-                    File.Copy(outputVersionsZips[0], tmpPath);
+                    File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
                     return tmpPath;
                 }
             }
@@ -181,12 +181,12 @@ public class Cache : ICache
         return null;
     }
 
-    public int OutputVersionsCount(string key)
+    public int OutputVersionsCount(CacheKey key)
     {
         return GetOutputVersions(key).Count();
     }
 
-    private string[] GetOutputVersions(string key)
+    private string[] GetOutputVersions(CacheKey key)
     {
         return Directory.EnumerateFiles(CacheDir(key), "*.zip", SearchOption.TopDirectoryOnly).ToArray();
     }

@@ -39,7 +39,7 @@ public class UserOrPopulator
     
     public static FileInfo BuildOutputsZip(DirectoryInfo baseDir, OutputItem[] items, AllCompilationMetadata metadata)
     {
-        var outputsDir = baseDir.CreateSubdirectory("outputs");
+        var outputsDir = baseDir.CreateSubdirectory("outputs_zip_building");
         
         var outputExtracts =
             items.Select(item =>
@@ -68,11 +68,11 @@ public class UserOrPopulator
     public static void UseCachedOutputs(string outputsZipPath, OutputItem[] items, DateTime postCompilationTimeUtc)
     {
         var tempPath = Path.GetTempFileName();
-        File.Copy(outputsZipPath, tempPath);
+        File.Copy(outputsZipPath, tempPath, overwrite: true);
         try
         {
-            var a = ZipFile.OpenRead(tempPath);
-            foreach (var entry in a.Entries)
+            using var a = ZipFile.OpenRead(tempPath);
+            foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
             {
                 var outputItem =
                     items.SingleOrDefault(it => it.Name == entry.Name)
