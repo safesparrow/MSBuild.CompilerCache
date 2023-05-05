@@ -129,23 +129,41 @@ AND
       <FileInputs
         Include="$(Win32Resource)" />
     </ItemGroup>
+    <ItemGroup
+      Condition="'$(CanCache)' == 'true'">
+      <CompileOutputsToCache
+        Include="$(DocumentationFile)"
+        Name="DocumentationFile" />
+      <CompileOutputsToCache
+        Include="@(IntermediateAssembly)"
+        Name="OutputAssembly" />
+      <CompileOutputsToCache
+        Include="$(PdbFile)"
+        Name="PdbFile" />
+    </ItemGroup>
     <LocateCompilationCacheEntry
       Condition="'$(CanCache)' == 'true'"
+      ProjectFullPath="$(MSBuildProjectFullPath)"
       FileInputs="@(FileInputs)"
       PropertyInputs="@(PropertyInputs)"
       References="@(ReferencePath)"
+      OutputsToCache="@(CompileOutputsToCache)"
       BaseCacheDir="$(CompilationCacheBaseDir)">
-      <Output
-        TaskParameter="CacheDir"
-        PropertyName="CacheDir" />
       <Output
         TaskParameter="CacheHit"
         PropertyName="CacheHit" />
+      <Output
+        TaskParameter="CacheKey"
+        PropertyName="CacheKey" />
+      <Output
+        TaskParameter="LocalInputsHash"
+        PropertyName="LocalInputsHash" />
     </LocateCompilationCacheEntry>
     <PropertyGroup>
       <DoInvokeCompilation
         Condition="'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'">true</DoInvokeCompilation>
     </PropertyGroup>
+    <!--END OF CACHING EXTENSION CODE-->
     <!--END OF CACHING EXTENSION CODE-->
     <Fsc
       Condition="'$(DoInvokeCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
@@ -208,25 +226,19 @@ AND
         ItemName="FscCommandLineArgs" />
     </Fsc>
     <!--START OF CACHING EXTENSION CODE-->
-    <ItemGroup
-      Condition="'$(CanCache)' == 'true'">
-      <CompileOutputsToCache
-        Include="$(DocumentationFile)"
-        Name="DocumentationFile" />
-      <CompileOutputsToCache
-        Include="@(IntermediateAssembly)"
-        Name="OutputAssembly" />
-      <CompileOutputsToCache
-        Include="$(PdbFile)"
-        Name="PdbFile" />
-    </ItemGroup>
     <UseOrPopulateCache
       Condition="'$(CanCache)' == 'true'"
-      IntermediateOutputPath="$(IntermediateOutputPath)"
+      ProjectFullPath="$(MSBuildProjectFullPath)"
+      FileInputs="@(FileInputs)"
+      PropertyInputs="@(PropertyInputs)"
+      References="@(ReferencePath)"
       OutputsToCache="@(CompileOutputsToCache)"
+      IntermediateOutputPath="$(IntermediateOutputPath)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
-      CacheDir="$(CacheDir)" />
+      CacheKey="$(CacheKey)"
+      LocalInputsHash="$(LocalInputsHash)"
+      BaseCacheDir="$(CompilationCacheBaseDir)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs

@@ -10,7 +10,9 @@ using Microsoft.Build.Framework;
 public record UseOrPopulateInputs(
     BaseTaskInputs Inputs,
     bool CacheHit,
-    string CacheDir,
+    CacheKey CacheKey,
+    string BaseCacheDir,
+    string LocatorLocalInputsHash,
     bool CheckCompileOutputAgainstCache
 );
 
@@ -87,25 +89,27 @@ public class UserOrPopulator
         }
     }
 
-    public CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
+    public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
     {
-        var dateString = $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}";
-        var name = inputs.GlobalProps.ProjectNameWithExtension;
-        return new CacheKey($"{name}_{dateString}_{hash}");
+        //var dateString = $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}";
+        var name = Path.GetFileName(inputs.ProjectFullPath);
+        return new CacheKey($"{name}_{hash}");
     }
     
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
         using var tmpDir = new DisposableDir();
         var postCompilationTimeUtc = DateTime.UtcNow;
-        var dir = new DirectoryInfo(inputs.CacheDir);
+        var dir = new DirectoryInfo(inputs.BaseCacheDir);
+        
+        var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
+        var extract = localInputs.ToFullExtract();
+        var hashString = Utils.ObjectToSHA256Hex(extract);
+        var cacheKey = GenerateKey(inputs.Inputs, hashString);
 
-        var originalHash = Path.GetFileName(Path.TrimEndingDirectorySeparator(inputs.CacheDir));
-        var recalculatedExtract = Locator.CalculateCacheExtract(inputs.Inputs);
-        var recalculatedHash = Utils.ObjectToSHA256Hex(recalculatedExtract);
-        var cacheKey = GenerateKey(inputs.Inputs, recalculatedHash);
+        var originalHash = inputs.CacheKey;
         var hashesMatch = originalHash == cacheKey.Key;
-        // TODO check hashes
+        log.LogMessage(MessageImportance.High, $"Match={hashesMatch} LocatorKey={originalHash} RecalculatedKey={cacheKey}");
 
         var compilationHappened =
             !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
@@ -138,11 +142,10 @@ public class UserOrPopulator
             {
                 log.LogMessage(MessageImportance.High,
                     $"CacheMiss - copying {outputs.Length} files from output to cache");
-                var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
                 var pre = Locator.GetPreCompilationMetadata();
                 var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
                 var outputZip = BuildOutputsZip(dir, outputs, stuff);
-                _cache.Set(cacheKey, recalculatedExtract, outputZip);
+                _cache.Set(cacheKey, extract, outputZip);
             }
             else
             {
@@ -162,26 +165,25 @@ public class UserOrPopulator
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class UseOrPopulateCache : BaseTask
 {
-    private readonly UserOrPopulator _userOrPopulator;
 #pragma warning disable CS8618
     [Required] public bool CacheHit { get; set; }
-    [Required] public string CacheDir { get; set; }
+    [Required] public string CacheKey { get; set; }
+    [Required] public string LocalInputsHash { get; set; }
     // TODO Unused - remove.
     [Required] public string IntermediateOutputPath { get; set; }
-#pragma warning restore CS8618
     public bool CheckCompileOutputAgainstCache { get; set; }
-
-    public UseOrPopulateCache()
-    {
-        _userOrPopulator = new UserOrPopulator(new Cache(Path.GetDirectoryName(CacheDir)!));
-    }
+    [Required] public string BaseCacheDir { get; set; }
+#pragma warning restore CS8618
 
     public override bool Execute()
     {
+        var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir!));
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
-            CacheDir: CacheDir,
+            CacheKey: new CacheKey(CacheKey),
+            BaseCacheDir: BaseCacheDir,
             Inputs: GatherInputs(),
+            LocatorLocalInputsHash: LocalInputsHash,
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache
         );
         var results = _userOrPopulator.UseOrPopulate(inputs, Log);

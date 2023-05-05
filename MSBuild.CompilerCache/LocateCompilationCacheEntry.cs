@@ -9,16 +9,8 @@ using System.Security.Cryptography;
 using Microsoft.Build.Framework;
 using Task = Microsoft.Build.Utilities.Task;
 
-public record GlobalProps(
-    string ProjectFullPath
-)
-{
-    public string ProjectNameWithExtension => Path.GetFileName(ProjectFullPath);
-    public string ProjectExtension => Path.GetExtension(ProjectFullPath);
-};
-
 public record BaseTaskInputs(
-    GlobalProps GlobalProps,
+    string ProjectFullPath,
     string[] PropertyInputs,
     string[] FileInputs,
     string[] References,
@@ -57,21 +49,12 @@ public abstract class BaseTask : Task
     [Required] public string[] FileInputs { get; set; }
     [Required] public string[] References { get; set; }
     [Required] public ITaskItem[] OutputsToCache { get; set; }
+    [Required] public string ProjectFullPath { get; set; }
 
     protected BaseTaskInputs GatherInputs()
     {
-        var allGlobalProps = BuildEngine6.GetGlobalProperties();
-        string GetGlobalProp(string name) =>
-            allGlobalProps.TryGetValue(name, out var value)
-                ? value
-                : throw new ArgumentException($"The '{name}' MSBuild global property is not set but is required.");
-
-        var fullPath = GetGlobalProp("MSBuildProjectFullPath");
-        var globalProps = new GlobalProps(
-            ProjectFullPath: fullPath
-        );
         return new BaseTaskInputs(
-            GlobalProps: globalProps,
+            ProjectFullPath: ProjectFullPath,
             PropertyInputs: PropertyInputs,
             FileInputs: FileInputs,
             References: References,
@@ -88,38 +71,34 @@ public abstract class BaseTask : Task
 
 public record LocateResult(
     bool CacheHit,
-    string CacheDir,
+    CacheKey CacheKey,
     string LocalInputsHash,
     DateTime PreCompilationTimeUtc
 );
 
 public class Locator
 {
-    public LocateResult Locate(BaseTaskInputs inputs, string BaseCacheDir, TaskLoggingHelper log)
+    public LocateResult Locate(BaseTaskInputs inputs, string baseCacheDir, TaskLoggingHelper log)
     {
+        var cache = new Cache(baseCacheDir);
         var localInputs = CalculateLocalInputs(inputs);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
-        var cacheDir = Path.Combine(BaseCacheDir, hashString);
+        var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+        
+        
+        
+        var cacheDir = Path.Combine(baseCacheDir, hashString);
 
-        var markerPath = Helpers.GetMarkerPath(Path.Combine(BaseCacheDir, hashString));
-        bool cacheHit;
-        if (!Directory.Exists(Path.Combine(BaseCacheDir, hashString)))
+        var markerPath = Helpers.GetMarkerPath(Path.Combine(baseCacheDir, hashString));
+        var cacheHit = cache.Exists(cacheKey);
+        if (!cacheHit)
         {
-            Directory.CreateDirectory(Path.Combine(BaseCacheDir, hashString));
-            var extractPath = Path.Combine(Path.Combine(BaseCacheDir, hashString), "extract.json");
-            File.WriteAllText(extractPath, JsonConvert.SerializeObject(extract, Formatting.Indented));
-            log.LogMessage(MessageImportance.High, $"{Path.Combine(BaseCacheDir, hashString)} does not exist");
-            cacheHit = false;
-        }
-        else if (!File.Exists(markerPath))
-        {
-            log.LogMessage(MessageImportance.High, $"Marker file {markerPath} does not exist");
-            cacheHit = false;
+            log.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a miss.");
         }
         else
         {
-            log.LogMessage(MessageImportance.High, $"{Path.Combine(BaseCacheDir, hashString)} and its marker exist");
+            log.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a hit.");
             cacheHit = true;
         }
 
@@ -127,7 +106,7 @@ public class Locator
 
         return new LocateResult(
             CacheHit: cacheHit,
-            CacheDir: cacheDir,
+            CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: DateTime.UtcNow
         );
@@ -195,7 +174,8 @@ public class LocateCompilationCacheEntry : BaseTask
     [Required] public string BaseCacheDir { get; set; }
 
     [Output] public bool CacheHit { get; private set; }
-    [Output] public string CacheDir { get; private set; }
+    [Output] public string CacheKey { get; private set; }
+    [Output] public string LocalInputsHash { get; set; }
     [Output] public DateTime PreCompilationTimeUtc { get; private set; }
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
@@ -211,9 +191,11 @@ public class LocateCompilationCacheEntry : BaseTask
         var results = _locator.Locate(inputs, BaseCacheDir, Log);
 
         CacheHit = results.CacheHit;
-        CacheDir = results.CacheDir;
+        CacheKey = results.CacheKey;
+        LocalInputsHash = results.LocalInputsHash;
         PreCompilationTimeUtc = results.PreCompilationTimeUtc;
         
         return true;
     }
+
 }

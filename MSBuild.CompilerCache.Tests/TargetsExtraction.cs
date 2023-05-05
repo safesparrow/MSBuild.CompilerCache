@@ -335,15 +335,18 @@ public class TargetsExtraction
                 
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
+                    new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
                     new XAttribute("FileInputs", "@(FileInputs)"),
                     new XAttribute("PropertyInputs", "@(PropertyInputs)"),
                     new XAttribute("References", refs),
                     new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
                     new XAttribute("BaseCacheDir", "$(CompilationCacheBaseDir)"),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheDir"),
-                        new XAttribute("PropertyName", "CacheDir")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
-                        new XAttribute("PropertyName", "CacheHit"))
+                        new XAttribute("PropertyName", "CacheHit")),
+                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
+                        new XAttribute("PropertyName", "CacheKey")),
+                    new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
+                        new XAttribute("PropertyName", "LocalInputsHash"))
                 );
                 
                 compilationTask.AddBeforeSelf(locateElement);
@@ -355,16 +358,23 @@ public class TargetsExtraction
                 compilationTask.AddBeforeSelf(gElement);
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
                 compilationTask.AddBeforeSelf(endComment);
+                compilationTask.AddBeforeSelf(endComment);
 
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
                         canCacheCondition,
-                        new XAttribute("IntermediateOutputPath", "$(IntermediateOutputPath)"),
+                        new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
+                        new XAttribute("FileInputs", "@(FileInputs)"),
+                        new XAttribute("PropertyInputs", "@(PropertyInputs)"),
+                        new XAttribute("References", refs),
                         new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
+                        new XAttribute("IntermediateOutputPath", "$(IntermediateOutputPath)"),
                         new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
                         new XAttribute("CacheHit", "$(CacheHit)"),
-                        new XAttribute("CacheDir", "$(CacheDir)")
+                        new XAttribute("CacheKey", "$(CacheKey)"),
+                        new XAttribute("LocalInputsHash", "$(LocalInputsHash)"),
+                        new XAttribute("BaseCacheDir", "$(CompilationCacheBaseDir)")
                     );
 
                 compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
