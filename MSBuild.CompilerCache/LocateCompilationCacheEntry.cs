@@ -11,7 +11,7 @@ using Task = Microsoft.Build.Utilities.Task;
 
 public record BaseTaskInputs(
     string ProjectFullPath,
-    string[] PropertyInputs,
+    string PropertyInputs,
     string[] FileInputs,
     string[] References,
     OutputItem[] OutputsToCache
@@ -45,7 +45,7 @@ public static class Utils
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public abstract class BaseTask : Task
 {
-    [Required] public string[] PropertyInputs { get; set; }
+    [Required] public string PropertyInputs { get; set; }
     [Required] public string[] FileInputs { get; set; }
     [Required] public string[] References { get; set; }
     [Required] public ITaskItem[] OutputsToCache { get; set; }
@@ -53,11 +53,12 @@ public abstract class BaseTask : Task
 
     protected BaseTaskInputs GatherInputs()
     {
+        
         return new BaseTaskInputs(
             ProjectFullPath: ProjectFullPath,
             PropertyInputs: PropertyInputs,
-            FileInputs: FileInputs,
-            References: References,
+            FileInputs: FileInputs.OrderBy(x => x).ToArray(),
+            References: References.OrderBy(x => x).ToArray(),
             OutputsToCache: OutputsToCache.Select(ParseOutputToCache).ToArray()
         );
     }
@@ -102,6 +103,7 @@ public class Locator
             cacheHit = true;
         }
 
+        File.WriteAllText(DateTime.UtcNow.Ticks.ToString() + ".json", JsonConvert.SerializeObject(localInputs, Formatting.Indented));
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
         return new LocateResult(
@@ -135,7 +137,7 @@ public class Locator
     public static LocalInputs CalculateLocalInputs(BaseTaskInputs inputs)
     {
         var allFileInputs = inputs.FileInputs.Union(inputs.References);
-        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().Select(GetLocalFileExtract).ToArray();
+        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().AsOrdered().Select(GetLocalFileExtract).ToArray();
 
         return new LocalInputs(fileExtracts, inputs.PropertyInputs, inputs.OutputsToCache);
     }
@@ -187,6 +189,7 @@ public class LocateCompilationCacheEntry : BaseTask
     
     public override bool Execute()
     {
+        Log.LogMessage(MessageImportance.High, $"PropertyInputs={PropertyInputs}");
         var inputs = GatherInputs();
         var results = _locator.Locate(inputs, BaseCacheDir, Log);
 

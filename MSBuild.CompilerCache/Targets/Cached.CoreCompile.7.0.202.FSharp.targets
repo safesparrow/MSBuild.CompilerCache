@@ -149,7 +149,7 @@ AND
       Condition="'$(CanCache)' == 'true'"
       ProjectFullPath="$(MSBuildProjectFullPath)"
       FileInputs="@(FileInputs)"
-      PropertyInputs="@(PropertyInputs)"
+      PropertyInputs="$(PropertyInputs)"
       References="@(ReferencePathWithRefAssemblies)"
       OutputsToCache="@(CompileOutputsToCache)"
       BaseCacheDir="$(CompilationCacheBaseDir)">
@@ -240,7 +240,7 @@ AND
       Condition="'$(CanCache)' == 'true'"
       ProjectFullPath="$(MSBuildProjectFullPath)"
       FileInputs="@(FileInputs)"
-      PropertyInputs="@(PropertyInputs)"
+      PropertyInputs="$(PropertyInputs)"
       References="@(ReferencePathWithRefAssemblies)"
       OutputsToCache="@(CompileOutputsToCache)"
       IntermediateOutputPath="$(IntermediateOutputPath)"

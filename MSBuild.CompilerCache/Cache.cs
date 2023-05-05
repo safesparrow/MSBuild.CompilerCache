@@ -43,7 +43,7 @@ public record FileExtract(string Name, string Hash, long Length);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
-public record FullExtract(FileExtract[] Files, string[] Props, string[] OutputFiles);
+public record FullExtract(FileExtract[] Files, string Props, string[] OutputFiles);
 
 [Serializable]
 public record LocalFileExtract(string Path, string Hash, long Length, DateTime LastWriteTimeUtc)
@@ -70,7 +70,7 @@ public record OutputItem(string Name, string LocalPath);
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
 [Serializable]
-public record LocalInputs(LocalFileExtract[] Files, string[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(LocalFileExtract[] Files, string Props, OutputItem[] OutputFiles)
 {
     public FullExtract ToFullExtract()
     {

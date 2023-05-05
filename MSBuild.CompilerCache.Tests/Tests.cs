@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using MSBuild.CompilerCache;
 using NUnit.Framework;
 
 namespace Tests;
@@ -232,9 +233,13 @@ public class Class { }
         var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
         WriteProject(projDir3, projModified);
 
-        BuildProject(projDir1, proj);
-        BuildProject(projDir2, proj);
-        BuildProject(projDir3, projModified);
+        var output1 = BuildProject(projDir1, proj);
+        var output2 = BuildProject(projDir2, proj);
+        var output3 = BuildProject(projDir3, projModified);
+        
+        Assert.That(output1.Where(x => x.Contains("CacheMiss - copying 3 files from output to cache")), Is.Not.Empty);
+        Assert.That(output2.Where(x => x.Contains("CacheHit - copying 3 files from cache")), Is.Not.Empty);
+        Assert.That(output3.Where(x => x.Contains("CacheMiss - copying 3 files from output to cache")), Is.Not.Empty);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
@@ -244,8 +249,13 @@ public class Class { }
         var dll2 = DllFile(projDir2, proj);
         var dll3 = DllFile(projDir3, proj);
 
-        Assert.That(dll1.LastWriteTime, Is.EqualTo(dll2.LastWriteTime));
-        Assert.That(dll3.LastWriteTime, Is.GreaterThan(dll2.LastWriteTime));
+        var hash1 = MSBuild.CompilerCache.Utils.FileToSHA256String(dll1);
+        var hash2 = MSBuild.CompilerCache.Utils.FileToSHA256String(dll2);
+        var hash3 = MSBuild.CompilerCache.Utils.FileToSHA256String(dll3);
+        
+        Assert.That(hash2, Is.EqualTo(hash1));
+        Assert.That(hash3, Is.Not.EqualTo(hash2));
+
     }
 
     private static void WriteProject(DirectoryInfo dir, ProjectFileBuilder project)
@@ -263,11 +273,11 @@ public class Class { }
         }
     }
 
-    private static void BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
+    private static string[] BuildProject(DirectoryInfo dir, ProjectFileBuilder project)
     {
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
-        Utils.RunProcess("dotnet", $"build", dir);
+        return Utils.RunProcess("dotnet", $"build", dir);
     }
 }

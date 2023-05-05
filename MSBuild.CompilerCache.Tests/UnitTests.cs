@@ -27,7 +27,7 @@ public class UnitTests
             LocalInputs:
             new LocalInputs(
                 Files: new LocalFileExtract[] { },
-                Props: new[] { "a=b" },
+                Props: "a=b",
                 OutputFiles: items
             )
         );

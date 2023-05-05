@@ -39,7 +39,7 @@ public class UserOrPopulator
         _cache = cache;
     }
     
-    public static FileInfo BuildOutputsZip(DirectoryInfo baseDir, OutputItem[] items, AllCompilationMetadata metadata)
+    public static FileInfo BuildOutputsZip(DirectoryInfo baseDir, OutputItem[] items, AllCompilationMetadata metadata, TaskLoggingHelper? log = null)
     {
         var outputsDir = baseDir.CreateSubdirectory("outputs_zip_building");
         
@@ -47,6 +47,7 @@ public class UserOrPopulator
             items.Select(item =>
             {
                 var tempPath = outputsDir.CombineAsFile(item.Name);
+                log?.LogMessage(MessageImportance.High, $"Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
             }).ToArray();
@@ -98,18 +99,14 @@ public class UserOrPopulator
     
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
-        using var tmpDir = new DisposableDir();
         var postCompilationTimeUtc = DateTime.UtcNow;
-        var dir = new DirectoryInfo(inputs.BaseCacheDir);
         
         var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
         var extract = localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = GenerateKey(inputs.Inputs, hashString);
-
-        var originalHash = inputs.CacheKey;
-        var hashesMatch = originalHash == cacheKey.Key;
-        log.LogMessage(MessageImportance.High, $"Match={hashesMatch} LocatorKey={originalHash} RecalculatedKey={cacheKey}");
+        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        var cacheKey = inputs.CacheKey;
+        var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
+        log.LogMessage(MessageImportance.High, $"Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
 
         var compilationHappened =
             !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
@@ -144,7 +141,8 @@ public class UserOrPopulator
                     $"CacheMiss - copying {outputs.Length} files from output to cache");
                 var pre = Locator.GetPreCompilationMetadata();
                 var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
-                var outputZip = BuildOutputsZip(dir, outputs, stuff);
+                using var tmpDir = new DisposableDir();
+                var outputZip = BuildOutputsZip(tmpDir, outputs, stuff, log);
                 _cache.Set(cacheKey, extract, outputZip);
             }
             else
@@ -177,6 +175,7 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
+        Log.LogMessage(MessageImportance.High, $"PropertyInputs={string.Join(",", PropertyInputs)}");
         var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir!));
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
