@@ -87,9 +87,11 @@ public class UserOrPopulator
         }
     }
 
-    public string GenerateKey(BaseTaskInputs inputs)
+    public CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
     {
-        var key = $"{inputs.FileInputs}"
+        var dateString = $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}";
+        var name = inputs.GlobalProps.ProjectNameWithExtension;
+        return new CacheKey($"{name}_{dateString}_{hash}");
     }
     
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
@@ -101,36 +103,51 @@ public class UserOrPopulator
         var originalHash = Path.GetFileName(Path.TrimEndingDirectorySeparator(inputs.CacheDir));
         var recalculatedExtract = Locator.CalculateCacheExtract(inputs.Inputs);
         var recalculatedHash = Utils.ObjectToSHA256Hex(recalculatedExtract);
-        var hashesMatch = originalHash == recalculatedHash;
+        var cacheKey = GenerateKey(inputs.Inputs, recalculatedHash);
+        var hashesMatch = originalHash == cacheKey.Key;
         // TODO check hashes
-        
+
         var compilationHappened =
             !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
         var outputs = inputs.Inputs.OutputsToCache;
-        var cacheKey = new CacheKey(originalHash);
         if (!compilationHappened)
         {
-            log.LogMessage(MessageImportance.High, $"CacheHit - copying {outputs.Length} files from cache");
+            if (hashesMatch)
+            {
+                log.LogMessage(MessageImportance.High, $"CacheHit - copying {outputs.Length} files from cache");
 
-            var cachedOutputTmpZip = _cache.Get(cacheKey);
-            try
-            {
-                UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
+                var cachedOutputTmpZip = _cache.Get(cacheKey);
+                try
+                {
+                    UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
+                }
+                finally
+                {
+                    File.Delete(cachedOutputTmpZip);
+                }
             }
-            finally
+            else
             {
-                File.Delete(cachedOutputTmpZip);
+                throw new InvalidOperationException($"Initial inputs generated a CacheHit, but inputs changed since then. Since compilation was already skipped, we are unable to proceed.");
             }
         }
-        else // populate the cache
+        else // Compilation happened
         {
-            log.LogMessage(MessageImportance.High, $"CacheMiss - copying {outputs.Length} files from output to cache");
-            var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
-            var pre = Locator.GetPreCompilationMetadata();
-            var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
-            var outputZip = BuildOutputsZip(dir, outputs, stuff);
-            _cache.Set(cacheKey, recalculatedExtract, outputZip);
+            if (hashesMatch)
+            {
+                log.LogMessage(MessageImportance.High,
+                    $"CacheMiss - copying {outputs.Length} files from output to cache");
+                var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
+                var pre = Locator.GetPreCompilationMetadata();
+                var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
+                var outputZip = BuildOutputsZip(dir, outputs, stuff);
+                _cache.Set(cacheKey, recalculatedExtract, outputZip);
+            }
+            else
+            {
+                log.LogWarning($"CacheMiss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
+            }
         }
 
         return new UseOrPopulateResult();
@@ -161,7 +178,6 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
-        base.BuildEngine6.GetGlobalProperties()
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
             CacheDir: CacheDir,

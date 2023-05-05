@@ -13,7 +13,8 @@ public record GlobalProps(
     string ProjectFullPath
 )
 {
-    public string ProjectName => Path.GetFileName(ProjectFullPath);
+    public string ProjectNameWithExtension => Path.GetFileName(ProjectFullPath);
+    public string ProjectExtension => Path.GetExtension(ProjectFullPath);
 };
 
 public record BaseTaskInputs(
