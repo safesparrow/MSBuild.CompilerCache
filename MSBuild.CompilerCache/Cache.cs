@@ -63,7 +63,34 @@ public record PreCompilationMetadata(string Hostname, string Username, DateTime 
 public record PostCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, DateTime StopTimeUtc);
 
 [Serializable]
-public record OutputItem(string Name, string LocalPath);
+public record OutputItem
+{
+    public OutputItem(string Name, string LocalPath)
+    {
+        this.Name = Name;
+        this.LocalPath = LocalPath;
+        this.CacheFileName = GetCacheFileName();
+    }
+
+    public string CacheFileName { get; }
+    public string GetCacheFileName()
+    {
+        if (Path.HasExtension(LocalPath))
+        {
+            return $"{Name}{Path.GetExtension(LocalPath)}";
+        }
+        return Name;
+    }
+
+    public string Name { get; init; }
+    public string LocalPath { get; init; }
+
+    public void Deconstruct(out string Name, out string LocalPath)
+    {
+        Name = this.Name;
+        LocalPath = this.LocalPath;
+    }
+}
 
 /// <summary>
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.

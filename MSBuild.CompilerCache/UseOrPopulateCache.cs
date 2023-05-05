@@ -46,7 +46,7 @@ public class UserOrPopulator
         var outputExtracts =
             items.Select(item =>
             {
-                var tempPath = outputsDir.CombineAsFile(item.Name);
+                var tempPath = outputsDir.CombineAsFile(item.CacheFileName);
                 log?.LogMessage(MessageImportance.High, $"Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
@@ -78,7 +78,7 @@ public class UserOrPopulator
             foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
             {
                 var outputItem =
-                    items.SingleOrDefault(it => it.Name == entry.Name)
+                    items.SingleOrDefault(it => it.CacheFileName == entry.Name)
                     ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
                 entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
                 File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
