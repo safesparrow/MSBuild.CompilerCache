@@ -9,7 +9,15 @@ using System.Security.Cryptography;
 using Microsoft.Build.Framework;
 using Task = Microsoft.Build.Utilities.Task;
 
+public record GlobalProps(
+    string ProjectFullPath
+)
+{
+    public string ProjectName => Path.GetFileName(ProjectFullPath);
+};
+
 public record BaseTaskInputs(
+    GlobalProps GlobalProps,
     string[] PropertyInputs,
     string[] FileInputs,
     string[] References,
@@ -49,18 +57,32 @@ public abstract class BaseTask : Task
     [Required] public string[] References { get; set; }
     [Required] public ITaskItem[] OutputsToCache { get; set; }
 
-    protected BaseTaskInputs GatherInputs() =>
-        new(
+    protected BaseTaskInputs GatherInputs()
+    {
+        var allGlobalProps = BuildEngine6.GetGlobalProperties();
+        string GetGlobalProp(string name) =>
+            allGlobalProps.TryGetValue(name, out var value)
+                ? value
+                : throw new ArgumentException($"The '{name}' MSBuild global property is not set but is required.");
+
+        var fullPath = GetGlobalProp("MSBuildProjectFullPath");
+        var globalProps = new GlobalProps(
+            ProjectFullPath: fullPath
+        );
+        return new BaseTaskInputs(
+            GlobalProps: globalProps,
             PropertyInputs: PropertyInputs,
             FileInputs: FileInputs,
             References: References,
             OutputsToCache: OutputsToCache.Select(ParseOutputToCache).ToArray()
         );
-
-    private static OutputItem ParseOutputToCache(ITaskItem arg)
-    {
-        return new OutputItem(Name: arg.GetMetadata("Name"), LocalPath: arg.ItemSpec);
     }
+
+    private static OutputItem ParseOutputToCache(ITaskItem arg) =>
+        new(
+            Name: arg.GetMetadata("Name") ?? throw new ArgumentException($"The '{arg.ItemSpec}' item has no 'Name' metadata."),
+            LocalPath: arg.ItemSpec
+        );
 }
 
 public record LocateResult(

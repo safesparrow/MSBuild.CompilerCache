@@ -86,6 +86,11 @@ public class UserOrPopulator
             File.Delete(tempPath);
         }
     }
+
+    public string GenerateKey(BaseTaskInputs inputs)
+    {
+        var key = $"{inputs.FileInputs}"
+    }
     
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
@@ -156,6 +161,7 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
+        base.BuildEngine6.GetGlobalProperties()
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
             CacheDir: CacheDir,

@@ -115,7 +115,7 @@ public class Cache : ICache
     public static void AtomicCopy(string source, string destination)
     {
         var dir = Path.GetDirectoryName(destination)!;
-        var tmpDestination = Path.Combine(dir, Guid.NewGuid().ToString());
+        var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
         File.Copy(source, tmpDestination);
         try
         {
