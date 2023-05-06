@@ -253,7 +253,6 @@ AND
       PropertyInputs="$(PropertyInputs)"
       References="@(ReferencePathWithRefAssemblies)"
       OutputsToCache="@(CompileOutputsToCache)"
-      IntermediateOutputPath="$(IntermediateOutputPath)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
       CacheKey="$(CacheKey)"

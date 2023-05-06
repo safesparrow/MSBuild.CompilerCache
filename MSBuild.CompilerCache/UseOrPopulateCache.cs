@@ -16,7 +16,7 @@ public class UseOrPopulateCache : BaseTask
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheKey { get; set; }
     [Required] public string LocalInputsHash { get; set; }
-    [Required] public bool CheckCompileOutputAgainstCache { get; set; }
+    public bool CheckCompileOutputAgainstCache { get; set; }
 #pragma warning restore CS8618
 
     public override bool Execute()

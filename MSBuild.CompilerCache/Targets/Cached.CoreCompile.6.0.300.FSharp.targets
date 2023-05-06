@@ -233,7 +233,6 @@ AND
       PropertyInputs="$(PropertyInputs)"
       References="@(ReferencePath)"
       OutputsToCache="@(CompileOutputsToCache)"
-      IntermediateOutputPath="$(IntermediateOutputPath)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
       CacheKey="$(CacheKey)"
