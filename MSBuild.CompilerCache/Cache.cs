@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
@@ -65,8 +66,16 @@ public record PostCompilationMetadata(string Hostname, string Username, DateTime
 [Serializable]
 public record OutputItem
 {
+    public static Regex NameRegex = new Regex("^[\\d\\w_\\-]+$", RegexOptions.Compiled);
+
     public OutputItem(string Name, string LocalPath)
-    {
+    { 
+        if (!NameRegex.IsMatch(Name))
+        {
+            throw new ArgumentException(
+                $"OutputItem Name must be an alphanumeric string to represent a filename, but given: '{Name}'.");
+        }
+
         this.Name = Name;
         this.LocalPath = LocalPath;
         this.CacheFileName = GetCacheFileName();
@@ -78,7 +87,7 @@ public record OutputItem
         if (Path.HasExtension(LocalPath))
         {
             return $"{Name}{Path.GetExtension(LocalPath)}";
-        }
+        } 
         return Name;
     }
 
