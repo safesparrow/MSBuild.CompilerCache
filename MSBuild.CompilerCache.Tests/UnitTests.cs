@@ -1,5 +1,6 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Moq;
 using MSBuild.CompilerCache;
 using NUnit.Framework;
 
@@ -70,10 +71,19 @@ public class UnitTests
 }
 
 [TestFixture]
-public class Bigger
+public class InMemoryIntegrationTests
 {
+    private Mock<IBuildEngine9> _buildEngine;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _buildEngine = new Mock<IBuildEngine9>();
+        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
+    }
+    
     [Test]
-    public void Test()
+    public void SimpleCacheHitTest()
     {
         /*
          * 1. Create input files on disk, setup the cache with/without entries.
@@ -82,9 +92,9 @@ public class Bigger
          * 4. Call UseOrPopulate task
          * 5. Inspect the cache.
          */
-        var baseCacheDir = "";
-        var cache = new Cache(baseCacheDir);
         using var tmpDir = new DisposableDir();
+        var baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
+        var cache = new Cache(baseCacheDir);
 
         string CreateTmpOutputFile(string name, string content)
         {
@@ -118,6 +128,7 @@ public class Bigger
         cache.Set(cacheKey, extract, zip);
 
         var locate = new LocateCompilationCacheEntry();
+        locate.BuildEngine = _buildEngine.Object;
         locate.SetInputs(baseInputs);
         var locateSuccess = locate.Execute();
         Assert.That(locateSuccess, Is.True);
@@ -131,6 +142,7 @@ public class Bigger
         });
 
         var use = new UseOrPopulateCache();
+        use.BuildEngine = _buildEngine.Object;
         var useInputs = new UseOrPopulateInputs(
             Inputs: baseInputs,
             CacheHit: locateResult.CacheHit,
@@ -140,6 +152,9 @@ public class Bigger
         );
         use.SetAllInputs(useInputs);
         Assert.That(use.Execute(), Is.True);
+
+        var allKeys = cache.GetAllExistingKeys();
+        Assert.That(allKeys, Is.EquivalentTo(new[]{cacheKey}));
     }
 
     private static ITaskItem[] BuildRawOutputsToCache(OutputItem[] outputItems) =>

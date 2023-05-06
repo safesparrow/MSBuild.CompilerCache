@@ -148,6 +148,13 @@ public class Cache : ICache
         }
     }
 
+    public CacheKey[] GetAllExistingKeys()
+    {
+        var options = new EnumerationOptions{ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false};
+        var fullNames = Directory.EnumerateDirectories(_baseCacheDir, "*", options);
+        return fullNames.Select(full => new CacheKey(Path.GetFileName(full))).ToArray();
+    }
+
     public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
     {
         var dir = new DirectoryInfo(CacheDir(key));

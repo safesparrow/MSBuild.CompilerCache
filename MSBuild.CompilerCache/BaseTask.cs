@@ -39,17 +39,18 @@ public abstract class BaseTask : Task
         References = inputs.References;
         OutputsToCache = inputs.RawOutputsToCache;
         ProjectFullPath = inputs.ProjectFullPath;
+        BaseCacheDir = inputs.BaseCacheDir;
     }
 
     protected BaseTaskInputs GatherInputs() =>
         new(
-            ProjectFullPath: ProjectFullPath ?? throw new ArgumentException($"{ProjectFullPath} cannot be null"),
-            PropertyInputs: PropertyInputs ?? throw new ArgumentException($"{PropertyInputs} cannot be null"),
-            FileInputs: (FileInputs ?? throw new ArgumentException($"{FileInputs} cannot be null")).OrderBy(x => x)
+            ProjectFullPath: ProjectFullPath ?? throw new ArgumentException($"{nameof(ProjectFullPath)} cannot be null"),
+            PropertyInputs: PropertyInputs ?? throw new ArgumentException($"{nameof(PropertyInputs)} cannot be null"),
+            FileInputs: (FileInputs ?? throw new ArgumentException($"{nameof(FileInputs)} cannot be null")).OrderBy(x => x)
             .ToArray(),
-            References: (References ?? throw new ArgumentException($"{References} cannot be null")).OrderBy(x => x)
+            References: (References ?? throw new ArgumentException($"{nameof(References)} cannot be null")).OrderBy(x => x)
             .ToArray(),
-            RawOutputsToCache: OutputsToCache ?? throw new ArgumentException($"{OutputsToCache} cannot be null"),
-            BaseCacheDir: BaseCacheDir ?? throw new ArgumentException($"{BaseCacheDir} cannot be null")
+            RawOutputsToCache: OutputsToCache ?? throw new ArgumentException($"{nameof(OutputsToCache)} cannot be null"),
+            BaseCacheDir: BaseCacheDir ?? throw new ArgumentException($"{nameof(BaseCacheDir)} cannot be null")
         );
 }
