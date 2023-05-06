@@ -11,13 +11,11 @@ public record UseOrPopulateInputs(
     BaseTaskInputs Inputs,
     bool CacheHit,
     CacheKey CacheKey,
-    string BaseCacheDir,
     string LocatorLocalInputsHash,
     bool CheckCompileOutputAgainstCache
 );
 
-public record UseOrPopulateResult(
-);
+public record UseOrPopulateResult;
 
 public static class DirectoryInfoExtensions
 {
@@ -54,16 +52,16 @@ public class UserOrPopulator
 
         var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
 
-        var outputsExtractJson = Newtonsoft.Json.JsonConvert.SerializeObject(outputExtracts, Formatting.Indented);
+        var outputsExtractJson = JsonConvert.SerializeObject(outputExtracts, Formatting.Indented);
         var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json");
         File.WriteAllText(outputsExtractJsonPath.FullName, outputsExtractJson);
         
-        var metaJson = Newtonsoft.Json.JsonConvert.SerializeObject(metadata, Formatting.Indented);
+        var metaJson = JsonConvert.SerializeObject(metadata, Formatting.Indented);
         var metaPath = outputsDir.CombineAsFile("__inputs.json");
         File.WriteAllText(metaPath.FullName, metaJson);
 
         var tempZipPath = baseDir.CombineAsFile($"{hashForFileName}.zip");
-        System.IO.Compression.ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
+        ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
             CompressionLevel.NoCompression, includeBaseDirectory: false);
         return tempZipPath;
     }
@@ -169,18 +167,16 @@ public class UseOrPopulateCache : BaseTask
     [Required] public string LocalInputsHash { get; set; }
     // TODO Unused - remove.
     [Required] public string IntermediateOutputPath { get; set; }
-    public bool CheckCompileOutputAgainstCache { get; set; }
-    [Required] public string BaseCacheDir { get; set; }
+    [Required] public bool CheckCompileOutputAgainstCache { get; set; }
 #pragma warning restore CS8618
 
     public override bool Execute()
     {
         Log.LogMessage(MessageImportance.High, $"PropertyInputs={string.Join(",", PropertyInputs)}");
-        var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir!));
+        var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir));
         var inputs = new UseOrPopulateInputs(
             CacheHit: CacheHit,
             CacheKey: new CacheKey(CacheKey),
-            BaseCacheDir: BaseCacheDir,
             Inputs: GatherInputs(),
             LocatorLocalInputsHash: LocalInputsHash,
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache

@@ -1,3 +1,4 @@
+using Microsoft.Build.Framework;
 using MSBuild.CompilerCache;
 using NUnit.Framework;
 
@@ -80,5 +81,19 @@ public class Bigger
          * 4. Call UseOrPopulate task
          * 5. Inspect the cache.
          */
+        var baseInputs = new BaseTaskInputs(
+            ProjectFullPath: "",
+            PropertyInputs: "",
+            FileInputs: new string[]{},
+            References: new string[]{},
+            RawOutputsToCache: new ITaskItem[]{},
+            BaseCacheDir: ""
+        );
+        
+        var locate = new LocateCompilationCacheEntry();
+        locate.SetInputs(baseInputs);
+
+        var use = new UseOrPopulateCache();
+        use.SetInputs(baseInputs);
     }
 }
