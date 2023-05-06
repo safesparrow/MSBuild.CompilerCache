@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using MSBuild.CompilerCache;
 using NUnit.Framework;
 
@@ -65,5 +64,21 @@ public class UnitTests
         var bInfo = GetInfo(b);
         
         Assert.That(bInfo, Is.EqualTo(aInfo));
+    }
+}
+
+[TestFixture]
+public class Bigger
+{
+    [Test]
+    public void Test()
+    {
+        /*
+         * 1. Create input files on disk, setup the cache with/without entries.
+         * 2. Call Locate task, grab and assert on its outputs.
+         * 3. Either do nothing, or generate fake compilation outputs.
+         * 4. Call UseOrPopulate task
+         * 5. Inspect the cache.
+         */
     }
 }
