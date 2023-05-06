@@ -84,12 +84,6 @@ public record OutputItem
 
     public string Name { get; init; }
     public string LocalPath { get; init; }
-
-    public void Deconstruct(out string Name, out string LocalPath)
-    {
-        Name = this.Name;
-        LocalPath = this.LocalPath;
-    }
 }
 
 /// <summary>

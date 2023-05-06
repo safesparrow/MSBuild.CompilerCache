@@ -369,7 +369,6 @@ public class TargetsExtraction
                         new XAttribute("PropertyInputs", "$(PropertyInputs)"),
                         new XAttribute("References", refs),
                         new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
-                        new XAttribute("IntermediateOutputPath", "$(IntermediateOutputPath)"),
                         new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
                         new XAttribute("CacheHit", "$(CacheHit)"),
                         new XAttribute("CacheKey", "$(CacheKey)"),

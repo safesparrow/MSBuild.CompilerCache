@@ -4,10 +4,8 @@ public class DisposableDir : IDisposable
 {
     public DisposableDir()
     {
-        // TODO Use Guid-like path instead?
-        var tempFile = Path.GetTempFileName();
-        File.Delete(tempFile);
-        Dir = Directory.CreateDirectory(tempFile);
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Dir = Directory.CreateDirectory(path);
     }
 
     public DirectoryInfo Dir { get; set; }

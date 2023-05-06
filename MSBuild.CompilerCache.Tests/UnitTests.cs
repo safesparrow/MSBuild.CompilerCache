@@ -1,4 +1,5 @@
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using MSBuild.CompilerCache;
 using NUnit.Framework;
 
@@ -36,16 +37,16 @@ public class UnitTests
         var cache = new Cache(dir.Dir.CombineAsDir(".cache").FullName);
 
         var key = new CacheKey("a");
-        cache.Set(key,  metadata.LocalInputs.ToFullExtract(), zipPath);
+        cache.Set(key, metadata.LocalInputs.ToFullExtract(), zipPath);
 
         var count = cache.OutputVersionsCount(key);
-        
+
         Assert.That(count, Is.EqualTo(1));
 
         var cachedZip = cache.Get(key);
         Assert.That(cachedZip, Is.Not.Null);
 
-        var mainOutputsDir = new DirectoryInfo(outputsDir.FullName); 
+        var mainOutputsDir = new DirectoryInfo(outputsDir.FullName);
         outputsDir.MoveTo(dir.Dir.CombineAsDir("old_output").FullName);
         mainOutputsDir.Create();
         UserOrPopulator.UseCachedOutputs(cachedZip!, items, DateTime.Now);
@@ -63,7 +64,7 @@ public class UnitTests
 
         var aInfo = GetInfo(a);
         var bInfo = GetInfo(b);
-        
+
         Assert.That(bInfo, Is.EqualTo(aInfo));
     }
 }
@@ -81,19 +82,70 @@ public class Bigger
          * 4. Call UseOrPopulate task
          * 5. Inspect the cache.
          */
+        var baseCacheDir = "";
+        var cache = new Cache(baseCacheDir);
+        using var tmpDir = new DisposableDir();
+
+        string CreateTmpOutputFile(string name, string content)
+        {
+            var path = Path.Combine(tmpDir.FullName, name);
+            File.WriteAllText(path, content);
+            return path;
+        }
+        var outputItems = new[]
+        {
+            new OutputItem("OutputAssembly", CreateTmpOutputFile("Output", "content_output")),
+            new OutputItem("OutputRefAssembly", CreateTmpOutputFile("OutputRef", "content_output_ref")),
+        };
+
         var baseInputs = new BaseTaskInputs(
             ProjectFullPath: "",
             PropertyInputs: "",
-            FileInputs: new string[]{},
-            References: new string[]{},
-            RawOutputsToCache: new ITaskItem[]{},
-            BaseCacheDir: ""
+            FileInputs: new string[] { },
+            References: new string[] { },
+            RawOutputsToCache: BuildRawOutputsToCache(outputItems),
+            BaseCacheDir: baseCacheDir
         );
-        
+
+        var localInputs = Locator.CalculateLocalInputs(baseInputs);
+        var extract = localInputs.ToFullExtract();
+        var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
+        var cacheKey = UserOrPopulator.GenerateKey(baseInputs, hashString);
+        var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
+        var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
+            new AllCompilationMetadata(null, localInputs));
+
+        cache.Set(cacheKey, extract, zip);
+
         var locate = new LocateCompilationCacheEntry();
         locate.SetInputs(baseInputs);
+        var locateSuccess = locate.Execute();
+        Assert.That(locateSuccess, Is.True);
+        var locateResult = locate.LocateResult;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(locateResult.CacheHit, Is.True);
+            Assert.That(locateResult.CacheKey, Is.EqualTo(cacheKey));
+            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(localInputsHash));
+        });
 
         var use = new UseOrPopulateCache();
-        use.SetInputs(baseInputs);
+        var useInputs = new UseOrPopulateInputs(
+            Inputs: baseInputs,
+            CacheHit: locateResult.CacheHit,
+            CacheKey: locateResult.CacheKey,
+            LocatorLocalInputsHash: locateResult.LocalInputsHash,
+            CheckCompileOutputAgainstCache: true
+        );
+        use.SetAllInputs(useInputs);
+        Assert.That(use.Execute(), Is.True);
     }
+
+    private static ITaskItem[] BuildRawOutputsToCache(OutputItem[] outputItems) =>
+        outputItems.Select(o =>
+        {
+            var meta = new Dictionary<string, string> { ["name"] = o.Name };
+            return (ITaskItem) new TaskItem(o.LocalPath, meta);
+        }).ToArray();
 }
