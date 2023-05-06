@@ -10,7 +10,7 @@ namespace Tests;
 public class UnitTests
 {
     [Test]
-    public void Test()
+    public void TestOutputBuildAndCache()
     {
         using var dir = new DisposableDir();
         var outputsDir = dir.Dir.CreateSubdirectory("outputs");
@@ -71,9 +71,9 @@ public class UnitTests
 }
 
 [TestFixture]
-public class InMemoryIntegrationTests
+public class InMemoryTaskBasedTests
 {
-    private Mock<IBuildEngine9> _buildEngine;
+    private Mock<IBuildEngine9> _buildEngine = null!;
 
     [SetUp]
     public void SetUp()
@@ -108,6 +108,11 @@ public class InMemoryIntegrationTests
             new OutputItem("OutputRefAssembly", CreateTmpOutputFile("OutputRef", "content_output_ref")),
         };
 
+        foreach (var outputItem in outputItems)
+        {
+            File.Copy(outputItem.LocalPath, outputItem.LocalPath + ".copy");
+        }
+
         var baseInputs = new BaseTaskInputs(
             ProjectFullPath: "",
             PropertyInputs: "",
@@ -126,6 +131,11 @@ public class InMemoryIntegrationTests
             new AllCompilationMetadata(null, localInputs));
 
         cache.Set(cacheKey, extract, zip);
+
+        foreach (var outputItem in outputItems)
+        {
+            File.Delete(outputItem.LocalPath);
+        }
 
         var locate = new LocateCompilationCacheEntry();
         locate.BuildEngine = _buildEngine.Object;
@@ -148,13 +158,19 @@ public class InMemoryIntegrationTests
             CacheHit: locateResult.CacheHit,
             CacheKey: locateResult.CacheKey,
             LocatorLocalInputsHash: locateResult.LocalInputsHash,
-            CheckCompileOutputAgainstCache: true
+            CheckCompileOutputAgainstCache: false
         );
         use.SetAllInputs(useInputs);
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[]{cacheKey}));
+
+        foreach (var outputItem in outputItems)
+        {
+            Assert.That(File.Exists(outputItem.LocalPath));
+            Assert.That(File.ReadAllText(outputItem.LocalPath), Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
+        }
     }
 
     private static ITaskItem[] BuildRawOutputsToCache(OutputItem[] outputItems) =>
