@@ -58,10 +58,7 @@ public record LocalFileExtract(string Path, string Hash, long Length, DateTime L
 /// and can be recorded for investigation.
 /// </summary>
 [Serializable]
-public record PreCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, string WorkingDirectory);
-
-[Serializable]
-public record PostCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc, DateTime StopTimeUtc);
+public record CompilationMetadata(string Hostname, string Username, DateTime StopTimeUtc, string WorkingDirectory);
 
 [Serializable]
 public record OutputItem
@@ -109,7 +106,7 @@ public record LocalInputs(LocalFileExtract[] Files, string Props, OutputItem[] O
 }
 
 [Serializable]
-public record AllCompilationMetadata(PreCompilationMetadata Metadata, LocalInputs LocalInputs);
+public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
 
 
 public record CacheKey(string Key)

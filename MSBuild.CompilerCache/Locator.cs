@@ -63,11 +63,11 @@ public class Locator
         return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
     }
 
-    public static PreCompilationMetadata GetPreCompilationMetadata() =>
+    public static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
         new(
             Hostname: Environment.MachineName,
             Username: Environment.UserName,
-            StartTimeUtc: DateTime.UtcNow,
+            StopTimeUtc: postCompilationTimeUtc,
             WorkingDirectory: Environment.CurrentDirectory
         );
 }

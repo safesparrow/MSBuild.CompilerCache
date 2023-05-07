@@ -127,8 +127,8 @@ public class UserOrPopulator
             {
                 log.LogMessage(MessageImportance.High,
                     $"CacheMiss - copying {outputs.Length} files from output to cache");
-                var pre = Locator.GetPreCompilationMetadata();
-                var stuff = new AllCompilationMetadata(Metadata: pre, LocalInputs: localInputs);
+                var meta = Locator.GetCompilationMetadata(postCompilationTimeUtc);
+                var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: localInputs);
                 using var tmpDir = new DisposableDir();
                 var outputZip = BuildOutputsZip(tmpDir, outputs, stuff, log);
                 _cache.Set(cacheKey, extract, outputZip);

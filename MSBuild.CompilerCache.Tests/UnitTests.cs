@@ -21,10 +21,10 @@ public class UnitTests
             new OutputItem("foo", foo.FullName)
         };
         var metadata = new AllCompilationMetadata(
-            Metadata: new PreCompilationMetadata(
+            Metadata: new CompilationMetadata(
                 Hostname: "A",
                 Username: "B",
-                StartTimeUtc: DateTime.Today,
+                StopTimeUtc: DateTime.Today,
                 WorkingDirectory: "e:/foo"),
             LocalInputs:
             new LocalInputs(
@@ -74,71 +74,77 @@ public class UnitTests
 public class InMemoryTaskBasedTests
 {
     private Mock<IBuildEngine9> _buildEngine = null!;
+    private LocateCompilationCacheEntry locate;
+    private UseOrPopulateCache use;
+    private DisposableDir tmpDir;
+    private Cache cache;
+    private string baseCacheDir;
 
     [SetUp]
     public void SetUp()
     {
         _buildEngine = new Mock<IBuildEngine9>();
         _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
+        
+        locate = new LocateCompilationCacheEntry();
+        locate.BuildEngine = _buildEngine.Object;
+        
+        use = new UseOrPopulateCache();
+        use.BuildEngine = _buildEngine.Object;
+        
+        tmpDir = new DisposableDir();
+        baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
+        cache = new Cache(baseCacheDir);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        tmpDir.Dispose();
+    }
+
+    public record All(BaseTaskInputs BaseTaskInputs, LocalInputs LocalInputs, CacheKey CacheKey,
+        string LocalInputsHash, FullExtract FullExtract);
+
+    public static All AllFromInputs(BaseTaskInputs inputs)
+    {
+        var localInputs = Locator.CalculateLocalInputs(inputs);
+        var extract = localInputs.ToFullExtract();
+        var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
+        var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+        var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
+
+        return new All(
+            BaseTaskInputs: inputs,
+            LocalInputs: localInputs,
+            CacheKey: cacheKey,
+            LocalInputsHash: localInputsHash,
+            FullExtract: extract
+        );
     }
     
     [Test]
     public void SimpleCacheHitTest()
     {
-        /*
-         * 1. Create input files on disk, setup the cache with/without entries.
-         * 2. Call Locate task, grab and assert on its outputs.
-         * 3. Either do nothing, or generate fake compilation outputs.
-         * 4. Call UseOrPopulate task
-         * 5. Inspect the cache.
-         */
-        using var tmpDir = new DisposableDir();
-        var baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
-        var cache = new Cache(baseCacheDir);
-
-        string CreateTmpOutputFile(string name, string content)
-        {
-            var path = Path.Combine(tmpDir.FullName, name);
-            File.WriteAllText(path, content);
-            return path;
-        }
         var outputItems = new[]
         {
-            new OutputItem("OutputAssembly", CreateTmpOutputFile("Output", "content_output")),
-            new OutputItem("OutputRefAssembly", CreateTmpOutputFile("OutputRef", "content_output_ref")),
+            new OutputItem("OutputAssembly", CreateTmpFile("Output", "content_output")),
+            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef", "content_output_ref")),
         };
 
-        foreach (var outputItem in outputItems)
-        {
-            File.Copy(outputItem.LocalPath, outputItem.LocalPath + ".copy");
-        }
+        var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
 
-        var baseInputs = new BaseTaskInputs(
-            ProjectFullPath: "",
-            PropertyInputs: "",
-            FileInputs: new string[] { },
-            References: new string[] { },
-            RawOutputsToCache: BuildRawOutputsToCache(outputItems),
-            BaseCacheDir: baseCacheDir
-        );
-
-        var localInputs = Locator.CalculateLocalInputs(baseInputs);
-        var extract = localInputs.ToFullExtract();
-        var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = UserOrPopulator.GenerateKey(baseInputs, hashString);
-        var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
+        var all = AllFromInputs(baseInputs);
         var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
-            new AllCompilationMetadata(null, localInputs));
-
-        cache.Set(cacheKey, extract, zip);
-
+            new AllCompilationMetadata(null, all.LocalInputs));
+        
         foreach (var outputItem in outputItems)
         {
-            File.Delete(outputItem.LocalPath);
+            File.Move(outputItem.LocalPath, outputItem.LocalPath + ".copy");
         }
 
-        var locate = new LocateCompilationCacheEntry();
-        locate.BuildEngine = _buildEngine.Object;
+        cache.Set(all.CacheKey, all.FullExtract, zip);
+
         locate.SetInputs(baseInputs);
         var locateSuccess = locate.Execute();
         Assert.That(locateSuccess, Is.True);
@@ -147,12 +153,10 @@ public class InMemoryTaskBasedTests
         Assert.Multiple(() =>
         {
             Assert.That(locateResult.CacheHit, Is.True);
-            Assert.That(locateResult.CacheKey, Is.EqualTo(cacheKey));
-            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(localInputsHash));
+            Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
+            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
         });
 
-        var use = new UseOrPopulateCache();
-        use.BuildEngine = _buildEngine.Object;
         var useInputs = new UseOrPopulateInputs(
             Inputs: baseInputs,
             CacheHit: locateResult.CacheHit,
@@ -164,13 +168,30 @@ public class InMemoryTaskBasedTests
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
-        Assert.That(allKeys, Is.EquivalentTo(new[]{cacheKey}));
+        Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
 
         foreach (var outputItem in outputItems)
         {
             Assert.That(File.Exists(outputItem.LocalPath));
             Assert.That(File.ReadAllText(outputItem.LocalPath), Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
         }
+    }
+    
+    private BaseTaskInputs EmptyBaseTaskInputs =>
+        new BaseTaskInputs(
+            ProjectFullPath: "",
+            PropertyInputs: "",
+            FileInputs: new string[] { },
+            References: new string[] { },
+            RawOutputsToCache: new ITaskItem[]{ },
+            BaseCacheDir: baseCacheDir
+        );
+
+    private string CreateTmpFile(string name, string content)
+    {
+        var path = Path.Combine(tmpDir.FullName, name);
+        File.WriteAllText(path, content);
+        return path;
     }
 
     private static ITaskItem[] BuildRawOutputsToCache(OutputItem[] outputItems) =>
