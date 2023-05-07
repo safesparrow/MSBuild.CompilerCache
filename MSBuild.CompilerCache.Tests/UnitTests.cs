@@ -129,8 +129,8 @@ public class InMemoryTaskBasedTests
     {
         var outputItems = new[]
         {
-            new OutputItem("OutputAssembly", CreateTmpFile("Output", "content_output")),
-            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef", "content_output_ref")),
+            new OutputItem("OutputAssembly", CreateTmpFile("Output.txt", "content_output")),
+            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef.txt", "content_output_ref")),
         };
 
         var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
@@ -180,8 +180,8 @@ public class InMemoryTaskBasedTests
     {
         var outputItems = new[]
         {
-            new OutputItem("OutputAssembly", CreateTmpFile("Output", "content_output")),
-            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef", "content_output_ref")),
+            new OutputItem("OutputAssembly", CreateTmpFile("Output.txt", "content_output")),
+            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef.log", "content_output_ref")),
         };
 
         var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
