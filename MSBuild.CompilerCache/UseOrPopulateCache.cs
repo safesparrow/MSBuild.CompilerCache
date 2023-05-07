@@ -16,6 +16,7 @@ public class UseOrPopulateCache : BaseTask
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheKey { get; set; }
     [Required] public string LocalInputsHash { get; set; }
+    [Required] public string PreCompilationTimeTicks { get; set; }
     public bool CheckCompileOutputAgainstCache { get; set; }
 #pragma warning restore CS8618
 
@@ -24,11 +25,14 @@ public class UseOrPopulateCache : BaseTask
         Log.LogMessage(MessageImportance.High, $"PropertyInputs={string.Join(",", PropertyInputs)}");
         var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir));
         var inputs = new UseOrPopulateInputs(
-            CacheHit: CacheHit,
-            CacheKey: new CacheKey(CacheKey),
             Inputs: GatherInputs(),
-            LocatorLocalInputsHash: LocalInputsHash,
-            CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache
+            CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache,
+            LocateResult: new LocateResult(
+                CacheHit: CacheHit,
+                CacheKey: new CacheKey(CacheKey),
+                LocalInputsHash: LocalInputsHash,
+                PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
+            )
         );
         var results = _userOrPopulator.UseOrPopulate(inputs, Log);
         return true;
@@ -40,6 +44,7 @@ public class UseOrPopulateCache : BaseTask
         CacheKey = inputs.CacheKey;
         LocalInputsHash = inputs.LocatorLocalInputsHash;
         CheckCompileOutputAgainstCache = inputs.CheckCompileOutputAgainstCache;
+        PreCompilationTimeTicks = inputs.LocateResult.PreCompilationTimeUtc.Ticks.ToString();
         base.SetInputs(inputs.Inputs);
     }
 }

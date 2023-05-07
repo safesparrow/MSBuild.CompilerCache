@@ -15,7 +15,7 @@ public class LocateCompilationCacheEntry : BaseTask
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheKey { get; private set; }
     [Output] public string LocalInputsHash { get; set; }
-    [Output] public DateTime PreCompilationTimeUtc { get; private set; }
+    [Output] public string PreCompilationTimeTicks { get; private set; }
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
@@ -33,7 +33,7 @@ public class LocateCompilationCacheEntry : BaseTask
         CacheHit = results.CacheHit;
         CacheKey = results.CacheKey;
         LocalInputsHash = results.LocalInputsHash;
-        PreCompilationTimeUtc = results.PreCompilationTimeUtc;
+        PreCompilationTimeTicks = results.PreCompilationTimeUtc.Ticks.ToString();
         
         return true;
     }
@@ -42,6 +42,6 @@ public class LocateCompilationCacheEntry : BaseTask
         CacheHit: CacheHit,
         CacheKey: new CacheKey(CacheKey),
         LocalInputsHash: LocalInputsHash,
-        PreCompilationTimeUtc: PreCompilationTimeUtc
+        PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
     );
 }

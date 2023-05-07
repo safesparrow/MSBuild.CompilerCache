@@ -133,7 +133,6 @@ public class InMemoryTaskBasedTests
         };
 
         var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
-
         var all = AllFromInputs(baseInputs);
         var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
@@ -159,10 +158,8 @@ public class InMemoryTaskBasedTests
 
         var useInputs = new UseOrPopulateInputs(
             Inputs: baseInputs,
-            CacheHit: locateResult.CacheHit,
-            CacheKey: locateResult.CacheKey,
-            LocatorLocalInputsHash: locateResult.LocalInputsHash,
-            CheckCompileOutputAgainstCache: false
+            CheckCompileOutputAgainstCache: false,
+            LocateResult: locateResult
         );
         use.SetAllInputs(useInputs);
         Assert.That(use.Execute(), Is.True);

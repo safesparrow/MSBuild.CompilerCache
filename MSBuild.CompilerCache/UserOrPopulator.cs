@@ -9,11 +9,14 @@ public record UseOrPopulateResult;
 
 public record UseOrPopulateInputs(
     BaseTaskInputs Inputs,
-    bool CacheHit,
-    CacheKey CacheKey,
-    string LocatorLocalInputsHash,
-    bool CheckCompileOutputAgainstCache
-);
+    bool CheckCompileOutputAgainstCache,
+    LocateResult LocateResult
+)
+{
+    public bool CacheHit => LocateResult.CacheHit;
+    public CacheKey CacheKey => LocateResult.CacheKey;
+    public string LocatorLocalInputsHash => LocateResult.LocalInputsHash;
+}
 
 public class UserOrPopulator
 {
