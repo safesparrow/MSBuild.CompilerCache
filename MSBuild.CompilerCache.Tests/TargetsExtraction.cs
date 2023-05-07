@@ -254,9 +254,18 @@ public class TargetsExtraction
 
                 condition.Value = $"'$(DoInvokeCompilation)' == 'true' AND {condition.Value}";
 
+                var regularAttributes = compilationTask.Attributes()
+                    .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
+                    .ToArray();
+                
+                var itemgroup2 = Name("ItemGroup");
+                var allItemGroup = new XElement(itemgroup2);
+                var all = new XElement(Name("All"), new XAttribute("Include", "___nonexistent___"));
+                all.Add(regularAttributes);
+                allItemGroup.Add(all);
+                
                 var relevantAttributes =
-                    compilationTask.Attributes()
-                        .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
+                    regularAttributes
                         .Select(a => (a.Name.LocalName, a.Value,
                             KnownAttr: Attrs.FirstOrDefault(x => x.Name == a.Name.LocalName)))
                         .ToImmutableArray();
@@ -276,7 +285,6 @@ public class TargetsExtraction
                     .ToImmutableArray();
 
                 var startComment = new XComment("START OF CACHING EXTENSION CODE");
-                compilationTask.AddBeforeSelf(startComment);
 
                 var extraCanCacheConditions =
                     relevantAttributes
@@ -291,7 +299,6 @@ public class TargetsExtraction
                 var canCacheElement =
                     new XElement(Name("CanCache"), new XAttribute("Condition", fullCanCacheCondition), "true");
                 firstPropsGroupElement.Add(canCacheElement);
-                compilationTask.AddBeforeSelf(firstPropsGroupElement);
 
                 var propsString =
                     relevantAttributes
@@ -307,7 +314,6 @@ public class TargetsExtraction
                 var propsGroupElement = new XElement(propertygroup, canCacheCondition);
                 var propsElement = new XElement(Name("PropertyInputs"), propsString);
                 propsGroupElement.Add(propsElement);
-                compilationTask.AddBeforeSelf(propsGroupElement);
 
                 var itemgroup = Name("ItemGroup");
                 var itemGroupElement = new XElement(itemgroup, canCacheCondition);
@@ -322,7 +328,6 @@ public class TargetsExtraction
                         .Select(i => new XElement(Name("FileInputs"), new XAttribute("Include", i.Value)))
                         .ToImmutableArray();
                 itemGroupElement.Add(inputFileItems);
-                compilationTask.AddBeforeSelf(itemGroupElement);
 
                 var outputsGroup = new XElement(itemgroup, canCacheCondition);
                 var outputItems =
@@ -331,8 +336,7 @@ public class TargetsExtraction
                         .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value), new XAttribute("Name", x.LocalName)))
                         .ToImmutableArray();
                 outputsGroup.Add(outputItems);
-                compilationTask.AddBeforeSelf(outputsGroup);
-                
+
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
                     new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
@@ -349,17 +353,12 @@ public class TargetsExtraction
                         new XAttribute("PropertyName", "LocalInputsHash"))
                 );
                 
-                compilationTask.AddBeforeSelf(locateElement);
-
                 var gElement = new XElement(propertygroup,
                     new XElement(Name("DoInvokeCompilation"),
                         new XAttribute("Condition",
                             "'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'"), "true"));
-                compilationTask.AddBeforeSelf(gElement);
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
-                compilationTask.AddBeforeSelf(endComment);
-                compilationTask.AddBeforeSelf(endComment);
-
+                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, propsGroupElement, itemGroupElement, outputsGroup, locateElement, gElement);
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
