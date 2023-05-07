@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Moq;
@@ -171,6 +172,54 @@ public class InMemoryTaskBasedTests
         {
             Assert.That(File.Exists(outputItem.LocalPath));
             Assert.That(File.ReadAllText(outputItem.LocalPath), Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
+        }
+    }
+    
+    [Test]
+    public void SimpleCacheMissTest()
+    {
+        var outputItems = new[]
+        {
+            new OutputItem("OutputAssembly", CreateTmpFile("Output", "content_output")),
+            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef", "content_output_ref")),
+        };
+
+        var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
+        var all = AllFromInputs(baseInputs);
+
+        locate.SetInputs(baseInputs);
+        var locateSuccess = locate.Execute();
+        Assert.That(locateSuccess, Is.True);
+        var locateResult = locate.LocateResult;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(locateResult.CacheHit, Is.False);
+            Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
+            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
+        });
+
+        var useInputs = new UseOrPopulateInputs(
+            Inputs: baseInputs,
+            CheckCompileOutputAgainstCache: false,
+            LocateResult: locateResult
+        );
+        use.SetAllInputs(useInputs);
+        Assert.That(use.Execute(), Is.True);
+
+        var allKeys = cache.GetAllExistingKeys();
+        Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
+
+        var zip = cache.Get(all.CacheKey);
+        Assert.That(zip, Is.Not.Null);
+        var fromCacheDir = tmpDir.Dir.CreateSubdirectory("from_cache");
+        ZipFile.ExtractToDirectory(zip, fromCacheDir.FullName);
+        
+        foreach (var outputItem in outputItems)
+        {
+            var cachedFile = fromCacheDir.CombineAsFile(outputItem.CacheFileName);
+            Assert.That(File.Exists(cachedFile.FullName));
+            Assert.That(File.ReadAllText(cachedFile.FullName), Is.EqualTo(File.ReadAllText(outputItem.LocalPath)));
         }
     }
     
