@@ -7,24 +7,22 @@ using Task = Microsoft.Build.Utilities.Task;
 namespace MSBuild.CompilerCache;
 
 public record BaseTaskInputs(
+    string ConfigPath,
     string ProjectFullPath,
-    string BaseCacheDir,
     IDictionary<string, string> AllProps
-)
-{
-}
+);
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public abstract class BaseTask : Task
 {
+    [Required] public string ConfigPath { get; set; } = null!;
     [Required] public string ProjectFullPath { get; set; } = null!;
-    [Required] public string BaseCacheDir { get; set; } = null!;
     [Required] public ITaskItem AllCompilerProperties { get; set; }
 
     public void SetInputs(BaseTaskInputs inputs)
     {
+        ConfigPath = inputs.ConfigPath;
         ProjectFullPath = inputs.ProjectFullPath;
-        BaseCacheDir = inputs.BaseCacheDir;
         AllCompilerProperties = new TaskItem("__nonexistent__", (IDictionary)inputs.AllProps);
         GetTypedAllCompilerProps(AllCompilerProperties);
     }
@@ -35,8 +33,8 @@ public abstract class BaseTask : Task
         return new(
             ProjectFullPath: ProjectFullPath ??
                              throw new ArgumentException($"{nameof(ProjectFullPath)} cannot be null"),
-            BaseCacheDir: BaseCacheDir ?? throw new ArgumentException($"{nameof(BaseCacheDir)} cannot be null"),
-            AllProps: typedAllCompilerProps
+            AllProps: typedAllCompilerProps,
+            ConfigPath: ConfigPath ?? throw new ArgumentException($"{nameof(ConfigPath)} cannot be null")
         );
     }
 

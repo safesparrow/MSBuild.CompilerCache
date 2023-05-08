@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -22,18 +23,22 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
-        var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir));
         var inputs = new UseOrPopulateInputs(
             Inputs: GatherInputs(),
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache,
             LocateResult: new LocateResult(
+                RunCompilation: true, // Not used
+                CacheSupported: true, // This task is not executed if caching is not supported at all
                 CacheHit: CacheHit,
                 CacheKey: new CacheKey(CacheKey),
                 LocalInputsHash: LocalInputsHash,
                 PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
             )
         );
-        var results = _userOrPopulator.UseOrPopulate(inputs, Log);
+        var configJson = File.ReadAllText(inputs.Inputs.ConfigPath);
+        var config = JsonConvert.DeserializeObject<Config>(configJson)!;
+        var userOrPopulator = new UserOrPopulator(new Cache(config.BaseCacheDir));
+        var results = userOrPopulator.UseOrPopulate(inputs, Log);
         return true;
     }
 

@@ -1,8 +1,8 @@
 using System.IO.Compression;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 using Moq;
 using MSBuild.CompilerCache;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Tests;
@@ -123,6 +123,12 @@ public class InMemoryTaskBasedTests
             FullExtract: extract
         );
     }
+
+    public string SaveConfig(Config config)
+    {
+        var json = JsonConvert.SerializeObject(config);
+        return CreateTmpFile(".config", json);
+    }
     
     [Test]
     public void SimpleCacheHitTest()
@@ -137,9 +143,11 @@ public class InMemoryTaskBasedTests
             ["References"] = "",
             ["OutputAssembly"] = outputItems[0].LocalPath
         };
+        var config = new Config();
+        var configPath = SaveConfig(config);
         var baseInputs = new BaseTaskInputs(
+            ConfigPath: configPath,
             ProjectFullPath: "",
-            BaseCacheDir: baseCacheDir,
             AllProps: allProps
         );
         var all = AllFromInputs(baseInputs);
@@ -196,9 +204,15 @@ public class InMemoryTaskBasedTests
             ["References"] = "",
             ["OutputAssembly"] = outputItems[0].LocalPath
         };
+        var config = new Config
+        {
+            BaseCacheDir = baseCacheDir
+        };
+        var configPath = SaveConfig(config);
+        
         var baseInputs = new BaseTaskInputs(
+            ConfigPath: configPath,
             ProjectFullPath: "",
-            BaseCacheDir: baseCacheDir,
             AllProps: allProps
         );
         var all = AllFromInputs(baseInputs);
@@ -245,11 +259,4 @@ public class InMemoryTaskBasedTests
         File.WriteAllText(path, content);
         return path;
     }
-
-    private static ITaskItem[] BuildRawOutputsToCache(OutputItem[] outputItems) =>
-        outputItems.Select(o =>
-        {
-            var meta = new Dictionary<string, string> { ["name"] = o.Name };
-            return (ITaskItem) new TaskItem(o.LocalPath, meta);
-        }).ToArray();
 }

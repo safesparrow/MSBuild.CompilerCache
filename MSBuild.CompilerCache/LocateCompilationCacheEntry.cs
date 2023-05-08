@@ -13,6 +13,8 @@ public class LocateCompilationCacheEntry : BaseTask
     private readonly Locator _locator;
 #pragma warning disable CS8618
     // ReSharper disable UnusedAutoPropertyAccessor.Global
+    [Output] public bool RunCompilation { get; private set; }
+    [Output] public bool CacheSupported { get; set; }
     [Output] public bool CacheHit { get; private set; }
     [Output] public string CacheKey { get; private set; }
     [Output] public string LocalInputsHash { get; set; }
@@ -30,6 +32,8 @@ public class LocateCompilationCacheEntry : BaseTask
         var inputs = GatherInputs();
         var results = _locator.Locate(inputs, Log);
 
+        CacheSupported = results.CacheSupported;
+        RunCompilation = results.RunCompilation;
         CacheHit = results.CacheHit;
         CacheKey = results.CacheKey;
         LocalInputsHash = results.LocalInputsHash;
@@ -39,6 +43,8 @@ public class LocateCompilationCacheEntry : BaseTask
     }
 
     public LocateResult LocateResult => new LocateResult(
+        RunCompilation: RunCompilation,
+        CacheSupported: CacheSupported,
         CacheHit: CacheHit,
         CacheKey: new CacheKey(CacheKey),
         LocalInputsHash: LocalInputsHash,

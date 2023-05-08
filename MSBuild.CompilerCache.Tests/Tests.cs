@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using MSBuild.CompilerCache;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Tests;
@@ -221,6 +222,12 @@ public class EndToEndTests
 namespace CSharp;
 public class Class { }
 """);
+        var config = new Config
+        {
+            BaseCacheDir = cache.FullName
+        };
+        var configFile = env.Dir.CombineAsFile("config.json");
+        File.WriteAllText(configFile.FullName, JsonConvert.SerializeObject(config));
         var proj =
             new ProjectFileBuilder("C.csproj")
                 {

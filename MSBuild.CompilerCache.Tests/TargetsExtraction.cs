@@ -172,7 +172,6 @@ public class TargetsExtraction
                         .Select(a => $"'{a.Value}' == ''")
                         .ToImmutableArray();
 
-
                 var fullCanCacheCondition = UseCacheConditions.Union(extraCanCacheConditions)
                     .StringsJoin($"{Environment.NewLine}AND{Environment.NewLine}");
                 var propertygroup = Name("PropertyGroup");
@@ -181,53 +180,13 @@ public class TargetsExtraction
                     new XElement(Name("CanCache"), new XAttribute("Condition", fullCanCacheCondition), "true");
                 firstPropsGroupElement.Add(canCacheElement);
 
-                var propsString =
-                    relevantAttributes
-                        .Where(x => new[] { TargetsExtractionUtils.AttrType.SimpleProperty, TargetsExtractionUtils.AttrType.OutputFile }.Contains(x.KnownAttr!.Type))
-                        .Select(x => $"{x.LocalName}={x.Value}")
-                        .StringsJoin(";");
-
-                var refs =
-                    relevantAttributes
-                        .Single(x => x.KnownAttr!.Type == TargetsExtractionUtils.AttrType.References).Value;
-
                 var canCacheCondition = new XAttribute("Condition", "'$(CanCache)' == 'true'");
-                var propsGroupElement = new XElement(propertygroup, canCacheCondition);
-                var propsElement = new XElement(Name("PropertyInputs"), propsString);
-                propsGroupElement.Add(propsElement);
-
-                var itemgroup = Name("ItemGroup");
-                var itemGroupElement = new XElement(itemgroup, canCacheCondition);
-
-                var inputFiles =
-                    relevantAttributes
-                        .Where(x => new[] { TargetsExtractionUtils.AttrType.Sources, TargetsExtractionUtils.AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
-                        .ToImmutableArray();
-                // Add metadata with item names, similar to property names above, to avoid hash clashes.
-                var inputFileItems =
-                    inputFiles
-                        .Select(i => new XElement(Name("FileInputs"), new XAttribute("Include", i.Value)))
-                        .ToImmutableArray();
-                itemGroupElement.Add(inputFileItems);
-
-                var outputsGroup = new XElement(itemgroup, canCacheCondition);
-                var outputItems =
-                    relevantAttributes
-                        .Where(x => x.KnownAttr!.Type == TargetsExtractionUtils.AttrType.OutputFile)
-                        .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value),
-                            new XAttribute("Name", x.LocalName)))
-                        .ToImmutableArray();
-                outputsGroup.Add(outputItems);
 
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
+                    new XAttribute("ConfigPath", "$(CacheConfigPath)"),
                     new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
                     new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
-                    new XAttribute("FileInputs", "@(FileInputs)"),
-                    new XAttribute("PropertyInputs", "$(PropertyInputs)"),
-                    new XAttribute("References", refs),
-                    new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
-                    new XAttribute("BaseCacheDir", "$(CompilationCacheBaseDir)"),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
                         new XAttribute("PropertyName", "CacheHit")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
@@ -241,23 +200,17 @@ public class TargetsExtraction
                         new XAttribute("Condition",
                             "'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'"), "true"));
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
-                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, propsGroupElement,
-                    itemGroupElement, outputsGroup, locateElement, gElement);
+                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement, gElement, endComment);
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
                         canCacheCondition,
                         new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
                         new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
-                        new XAttribute("FileInputs", "@(FileInputs)"),
-                        new XAttribute("PropertyInputs", "$(PropertyInputs)"),
-                        new XAttribute("References", refs),
-                        new XAttribute("OutputsToCache", "@(CompileOutputsToCache)"),
                         new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
                         new XAttribute("CacheHit", "$(CacheHit)"),
                         new XAttribute("CacheKey", "$(CacheKey)"),
-                        new XAttribute("LocalInputsHash", "$(LocalInputsHash)"),
-                        new XAttribute("BaseCacheDir", "$(CompilationCacheBaseDir)")
+                        new XAttribute("LocalInputsHash", "$(LocalInputsHash)")
                     );
 
                 compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);

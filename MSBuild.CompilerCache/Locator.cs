@@ -1,21 +1,43 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
 public record LocateResult(
+    bool RunCompilation,
+    bool CacheSupported,
     bool CacheHit,
     CacheKey CacheKey,
     string LocalInputsHash,
     DateTime PreCompilationTimeUtc
-);
+)
+{
+    public static LocateResult CreateNotSupported()
+    {
+        return new LocateResult(
+            RunCompilation: true,
+            CacheSupported: false,
+            CacheHit: false,
+            CacheKey: null,
+            LocalInputsHash: null,
+            PreCompilationTimeUtc: DateTime.MinValue
+        );
+    }
+}
 
 public class Locator
 {
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var baseCacheDir = inputs.BaseCacheDir;
+        if (!decomposed.NoUnsupportedPropsSet)
+        {
+            return LocateResult.CreateNotSupported();
+        }
+        var configJson = File.ReadAllText(inputs.ConfigPath);
+        var config = JsonConvert.DeserializeObject<Config>(configJson);
+        var baseCacheDir = config.BaseCacheDir;
         var cache = new Cache(baseCacheDir);
         var localInputs = CalculateLocalInputs(decomposed);
         var extract = localInputs.ToFullExtract();
@@ -34,8 +56,12 @@ public class Locator
             cacheHit = true;
         }
 
+        var runCompilation = cacheHit && !config.CheckCompileOutputAgainstCache;
+        
         return new LocateResult(
+            CacheSupported: true,
             CacheHit: cacheHit,
+            RunCompilation: runCompilation,
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: DateTime.UtcNow
