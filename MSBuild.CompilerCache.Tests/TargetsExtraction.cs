@@ -186,7 +186,9 @@ public class TargetsExtraction
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "RunCompilation"),
                         new XAttribute("PropertyName", "CacheRunCompilation")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheSupported"),
-                        new XAttribute("PropertyName", "CanCache"))
+                        new XAttribute("PropertyName", "CanCache")),
+                    new XElement(Name("Output"), new XAttribute("TaskParameter", "PreCompilationTimeTicks"),
+                        new XAttribute("PropertyName", "PreCompilationTimeTicks"))
                 );
 
                 var gElement = new XElement(propertygroup,
@@ -197,6 +199,7 @@ public class TargetsExtraction
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
                         canCacheCondition,
+                        new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
                         new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
                         new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
                         new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),

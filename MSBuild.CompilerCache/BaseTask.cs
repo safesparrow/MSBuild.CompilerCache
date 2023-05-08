@@ -38,13 +38,6 @@ public abstract class BaseTask : Task
         );
     }
 
-    public DecomposedCompilerProps GetDecomposedProps()
-    {
-        var props = GetTypedAllCompilerProps(AllCompilerProperties);
-        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(props);
-        return decomposed;
-    }
-    
     public static IDictionary<string, string> GetTypedAllCompilerProps(ITaskItem allTaskItem)
     {
         var _copy = allTaskItem.CloneCustomMetadata();

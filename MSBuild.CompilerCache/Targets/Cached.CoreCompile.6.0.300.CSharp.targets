@@ -173,6 +173,9 @@ AND
       <Output
         TaskParameter="CacheSupported"
         PropertyName="CanCache" />
+      <Output
+        TaskParameter="PreCompilationTimeTicks"
+        PropertyName="PreCompilationTimeTicks" />
     </LocateCompilationCacheEntry>
     <PropertyGroup>
       <CacheRunCompilation
@@ -267,6 +270,7 @@ AND
     <!--START OF CACHING EXTENSION CODE-->
     <UseOrPopulateCache
       Condition="'$(CanCache)' == 'true'"
+      PreCompilationTimeTicks="$(PreCompilationTimeTicks)"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"

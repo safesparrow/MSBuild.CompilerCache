@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace MSBuild.CompilerCache;
 
@@ -129,9 +131,12 @@ public static class TargetsExtractionUtils
     public static Attr Prop(string Name) => new Attr(Name, AttrType.SimpleProperty);
     public static Attr InputFiles(string Name) => new Attr(Name, AttrType.InputFiles);
     public static Attr OutputFile(string Name) => new Attr(Name, AttrType.OutputFile);
-    public static string[] SplitItemList(string value) => string.IsNullOrEmpty(value) ? Array.Empty<string>() : value.Split(";");
+    public static string[] SplitItemList(string value) =>
+        string.IsNullOrEmpty(value)
+            ? Array.Empty<string>()
+            : value.Split(";").Where(x => !string.IsNullOrEmpty(x)).ToArray();
 
-    public static DecomposedCompilerProps DecomposeCompilerProps(IDictionary<string, string> props)
+    public static DecomposedCompilerProps DecomposeCompilerProps(IDictionary<string, string> props, TaskLoggingHelper? log = null)
     {
         var relevant =
             props
@@ -170,15 +175,24 @@ public static class TargetsExtractionUtils
                 .Single(x => x.KnownAttr!.Type == AttrType.References).Value
         );
 
+        var inputMed = relevant
+            .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
+            .ToArray();
+        log?.LogMessage(MessageImportance.High, "Before");
+        foreach (var med in inputMed)
+        {
+            log?.LogMessage(MessageImportance.High, $"{med.Name}={med.Value}");
+        }
+        log?.LogMessage(MessageImportance.High, "After");
         var inputFiles =
-            relevant
-                .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
+            inputMed
                 .SelectMany(x => SplitItemList(x.Value))
                 .ToArray();
         
         var outputItems =
             relevant
                 .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
+                .Where(x => !string.IsNullOrEmpty(x.Value))
                 .Select(x => new OutputItem(x.Name, x.Value))
                 .ToArray();
 

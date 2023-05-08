@@ -30,7 +30,7 @@ public class Locator
 {
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
     {
-        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
         if (decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine, decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
@@ -59,7 +59,7 @@ public class Locator
             cacheHit = true;
         }
 
-        var runCompilation = cacheHit && !config.CheckCompileOutputAgainstCache;
+        var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
         
         return new LocateResult(
             CacheSupported: true,
