@@ -10,14 +10,16 @@ public record BaseTaskInputs(
     string[] FileInputs,
     string[] References,
     ITaskItem[] RawOutputsToCache,
-    string BaseCacheDir
+    string BaseCacheDir,
+    DecomposedCompilerProps Decomposed
 )
 {
     public OutputItem[] OutputsToCache => RawOutputsToCache.Select(ParseOutputToCache).ToArray();
-    
+
     private static OutputItem ParseOutputToCache(ITaskItem arg) =>
         new(
-            Name: arg.GetMetadata("Name") ?? throw new ArgumentException($"The '{arg.ItemSpec}' item has no 'Name' metadata."),
+            Name: arg.GetMetadata("Name") ??
+                  throw new ArgumentException($"The '{arg.ItemSpec}' item has no 'Name' metadata."),
             LocalPath: arg.ItemSpec
         );
 }
@@ -31,6 +33,7 @@ public abstract class BaseTask : Task
     [Required] public ITaskItem[] OutputsToCache { get; set; } = null!;
     [Required] public string ProjectFullPath { get; set; } = null!;
     [Required] public string BaseCacheDir { get; set; } = null!;
+    [Required] public ITaskItem AllCompilerProperties { get; set; }
 
     public void SetInputs(BaseTaskInputs inputs)
     {
@@ -44,13 +47,32 @@ public abstract class BaseTask : Task
 
     protected BaseTaskInputs GatherInputs() =>
         new(
-            ProjectFullPath: ProjectFullPath ?? throw new ArgumentException($"{nameof(ProjectFullPath)} cannot be null"),
+            ProjectFullPath: ProjectFullPath ??
+                             throw new ArgumentException($"{nameof(ProjectFullPath)} cannot be null"),
             PropertyInputs: PropertyInputs ?? throw new ArgumentException($"{nameof(PropertyInputs)} cannot be null"),
-            FileInputs: (FileInputs ?? throw new ArgumentException($"{nameof(FileInputs)} cannot be null")).OrderBy(x => x)
+            FileInputs: (FileInputs ?? throw new ArgumentException($"{nameof(FileInputs)} cannot be null"))
+            .OrderBy(x => x)
             .ToArray(),
-            References: (References ?? throw new ArgumentException($"{nameof(References)} cannot be null")).OrderBy(x => x)
+            References: (References ?? throw new ArgumentException($"{nameof(References)} cannot be null"))
+            .OrderBy(x => x)
             .ToArray(),
-            RawOutputsToCache: OutputsToCache ?? throw new ArgumentException($"{nameof(OutputsToCache)} cannot be null"),
-            BaseCacheDir: BaseCacheDir ?? throw new ArgumentException($"{nameof(BaseCacheDir)} cannot be null")
+            RawOutputsToCache: OutputsToCache ??
+                               throw new ArgumentException($"{nameof(OutputsToCache)} cannot be null"),
+            BaseCacheDir: BaseCacheDir ?? throw new ArgumentException($"{nameof(BaseCacheDir)} cannot be null"),
+            Decomposed: GetDecomposedProps()
         );
+
+    public DecomposedCompilerProps GetDecomposedProps()
+    {
+        var props = GetTypedAllCompilerProps();
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(props);
+        return decomposed;
+    }
+    
+    public IDictionary<string, string> GetTypedAllCompilerProps()
+    {
+        var _copy = AllCompilerProperties.CloneCustomMetadata();
+        return _copy as IDictionary<string, string> ?? throw new Exception(
+            $"Expected the 'All' item's metadata to be IDictionary<string, string>, but was {_copy.GetType().FullName}");
+    }
 }

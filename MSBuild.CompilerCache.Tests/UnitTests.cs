@@ -223,15 +223,21 @@ public class InMemoryTaskBasedTests
         }
     }
     
-    private BaseTaskInputs EmptyBaseTaskInputs =>
-        new BaseTaskInputs(
-            ProjectFullPath: "",
-            PropertyInputs: "",
-            FileInputs: new string[] { },
-            References: new string[] { },
-            RawOutputsToCache: new ITaskItem[]{ },
-            BaseCacheDir: baseCacheDir
-        );
+    private BaseTaskInputs EmptyBaseTaskInputs
+    {
+        get
+        {
+            return new BaseTaskInputs(
+                ProjectFullPath: "",
+                PropertyInputs: "",
+                FileInputs: new string[] { },
+                References: new string[] { },
+                RawOutputsToCache: new ITaskItem[] { },
+                BaseCacheDir: baseCacheDir,
+                Decomposed: null
+            );
+        }
+    }
 
     private string CreateTmpFile(string name, string content)
     {

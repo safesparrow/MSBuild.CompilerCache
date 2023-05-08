@@ -58,7 +58,6 @@ public class TestTask : Task
     
     public override bool Execute()
     {
-        log($"Proc={Process.GetCurrentProcess().Id} Thread={Thread.CurrentThread.ManagedThreadId}");
         log($"X={X}");
         X++;
         var _copy = All.CloneCustomMetadata();
