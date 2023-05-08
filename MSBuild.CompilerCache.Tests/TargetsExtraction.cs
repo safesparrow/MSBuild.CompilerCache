@@ -190,6 +190,77 @@ public class TargetsExtraction
         InputFiles("Win32ResourceFile")
     };
 
+    public record DecomposedCompilerProps(
+        string[] FileInputs,
+        IDictionary<string, string> PropertyInputs,
+        string[] References,
+        OutputItem[] OutputsToCache,
+        bool NoUnsupportedPropsSet
+    );
+
+    public static string[] SplitItemList(string value) => string.IsNullOrEmpty(value) ? Array.Empty<string>() : value.Split(";");
+    
+    public static DecomposedCompilerProps DecomposeCompilerProps(IDictionary<string, string> props)
+    {
+        var relevant =
+            props
+                .Select(kvp => (Name: kvp.Key, kvp.Value,
+                    KnownAttr: Attrs.FirstOrDefault(x => x.Name == kvp.Key)))
+                .ToImmutableArray();
+
+        var unknownAttributes =
+            relevant
+                .Where(x => x.KnownAttr == null)
+                .ToImmutableArray();
+        if (unknownAttributes.Length > 0)
+        {
+            throw new Exception($"{unknownAttributes.Length} unknown attributes found: " +
+                                $"{string.Join(",", unknownAttributes.Select(a => a.Name))}");
+        }
+
+        relevant = relevant
+            .Where(x => x.KnownAttr != null)
+            .ToImmutableArray();
+
+        var mustBeEmptyAttrs =
+            relevant
+                .Where(a => a.KnownAttr!.Type == AttrType.Unsupported)
+                .Select(a => (a.Name, a.Value))
+                .ToImmutableArray();
+        var noUnsupportedPropsSet = mustBeEmptyAttrs.All(x => string.IsNullOrEmpty(x.Value));
+
+        var regularProps =
+            relevant
+                .Where(x => new[] { AttrType.SimpleProperty, AttrType.OutputFile }.Contains(x.KnownAttr!.Type))
+                .ToDictionary(x => x.Name);
+
+        var refs =
+            SplitItemList(
+                relevant
+                    .Single(x => x.KnownAttr!.Type == AttrType.References).Value
+            );
+
+        var inputFiles =
+            relevant
+                .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
+                .SelectMany(x => SplitItemList(x.Value))
+                .ToArray();
+        
+        var outputItems =
+            relevant
+                .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
+                .Select(x => new OutputItem(x.Name, x.Value))
+                .ToArray();
+
+        return new DecomposedCompilerProps(
+            FileInputs: inputFiles,
+            PropertyInputs: regularProps.ToDictionary(x => x.Key, x => x.Value.Value),
+            References: refs,
+            OutputsToCache: outputItems,
+            NoUnsupportedPropsSet: noUnsupportedPropsSet
+        );
+    }
+
     [Explicit, Test]
     public void Extract()
     {
@@ -198,7 +269,8 @@ public class TargetsExtraction
             new SDKVersion("6.0.300"),
             new SDKVersion("7.0.202")
         };
-        var baseDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..", "..",
+        var baseDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..",
+            "..",
             "MSBuild.CompilerCache", "Targets");
         var referenceTargetsDir = Path.Combine(baseDir, "ReferenceTargets");
         Directory.CreateDirectory(referenceTargetsDir);
@@ -207,8 +279,9 @@ public class TargetsExtraction
         {
             foreach (var lang in new[] { SupportedLanguage.CSharp, SupportedLanguage.FSharp })
             {
-                Console.WriteLine($"Generating targets files for {lang}, SDK {sdk}, in base directory {baseDir} and reference directory {referenceTargetsDir}.");
-                
+                Console.WriteLine(
+                    $"Generating targets files for {lang}, SDK {sdk}, in base directory {baseDir} and reference directory {referenceTargetsDir}.");
+
                 var allTargetsPath = Path.Combine(referenceTargetsDir, $"Targets.{sdk}.{lang}.xml");
                 GenerateAllTargets(sdk, lang, allTargetsPath);
                 var coreCompilePath = Path.Combine(referenceTargetsDir, $"CoreCompile.{sdk}.{lang}.targets");
@@ -220,12 +293,13 @@ public class TargetsExtraction
                 {
                     commentNode.Remove();
                 }
+
                 var root = allTargets.Root!;
                 root.Name = Name("Project");
                 var allTargetsList = allTargets.Root!.Descendants(Name("Target"));
                 var coreCompileTargetNode = allTargetsList
                     .Single(n => n.Attribute("Name")?.Value == "CoreCompile");
-                
+
                 var nodes = root.Nodes().ToImmutableArray();
                 foreach (var e in nodes.Where(e => e != coreCompileTargetNode))
                 {
@@ -257,13 +331,14 @@ public class TargetsExtraction
                 var regularAttributes = compilationTask.Attributes()
                     .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
                     .ToArray();
-                
+
                 var itemgroup2 = Name("ItemGroup");
                 var allItemGroup = new XElement(itemgroup2);
-                var all = new XElement(Name("All"), new XAttribute("Include", "___nonexistent___"));
+                var all = new XElement(Name("CacheAllCompilerProperties"),
+                    new XAttribute("Include", "___nonexistent___"));
                 all.Add(regularAttributes);
                 allItemGroup.Add(all);
-                
+
                 var relevantAttributes =
                     regularAttributes
                         .Select(a => (a.Name.LocalName, a.Value,
@@ -293,7 +368,8 @@ public class TargetsExtraction
                         .ToImmutableArray();
 
 
-                var fullCanCacheCondition = UseCacheConditions.Union(extraCanCacheConditions).StringsJoin($"{Environment.NewLine}AND{Environment.NewLine}");
+                var fullCanCacheCondition = UseCacheConditions.Union(extraCanCacheConditions)
+                    .StringsJoin($"{Environment.NewLine}AND{Environment.NewLine}");
                 var propertygroup = Name("PropertyGroup");
                 var firstPropsGroupElement = new XElement(propertygroup);
                 var canCacheElement =
@@ -320,7 +396,7 @@ public class TargetsExtraction
 
                 var inputFiles =
                     relevantAttributes
-                        .Where(x => new[]{AttrType.Sources, AttrType.InputFiles}.Contains(x.KnownAttr!.Type))
+                        .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
                         .ToImmutableArray();
                 // Add metadata with item names, similar to property names above, to avoid hash clashes.
                 var inputFileItems =
@@ -333,12 +409,14 @@ public class TargetsExtraction
                 var outputItems =
                     relevantAttributes
                         .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
-                        .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value), new XAttribute("Name", x.LocalName)))
+                        .Select(x => new XElement(Name("CompileOutputsToCache"), new XAttribute("Include", x.Value),
+                            new XAttribute("Name", x.LocalName)))
                         .ToImmutableArray();
                 outputsGroup.Add(outputItems);
 
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
+                    new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
                     new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
                     new XAttribute("FileInputs", "@(FileInputs)"),
                     new XAttribute("PropertyInputs", "$(PropertyInputs)"),
@@ -352,17 +430,19 @@ public class TargetsExtraction
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
                         new XAttribute("PropertyName", "LocalInputsHash"))
                 );
-                
+
                 var gElement = new XElement(propertygroup,
                     new XElement(Name("DoInvokeCompilation"),
                         new XAttribute("Condition",
                             "'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'"), "true"));
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
-                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, propsGroupElement, itemGroupElement, outputsGroup, locateElement, gElement);
+                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, propsGroupElement,
+                    itemGroupElement, outputsGroup, locateElement, gElement);
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
                         canCacheCondition,
+                        new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
                         new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
                         new XAttribute("FileInputs", "@(FileInputs)"),
                         new XAttribute("PropertyInputs", "$(PropertyInputs)"),
@@ -379,7 +459,7 @@ public class TargetsExtraction
 
                 var p = compilationTask.Attribute("PathMap");
                 p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";
-                
+
                 {
                     using var writer = XmlWriter.Create(cachedPath,
                         new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });

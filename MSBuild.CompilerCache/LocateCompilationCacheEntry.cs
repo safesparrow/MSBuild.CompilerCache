@@ -1,10 +1,9 @@
-﻿using System.Collections;
+﻿using System.Diagnostics;
 
 namespace MSBuild.CompilerCache;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Microsoft.Build.Tasks;
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
@@ -52,11 +51,16 @@ public class LocateCompilationCacheEntry : BaseTask
 
 public class TestTask : Task
 {
+    public static int X;
+    
     [Required]
     public ITaskItem All { get; set; }
     
     public override bool Execute()
     {
+        log($"Proc={Process.GetCurrentProcess().Id} Thread={Thread.CurrentThread.ManagedThreadId}");
+        log($"X={X}");
+        X++;
         var _copy = All.CloneCustomMetadata();
         var copy = _copy as IDictionary<string, string> ?? throw new Exception($"Expected the 'All' item's metadata to be IDictionary<string, string>, but was {_copy.GetType().FullName}");
         
