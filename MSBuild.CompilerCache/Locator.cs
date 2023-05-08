@@ -31,8 +31,11 @@ public class Locator
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        if (!decomposed.NoUnsupportedPropsSet)
+        if (decomposed.UnsupportedPropsSet.Any())
         {
+            var s = string.Join(Environment.NewLine, decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
+            log.LogError("Some unsupported props set");
+            log.LogError(s);
             return LocateResult.CreateNotSupported();
         }
         var configJson = File.ReadAllText(inputs.ConfigPath);

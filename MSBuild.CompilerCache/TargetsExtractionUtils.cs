@@ -10,13 +10,13 @@ public static class TargetsExtractionUtils
         Unsup("AddModules"),
         Unsup("AdditionalFiles"),
         Prop("AllowUnsafeBlocks"),
-        Unsup("AnalyzerConfigFiles"),
-        Unsup("Analyzers"),
+        Ignore("AnalyzerConfigFiles"), // TODO
+        Ignore("Analyzers"), // TODO
         InputFiles("ApplicationConfiguration"),
         Prop("BaseAddress"),
         Prop("CheckForOverflowUnderflow"),
         Prop("ChecksumAlgorithm"),
-        Prop("CodeAnalysisRuleSet"),
+        Unsup("CodeAnalysisRuleSet"), // We don't track analyzers used, and attempt to disable caching when any analysis might be performed.WIP
         Prop("CodePage"),
         Prop("DebugType"), // TODO Affects whether separate PDB files are generated - but PDB path is not populated when no separate pdb file used.
         Prop("DefineConstants"),
@@ -115,6 +115,7 @@ public static class TargetsExtractionUtils
     {
         SimpleProperty,
         Unsupported,
+        Ignore,
         InputFiles,
         OutputFile,
         References,
@@ -124,6 +125,7 @@ public static class TargetsExtractionUtils
     public record Attr(string Name, AttrType Type);
 
     public static Attr Unsup(string Name) => new Attr(Name, AttrType.Unsupported);
+    public static Attr Ignore(string Name) => new Attr(Name, AttrType.Ignore);
     public static Attr Prop(string Name) => new Attr(Name, AttrType.SimpleProperty);
     public static Attr InputFiles(string Name) => new Attr(Name, AttrType.InputFiles);
     public static Attr OutputFile(string Name) => new Attr(Name, AttrType.OutputFile);
@@ -156,7 +158,7 @@ public static class TargetsExtractionUtils
                 .Where(a => a.KnownAttr!.Type == AttrType.Unsupported)
                 .Select(a => (a.Name, a.Value))
                 .ToImmutableArray<(string Name, string Value)>();
-        var noUnsupportedPropsSet = mustBeEmptyAttrs.All(x => string.IsNullOrEmpty(x.Value));
+        var unsupportedPropsSet = mustBeEmptyAttrs.Where(x => !string.IsNullOrEmpty(x.Value)).ToArray();
 
         var regularProps =
             relevant
@@ -185,7 +187,7 @@ public static class TargetsExtractionUtils
             PropertyInputs: regularProps.ToDictionary(x => x.Key, x => x.Value.Value),
             References: refs,
             OutputsToCache: outputItems,
-            NoUnsupportedPropsSet: noUnsupportedPropsSet
+            UnsupportedPropsSet: unsupportedPropsSet
         );
     }
 }
@@ -195,5 +197,5 @@ public record DecomposedCompilerProps(
     IDictionary<string, string> PropertyInputs,
     string[] References,
     OutputItem[] OutputsToCache,
-    bool NoUnsupportedPropsSet
+    (string Name, string Value)[] UnsupportedPropsSet
 );

@@ -20,11 +20,19 @@ internal static class Utils
         var output = new List<string>();
         p.OutputDataReceived += (sender, eventArgs) =>
         {
+            if (eventArgs.Data == null)
+            {
+                return;
+            }
             Console.WriteLine($"[{name} - OUT] {eventArgs.Data}");
             output.Add(eventArgs.Data!);
         };
         p.ErrorDataReceived += (sender, eventArgs) =>
         {
+            if (eventArgs.Data == null)
+            {
+                return;
+            }
             Console.WriteLine($"[{name} - ERR] {eventArgs.Data}");
             output.Add(eventArgs.Data!);
         };
