@@ -1,6 +1,5 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -15,9 +14,10 @@ public class Locator
 {
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
     {
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var baseCacheDir = inputs.BaseCacheDir;
         var cache = new Cache(baseCacheDir);
-        var localInputs = CalculateLocalInputs(inputs);
+        var localInputs = CalculateLocalInputs(decomposed);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -42,13 +42,13 @@ public class Locator
         );
     }
 
-    public static LocalInputs CalculateLocalInputs(BaseTaskInputs inputs)
+    public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed)
     {
-        var allFileInputs = inputs.FileInputs.Union(inputs.References);
+        var allFileInputs = decomposed.FileInputs.Union(decomposed.References);
         var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().AsOrdered().Select(GetLocalFileExtract)
             .ToArray();
 
-        return new LocalInputs(fileExtracts, inputs.PropertyInputs, inputs.OutputsToCache);
+        return new LocalInputs(fileExtracts, decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).ToArray(), decomposed.OutputsToCache);
     }
 
     public static LocalFileExtract GetLocalFileExtract(string filepath)

@@ -81,7 +81,6 @@ public class UserOrPopulator
 
     public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
     {
-        //var dateString = $"{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}";
         var name = Path.GetFileName(inputs.ProjectFullPath);
         return new CacheKey($"{name}_{hash}");
     }
@@ -90,7 +89,8 @@ public class UserOrPopulator
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
 
-        var localInputs = Locator.CalculateLocalInputs(inputs.Inputs);
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
+        var localInputs = Locator.CalculateLocalInputs(decomposed);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;
@@ -101,7 +101,7 @@ public class UserOrPopulator
         var compilationHappened =
             !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
-        var outputs = inputs.Inputs.OutputsToCache;
+        var outputs = decomposed.OutputsToCache;
         if (!compilationHappened)
         {
             if (hashesMatch)

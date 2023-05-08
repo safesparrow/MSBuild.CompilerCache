@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace MSBuild.CompilerCache;
+﻿namespace MSBuild.CompilerCache;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -29,7 +27,6 @@ public class LocateCompilationCacheEntry : BaseTask
     
     public override bool Execute()
     {
-        Log.LogMessage(MessageImportance.High, $"PropertyInputs={PropertyInputs}");
         var inputs = GatherInputs();
         var results = _locator.Locate(inputs, Log);
 

@@ -22,7 +22,6 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
-        Log.LogMessage(MessageImportance.High, $"PropertyInputs={string.Join(",", PropertyInputs)}");
         var _userOrPopulator = new UserOrPopulator(new Cache(BaseCacheDir));
         var inputs = new UseOrPopulateInputs(
             Inputs: GatherInputs(),

@@ -30,7 +30,7 @@ public class UnitTests
             LocalInputs:
             new LocalInputs(
                 Files: new LocalFileExtract[] { },
-                Props: "a=b",
+                Props: new[]{("a", "b")},
                 OutputFiles: items
             )
         );
@@ -109,7 +109,7 @@ public class InMemoryTaskBasedTests
 
     public static All AllFromInputs(BaseTaskInputs inputs)
     {
-        var localInputs = Locator.CalculateLocalInputs(inputs);
+        var localInputs = Locator.CalculateLocalInputs(TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps));
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -130,10 +130,18 @@ public class InMemoryTaskBasedTests
         var outputItems = new[]
         {
             new OutputItem("OutputAssembly", CreateTmpFile("Output.txt", "content_output")),
-            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef.txt", "content_output_ref")),
         };
 
-        var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
+        var allProps = new Dictionary<string, string>
+        {
+            ["References"] = "",
+            ["OutputAssembly"] = outputItems[0].LocalPath
+        };
+        var baseInputs = new BaseTaskInputs(
+            ProjectFullPath: "",
+            BaseCacheDir: baseCacheDir,
+            AllProps: allProps
+        );
         var all = AllFromInputs(baseInputs);
         var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
@@ -181,10 +189,18 @@ public class InMemoryTaskBasedTests
         var outputItems = new[]
         {
             new OutputItem("OutputAssembly", CreateTmpFile("Output.txt", "content_output")),
-            new OutputItem("OutputRefAssembly", CreateTmpFile("OutputRef.log", "content_output_ref")),
         };
 
-        var baseInputs = EmptyBaseTaskInputs with { RawOutputsToCache = BuildRawOutputsToCache(outputItems) };
+        var allProps = new Dictionary<string, string>
+        {
+            ["References"] = "",
+            ["OutputAssembly"] = outputItems[0].LocalPath
+        };
+        var baseInputs = new BaseTaskInputs(
+            ProjectFullPath: "",
+            BaseCacheDir: baseCacheDir,
+            AllProps: allProps
+        );
         var all = AllFromInputs(baseInputs);
 
         locate.SetInputs(baseInputs);
@@ -220,22 +236,6 @@ public class InMemoryTaskBasedTests
             var cachedFile = fromCacheDir.CombineAsFile(outputItem.CacheFileName);
             Assert.That(File.Exists(cachedFile.FullName));
             Assert.That(File.ReadAllText(cachedFile.FullName), Is.EqualTo(File.ReadAllText(outputItem.LocalPath)));
-        }
-    }
-    
-    private BaseTaskInputs EmptyBaseTaskInputs
-    {
-        get
-        {
-            return new BaseTaskInputs(
-                ProjectFullPath: "",
-                PropertyInputs: "",
-                FileInputs: new string[] { },
-                References: new string[] { },
-                RawOutputsToCache: new ITaskItem[] { },
-                BaseCacheDir: baseCacheDir,
-                Decomposed: null
-            );
         }
     }
 
