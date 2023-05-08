@@ -143,7 +143,11 @@ public class InMemoryTaskBasedTests
             ["References"] = "",
             ["OutputAssembly"] = outputItems[0].LocalPath
         };
-        var config = new Config();
+        var config = new Config
+        {
+            BaseCacheDir = baseCacheDir
+        };
+        
         var configPath = SaveConfig(config);
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,

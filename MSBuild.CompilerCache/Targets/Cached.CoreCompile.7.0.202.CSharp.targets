@@ -52,7 +52,7 @@
     <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
     <!--START OF CACHING EXTENSION CODE-->
     <ItemGroup>
-      <All
+      <CacheAllCompilerProperties
         Include="___nonexistent___"
         AdditionalLibPaths="$(AdditionalLibPaths)"
         AddModules="@(AddModules)"
@@ -152,82 +152,13 @@ AND
 AND
 '$(SourceLink)' == ''
 AND
-'$(PublicSign)' != 'true'
-AND
-'@(AdditionalFiles)' == ''
-AND
-'@(EditorConfigFiles)' == ''
-AND
-'@(Analyzer)' == ''
-AND
-'$(DelaySign)' == ''
-AND
-'$(ErrorLog)' == ''
-AND
-'$(CompilerGeneratedFilesOutputPath)' == ''
-AND
-'@(LinkResource)' == ''
-AND
-'$(ModuleAssemblyName)' == ''
-AND
-'$(CompilerResponseFile)' == ''
-AND
-'$(SharedCompilationId)' == ''
-AND
-'$(CscToolExe)' == ''
-AND
-'$(CscToolPath)' == ''
-AND
-'$(VsSessionGuid)' == ''
-AND
-'$(PathMap)' == ''">true</CanCache>
+'$(PublicSign)' != 'true'">true</CanCache>
     </PropertyGroup>
-    <PropertyGroup
-      Condition="'$(CanCache)' == 'true'">
-      <PropertyInputs>AllowUnsafeBlocks=$(AllowUnsafeBlocks);BaseAddress=$(BaseAddress);CheckForOverflowUnderflow=$(CheckForOverflowUnderflow);ChecksumAlgorithm=$(ChecksumAlgorithm);CodeAnalysisRuleSet=$(ResolvedCodeAnalysisRuleSet);CodePage=$(CodePage);DebugType=$(DebugType);DefineConstants=$(DefineConstants);DisabledWarnings=$(NoWarn);DisableSdkPath=$(DisableSdkPath);DocumentationFile=@(DocFileItem);EmbedAllSources=$(EmbedAllSources);EmitDebugInformation=$(DebugSymbols);EnvironmentVariables=$(CscEnvironment);ErrorEndLocation=$(ErrorEndLocation);ErrorReport=$(ErrorReport);Features=$(Features);FileAlignment=$(FileAlignment);GenerateFullPaths=$(GenerateFullPaths);HighEntropyVA=$(HighEntropyVA);Instrument=$(Instrument);KeyContainer=$(KeyContainerName);LangVersion=$(LangVersion);MainEntryPoint=$(StartupObject);NoConfig=true;NoLogo=$(NoLogo);NoStandardLib=$(NoCompilerStandardLib);NoWin32Manifest=$(NoWin32Manifest);Nullable=$(Nullable);Optimize=$(Optimize);Deterministic=$(Deterministic);PublicSign=$(PublicSign);OutputAssembly=@(IntermediateAssembly);OutputRefAssembly=@(IntermediateRefAssembly);PdbFile=$(PdbFile);Platform=$(PlatformTarget);Prefer32Bit=$(Prefer32Bit);PreferredUILang=$(PreferredUILang);ProvideCommandLineArgs=$(ProvideCommandLineArgs);RefOnly=$(ProduceOnlyReferenceAssembly);ReportAnalyzer=$(ReportAnalyzer);RuntimeMetadataVersion=$(RuntimeMetadataVersion);SkipAnalyzers=$(_SkipAnalyzers);SkipCompilerExecution=$(SkipCompilerExecution);SubsystemVersion=$(SubsystemVersion);TargetType=$(OutputType);TreatWarningsAsErrors=$(TreatWarningsAsErrors);UseHostCompilerIfAvailable=$(UseHostCompilerIfAvailable);UseSharedCompilation=$(UseSharedCompilation);Utf8Output=$(Utf8Output);WarningLevel=$(WarningLevel);WarningsAsErrors=$(WarningsAsErrors);WarningsNotAsErrors=$(WarningsNotAsErrors);SourceLink=$(SourceLink)</PropertyInputs>
-    </PropertyGroup>
-    <ItemGroup
-      Condition="'$(CanCache)' == 'true'">
-      <FileInputs
-        Include="$(AppConfigForCompiler)" />
-      <FileInputs
-        Include="@(EmbeddedFiles)" />
-      <FileInputs
-        Include="$(KeyOriginatorFile)" />
-      <FileInputs
-        Include="@(_CoreCompileResourceInputs);@(CompiledLicenseFile)" />
-      <FileInputs
-        Include="@(Compile)" />
-      <FileInputs
-        Include="$(ApplicationIcon)" />
-      <FileInputs
-        Include="$(Win32Manifest)" />
-      <FileInputs
-        Include="$(Win32Resource)" />
-    </ItemGroup>
-    <ItemGroup
-      Condition="'$(CanCache)' == 'true'">
-      <CompileOutputsToCache
-        Include="@(DocFileItem)"
-        Name="DocumentationFile" />
-      <CompileOutputsToCache
-        Include="@(IntermediateAssembly)"
-        Name="OutputAssembly" />
-      <CompileOutputsToCache
-        Include="@(IntermediateRefAssembly)"
-        Name="OutputRefAssembly" />
-      <CompileOutputsToCache
-        Include="$(PdbFile)"
-        Name="PdbFile" />
-    </ItemGroup>
     <LocateCompilationCacheEntry
       Condition="'$(CanCache)' == 'true'"
-      ProjectFullPath="$(MSBuildProjectFullPath)"
-      FileInputs="@(FileInputs)"
-      PropertyInputs="$(PropertyInputs)"
-      References="@(ReferencePathWithRefAssemblies)"
-      OutputsToCache="@(CompileOutputsToCache)"
-      BaseCacheDir="$(CompilationCacheBaseDir)">
+      ConfigPath="$(CacheConfigPath)"
+      AllCompilerProperties="$(CacheAllCompilerProperties)"
+      ProjectFullPath="$(MSBuildProjectFullPath)">
       <Output
         TaskParameter="CacheHit"
         PropertyName="CacheHit" />
@@ -242,6 +173,7 @@ AND
       <DoInvokeCompilation
         Condition="'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'">true</DoInvokeCompilation>
     </PropertyGroup>
+    <!--END OF CACHING EXTENSION CODE-->
     <Csc
       Condition="'$(DoInvokeCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
       AdditionalLibPaths="$(AdditionalLibPaths)"
@@ -330,16 +262,12 @@ AND
     <!--START OF CACHING EXTENSION CODE-->
     <UseOrPopulateCache
       Condition="'$(CanCache)' == 'true'"
+      AllCompilerProperties="$(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
-      FileInputs="@(FileInputs)"
-      PropertyInputs="$(PropertyInputs)"
-      References="@(ReferencePathWithRefAssemblies)"
-      OutputsToCache="@(CompileOutputsToCache)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
       CacheKey="$(CacheKey)"
-      LocalInputsHash="$(LocalInputsHash)"
-      BaseCacheDir="$(CompilationCacheBaseDir)" />
+      LocalInputsHash="$(LocalInputsHash)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs

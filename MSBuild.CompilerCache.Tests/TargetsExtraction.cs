@@ -166,13 +166,7 @@ public class TargetsExtraction
 
                 var startComment = new XComment("START OF CACHING EXTENSION CODE");
 
-                var extraCanCacheConditions =
-                    relevantAttributes
-                        .Where(a => a.KnownAttr!.Type == TargetsExtractionUtils.AttrType.Unsupported)
-                        .Select(a => $"'{a.Value}' == ''")
-                        .ToImmutableArray();
-
-                var fullCanCacheCondition = UseCacheConditions.Union(extraCanCacheConditions)
+                var fullCanCacheCondition = UseCacheConditions
                     .StringsJoin($"{Environment.NewLine}AND{Environment.NewLine}");
                 var propertygroup = Name("PropertyGroup");
                 var firstPropsGroupElement = new XElement(propertygroup);
