@@ -162,18 +162,47 @@ public static class TargetsExtractionUtils
             relevant
                 .Where(a => a.KnownAttr!.Type == AttrType.Unsupported)
                 .Select(a => (a.Name, a.Value))
-                .ToImmutableArray<(string Name, string Value)>();
+                .ToImmutableArray();
         var unsupportedPropsSet = mustBeEmptyAttrs.Where(x => !string.IsNullOrEmpty(x.Value)).ToArray();
+
+        var dict = relevant.ToDictionary(x => x.Name, x => x.Value);
+        
+        bool PropSatisfies(string name, Func<string, bool> predicate) => predicate(dict[name]);
+        bool CaseInsensitiveEquals(string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase);
+
+        bool PropEmpty(string name) => !dict.ContainsKey(name) || PropSatisfies(name, string.IsNullOrEmpty);
+        bool PropNotTrue(string name) => !dict.ContainsKey(name) || PropSatisfies(name, x => !CaseInsensitiveEquals(x, "true"));
+        
+        bool ExtraSupportCheck()
+        {
+            return
+                dict.ContainsKey("TargetType") && PropSatisfies("TargetType", x => CaseInsensitiveEquals(x, "Library") || CaseInsensitiveEquals(x, "Exe")) &&
+                PropEmpty("AdditionalLibPaths") &&
+                PropNotTrue("EmitCompilerGeneratedFiles") &&
+                PropNotTrue("ProvideCommandLineArgs") &&
+                PropNotTrue("ReportAnalyzer") &&
+                PropNotTrue("SkipCompilerExecution") &&
+                PropEmpty("SourceLink") &&
+                PropNotTrue("PublicSign")
+            ;
+        }
+
+        var extraConditionsMet = ExtraSupportCheck();
+        if (!extraConditionsMet)
+        {
+            unsupportedPropsSet = unsupportedPropsSet.Append(("ExtraConditions", "Extra")).ToArray();
+        }
 
         var regularProps =
             relevant
                 .Where(x => new[] { AttrType.SimpleProperty, AttrType.OutputFile }.Contains(x.KnownAttr!.Type))
                 .ToDictionary(x => x.Name);
 
-        var refs = SplitItemList(
-            relevant
-                .Single(x => x.KnownAttr!.Type == AttrType.References).Value
-        );
+        var refsItems = relevant.Where(x => x.KnownAttr!.Type == AttrType.References).ToArray();
+        var refs =
+            refsItems.Length == 1
+                ? SplitItemList(refsItems[0].Value)
+                : Array.Empty<string>();
 
         var inputMed = relevant
             .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))

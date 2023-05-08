@@ -28,6 +28,10 @@ public record LocateResult(
 
 public class Locator
 {
+    private FullExtract _extract;
+    private string _hashString;
+    private BaseTaskInputs _inputs;
+
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
@@ -44,7 +48,10 @@ public class Locator
         var cache = new Cache(baseCacheDir);
         var localInputs = CalculateLocalInputs(decomposed);
         var extract = localInputs.ToFullExtract();
+        _inputs = inputs;
+        _extract = extract;
         var hashString = Utils.ObjectToSHA256Hex(extract);
+        _hashString = hashString; 
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
@@ -77,7 +84,7 @@ public class Locator
         var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().AsOrdered().Select(GetLocalFileExtract)
             .ToArray();
 
-        return new LocalInputs(fileExtracts, decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).ToArray(), decomposed.OutputsToCache);
+        return new LocalInputs(fileExtracts, decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray(), decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray());
     }
 
     public static LocalFileExtract GetLocalFileExtract(string filepath)

@@ -140,8 +140,8 @@ public class InMemoryTaskBasedTests
 
         var allProps = new Dictionary<string, string>
         {
-            ["References"] = "",
-            ["OutputAssembly"] = outputItems[0].LocalPath
+            ["OutputAssembly"] = outputItems[0].LocalPath,
+            ["TargetType"] = "library"
         };
         var config = new Config
         {
@@ -175,6 +175,8 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.CacheHit, Is.True);
             Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
             Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
+            Assert.That(locateResult.CacheSupported, Is.True);
+            Assert.That(locateResult.RunCompilation, Is.False);
         });
 
         var useInputs = new UseOrPopulateInputs(
@@ -205,6 +207,7 @@ public class InMemoryTaskBasedTests
 
         var allProps = new Dictionary<string, string>
         {
+            ["TargetType"] = "library",
             ["References"] = "",
             ["OutputAssembly"] = outputItems[0].LocalPath
         };
@@ -231,6 +234,8 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.CacheHit, Is.False);
             Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
             Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
+            Assert.That(locateResult.CacheSupported, Is.True);
+            Assert.That(locateResult.RunCompilation, Is.True);
         });
 
         var useInputs = new UseOrPopulateInputs(

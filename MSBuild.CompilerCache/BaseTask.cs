@@ -24,7 +24,6 @@ public abstract class BaseTask : Task
         ConfigPath = inputs.ConfigPath;
         ProjectFullPath = inputs.ProjectFullPath;
         AllCompilerProperties = new TaskItem("__nonexistent__", (IDictionary)inputs.AllProps);
-        GetTypedAllCompilerProps(AllCompilerProperties);
     }
 
     protected BaseTaskInputs GatherInputs()

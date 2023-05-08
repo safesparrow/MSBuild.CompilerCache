@@ -55,15 +55,7 @@ public class TargetsExtraction
 
     private static readonly string[] UseCacheConditions =
     {
-        "('$(OutputType)' == 'Library' OR '$(OutputType)' == 'Exe')",
-        "'$(AdditionalLibPaths)' == ''",
-        "'@(AddModules)' == ''",
         "'$(EmitCompilerGeneratedFiles)' != 'true'",
-        "'$(ProvideCommandLineArgs)' != 'true'",
-        "'$(ReportAnalyzer)' != 'true'",
-        "'$(SkipCompilerExecution)' != 'true'",
-        "'$(SourceLink)' == ''",
-        "'$(PublicSign)' != 'true'"
     };
 
     [Explicit, Test]
