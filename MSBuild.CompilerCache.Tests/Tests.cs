@@ -134,7 +134,7 @@ public record ProjectFileBuilder
     public bool GenerateDocumentationFile { get; init; } = true;
     public bool ProduceReferenceAssembly { get; init; } = true;
     public string? AssemblyName { get; init; } = null;
-    public string? CompilationCacheBaseDir { get; init; } = null;
+    public string? CompilationCacheConfigPath { get; init; } = null;
     public string TargetFramework { get; init; } = "net6.0";
     public string Name { get; init; } = null;
 
@@ -177,7 +177,7 @@ public record ProjectFileBuilder
         }
 
         AddIfNotNull("AssemblyName", AssemblyName);
-        AddIfNotNull("CompilationCacheBaseDir", CompilationCacheBaseDir);
+        AddIfNotNull("CompilationCacheConfigPath", CompilationCacheConfigPath);
 
         return properties;
     }
@@ -231,7 +231,7 @@ public class Class { }
         var proj =
             new ProjectFileBuilder("C.csproj")
                 {
-                    CompilationCacheBaseDir = cache.FullName
+                    CompilationCacheConfigPath = configFile.FullName
                 }
                 .WithSource(source);
 

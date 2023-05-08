@@ -152,8 +152,8 @@ AND
     </PropertyGroup>
     <LocateCompilationCacheEntry
       Condition="'$(CanCache)' == 'true'"
-      ConfigPath="$(CacheConfigPath)"
-      AllCompilerProperties="$(CacheAllCompilerProperties)"
+      ConfigPath="$(CompilationCacheConfigPath)"
+      AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)">
       <Output
         TaskParameter="CacheHit"
@@ -164,14 +164,20 @@ AND
       <Output
         TaskParameter="LocalInputsHash"
         PropertyName="LocalInputsHash" />
+      <Output
+        TaskParameter="RunCompilation"
+        PropertyName="CacheRunCompilation" />
+      <Output
+        TaskParameter="CacheSupported"
+        PropertyName="CanCache" />
     </LocateCompilationCacheEntry>
     <PropertyGroup>
-      <DoInvokeCompilation
-        Condition="'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'">true</DoInvokeCompilation>
+      <CacheRunCompilation
+        Condition="'$(CanCache)' != 'true'">true</CacheRunCompilation>
     </PropertyGroup>
     <!--END OF CACHING EXTENSION CODE-->
     <Fsc
-      Condition="'$(DoInvokeCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+      Condition="'$(CacheRunCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
       BaseAddress="$(BaseAddress)"
       ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
       CodePage="$(CodePage)"
@@ -233,7 +239,8 @@ AND
     <!--START OF CACHING EXTENSION CODE-->
     <UseOrPopulateCache
       Condition="'$(CanCache)' == 'true'"
-      AllCompilerProperties="$(CacheAllCompilerProperties)"
+      ConfigPath="$(CompilationCacheConfigPath)"
+      AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"

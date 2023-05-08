@@ -131,7 +131,7 @@ public class TargetsExtraction
                     throw new NotSupportedException("Expected compilation task Condition attribute to be set.");
                 }
 
-                condition.Value = $"'$(DoInvokeCompilation)' == 'true' AND {condition.Value}";
+                condition.Value = $"'$(CacheRunCompilation)' == 'true' AND {condition.Value}";
 
                 var regularAttributes = compilationTask.Attributes()
                     .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
@@ -160,10 +160,6 @@ public class TargetsExtraction
                                         $"{string.Join(",", unknownAttributes.Select(a => a.LocalName))}");
                 }
 
-                relevantAttributes = relevantAttributes
-                    .Where(x => x.KnownAttr != null)
-                    .ToImmutableArray();
-
                 var startComment = new XComment("START OF CACHING EXTENSION CODE");
 
                 var fullCanCacheCondition = UseCacheConditions
@@ -178,28 +174,31 @@ public class TargetsExtraction
 
                 var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
                     canCacheCondition,
-                    new XAttribute("ConfigPath", "$(CacheConfigPath)"),
-                    new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
+                    new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
+                    new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
                     new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
                         new XAttribute("PropertyName", "CacheHit")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
                         new XAttribute("PropertyName", "CacheKey")),
                     new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
-                        new XAttribute("PropertyName", "LocalInputsHash"))
+                        new XAttribute("PropertyName", "LocalInputsHash")),
+                    new XElement(Name("Output"), new XAttribute("TaskParameter", "RunCompilation"),
+                        new XAttribute("PropertyName", "CacheRunCompilation")),
+                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheSupported"),
+                        new XAttribute("PropertyName", "CanCache"))
                 );
 
                 var gElement = new XElement(propertygroup,
-                    new XElement(Name("DoInvokeCompilation"),
-                        new XAttribute("Condition",
-                            "'$(CacheHit)' != 'true' OR '$(CompileAndCheckAgainstCache)' == 'true'"), "true"));
+                    new XElement(Name("CacheRunCompilation"), new XAttribute("Condition", "'$(CanCache)' != 'true'"), "true"));
                 var endComment = new XComment("END OF CACHING EXTENSION CODE");
                 compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement, gElement, endComment);
 
                 var useOrPopulateCacheElement =
                     new XElement(Name("UseOrPopulateCache"),
                         canCacheCondition,
-                        new XAttribute("AllCompilerProperties", "$(CacheAllCompilerProperties)"),
+                        new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
+                        new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
                         new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
                         new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
                         new XAttribute("CacheHit", "$(CacheHit)"),

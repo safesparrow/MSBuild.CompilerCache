@@ -35,7 +35,7 @@ public class LocateCompilationCacheEntry : BaseTask
         CacheSupported = results.CacheSupported;
         RunCompilation = results.RunCompilation;
         CacheHit = results.CacheHit;
-        CacheKey = results.CacheKey;
+        CacheKey = results.CacheKey?.Key ?? null;
         LocalInputsHash = results.LocalInputsHash;
         PreCompilationTimeTicks = results.PreCompilationTimeUtc.Ticks.ToString();
         
