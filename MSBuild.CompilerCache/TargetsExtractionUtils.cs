@@ -22,7 +22,7 @@ public static class TargetsExtractionUtils
         Prop("CodePage"),
         Prop("DebugType"), // TODO Affects whether separate PDB files are generated - but PDB path is not populated when no separate pdb file used.
         Prop("DefineConstants"),
-        Unsup("DelaySign"),
+        Prop("DelaySign"),
         Prop("Deterministic"),
         Prop("DisabledWarnings"),
         Prop("DisableSdkPath"),
@@ -40,7 +40,7 @@ public static class TargetsExtractionUtils
         Prop("GenerateFullPaths"),
         Prop("HighEntropyVA"),
         Prop("Instrument"),
-        Prop("KeyContainer"),
+        Unsup("KeyContainer"),
         InputFiles("KeyFile"),
         Prop("LangVersion"),
         Unsup("LinkResources"),
