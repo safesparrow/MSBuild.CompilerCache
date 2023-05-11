@@ -1,117 +1,78 @@
-﻿using Newtonsoft.Json;
+﻿namespace MSBuild.CompilerCache;
 
-namespace MSBuild.CompilerCache;
-
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography;
 using Microsoft.Build.Framework;
-using Task = Microsoft.Build.Utilities.Task;
-
-// TODO Replace time+Length with contents hash
-[Serializable]
-public record FileExtract(string Name, string Hash, long Length);
-
-// TODO add key=value
-[Serializable]
-public record FullExtract(FileExtract[] files, string[] props);
-
-/// <summary>
-/// Information about the environment that is not part of the compilation inputs,
-/// but could potentially cause difference in results,
-/// and can be recorded for investigation.
-/// </summary>
-public record PreCompilationMetadata(string Hostname, string Username, DateTime StartTimeUtc);
-
-public record PostCompilationMetadata(PreCompilationMetadata metadata, DateTime StopTimeUtc);
+using Microsoft.Build.Utilities;
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
 /// Hashes compilation inputs and checks if a cache entry with the given hash exists. 
 /// </summary>
 // ReSharper disable once ClassNeverInstantiated.Global
-public class LocateCompilationCacheEntry : Task
+public class LocateCompilationCacheEntry : BaseTask
 {
+    private readonly Locator _locator;
 #pragma warning disable CS8618
     // ReSharper disable UnusedAutoPropertyAccessor.Global
-    [Required] public ITaskItem[] PropertyInputs { get; set; }
-    [Required] public ITaskItem[] FileInputs { get; set; }
-    [Required] public string BaseCacheDir { get; set; }
-    [Required] public ITaskItem[] References { get; set; }
-
+    [Output] public bool RunCompilation { get; private set; }
+    [Output] public bool CacheSupported { get; set; }
     [Output] public bool CacheHit { get; private set; }
-    [Output] public string CacheDir { get; private set; }
-    [Output] public DateTime PreCompilationTimeUtc { get; private set; }
+    [Output] public string CacheKey { get; private set; }
+    [Output] public string LocalInputsHash { get; set; }
+    [Output] public string PreCompilationTimeTicks { get; private set; }
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
+    public LocateCompilationCacheEntry()
+    {
+        _locator = new Locator();
+    }
+    
     public override bool Execute()
     {
-        ExecuteInner();
+        var inputs = GatherInputs();
+        var results = _locator.Locate(inputs, Log);
+
+        CacheSupported = results.CacheSupported;
+        RunCompilation = results.RunCompilation;
+        CacheHit = results.CacheHit;
+        CacheKey = results.CacheKey?.Key ?? null;
+        LocalInputsHash = results.LocalInputsHash;
+        PreCompilationTimeTicks = results.PreCompilationTimeUtc.Ticks.ToString();
+        
         return true;
     }
 
-    internal void ExecuteInner()
+    public LocateResult LocateResult => new LocateResult(
+        RunCompilation: RunCompilation,
+        CacheSupported: CacheSupported,
+        CacheHit: CacheHit,
+        CacheKey: new CacheKey(CacheKey),
+        LocalInputsHash: LocalInputsHash,
+        PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
+    );
+}
+
+public class TestTask : Task
+{
+    public static int X;
+    
+    [Required]
+    public ITaskItem All { get; set; }
+    
+    public override bool Execute()
     {
-        var props = PropertyInputs.Select(p => p.ItemSpec).ToArray();
-        var fileExtracts = FileInputs.Union(References).AsParallel().OrderBy(file => file.ItemSpec).Select(file =>
+        log($"X={X}");
+        X++;
+        var _copy = All.CloneCustomMetadata();
+        var copy = _copy as IDictionary<string, string> ?? throw new Exception($"Expected the 'All' item's metadata to be IDictionary<string, string>, but was {_copy.GetType().FullName}");
+        
+        void log(string msg) => Log.LogMessage(MessageImportance.High, msg);
+        log($"all={All.ItemSpec}");
+        foreach (var (key, value) in copy)
         {
-            var filepath = file.ItemSpec;
-            var fileInfo = new FileInfo(filepath);
-            if (!fileInfo.Exists)
-            {
-                throw new Exception($"File input does not exist: '{filepath}'");
-            }
-
-            var hashString = FileToSHA1String(fileInfo);
-            return new FileExtract(fileInfo.Name, hashString, fileInfo.Length);
-        }).ToArray();
-
-        var extract = new FullExtract(fileExtracts, props);
-        var hashString = HashExtractToString(extract);
-        var dir = Path.Combine(BaseCacheDir, hashString);
-        CacheDir = dir;
-
-        var markerPath = Helpers.GetMarkerPath(dir);
-        if (!Directory.Exists(dir))
-        {
-            Directory.CreateDirectory(dir);
-            var extractPath = Path.Combine(dir, "extract.json");
-            File.WriteAllText(extractPath, JsonConvert.SerializeObject(extract, Formatting.Indented));
-            Log.LogMessage(MessageImportance.High, $"{dir} does not exist");
-            CacheHit = false;
+            log($"{key}= [{value?.GetType().FullName}] {value} = {string.Join("^", value?.Split(";"))}");
         }
-        else if (!File.Exists(markerPath))
-        {
-            Log.LogMessage(MessageImportance.High, $"Marker file {markerPath} does not exist");
-            CacheHit = false;
-        }
-        else
-        {
-            Log.LogMessage(MessageImportance.High, $"{dir} and its marker exist");
-            CacheHit = true;
-        }
-
-        PreCompilationTimeUtc = DateTime.UtcNow;
-    }
-
-    public static string FileToSHA1String(FileInfo fileInfo)
-    {
-        using var hash = SHA1.Create();
-        using var f = fileInfo.OpenRead();
-        var bytes = hash.ComputeHash(f);
-        return Convert.ToHexString(bytes);
-    }
-
-    private static string HashExtractToString(FullExtract extract)
-    {
-        using var ms = new MemoryStream();
-#pragma warning disable SYSLIB0011
-        var binaryFormatter = new BinaryFormatter();
-        binaryFormatter.Serialize(ms, extract);
-        ms.Position = 0;
-#pragma warning restore SYSLIB0011
-        var hash = SHA256.Create().ComputeHash(ms);
-        var hashString = Convert.ToHexString(hash);
-        return hashString;
+        
+        return true;
     }
 }
