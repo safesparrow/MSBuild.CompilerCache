@@ -190,11 +190,17 @@ public record SourceFile(string Path, string Text);
 [TestFixture]
 public class EndToEndTests
 {
-    public static readonly SDKVersion[] SDKs = {
-        new SDKVersion("6.0.300"),
-        new SDKVersion("7.0.202")
-    };
-    
+    public static (SDKVersion, ProjectType)[] SDKs()
+    {
+        var sdks = new[]
+        {
+            new SDKVersion("6.0.300"),
+            new SDKVersion("7.0.202")
+        };
+        var types = new[] { ProjectType.CSharp, ProjectType.FSharp };
+        return sdks.SelectMany(sdk => types.Select(t => (sdk, t))).ToArray();
+    }
+
     private const string Configuration =
 #if DEBUG
         "Debug";
@@ -207,10 +213,17 @@ public class EndToEndTests
         Path.Combine("..", "..", "..", "..", "MSBuild.CompilerCache", "bin", Configuration)
     );
 
+    public enum ProjectType
+    {
+        CSharp,
+        FSharp
+    }
+
     [TestCaseSource(nameof(SDKs))]
     [Test]
-    public void CompileTwoIdenticalProjectsAssertDllReused(SDKVersion sdk)
+    public void CompileTwoIdenticalProjectsAssertDllReused((SDKVersion sdk, ProjectType type) x)
     {
+        var (sdk, type) = x;
         using var env = new BuildEnvironment(NugetSourcePath, sdk);
         var cache = new DirectoryInfo(Path.Combine(env.Dir.FullName, ".cache"));
         var projDir1 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "1"));
@@ -218,35 +231,27 @@ public class EndToEndTests
         var projDir3 = new DirectoryInfo(Path.Combine(env.Dir.FullName, "3"));
         cache.Create();
         projDir1.Create();
-        var source = new SourceFile("Library.cs", """
-namespace CSharp;
-public class Class { }
-""");
         var config = new Config
         {
             BaseCacheDir = cache.FullName
         };
         var configFile = env.Dir.CombineAsFile("config.json");
         File.WriteAllText(configFile.FullName, JsonConvert.SerializeObject(config));
-        var proj =
-            new ProjectFileBuilder("C.csproj")
-                {
-                    CompilationCacheConfigPath = configFile.FullName
-                }
-                .WithSource(source);
+        var produceRefAssembly = int.Parse(sdk.Version.Split(".")[0]) > 6 || type == ProjectType.CSharp;
+        var outputsCount = produceRefAssembly ? 3 : 2;
+        var (proj, projModified) = CreateProjects(configFile, type, produceRefAssembly);
 
         WriteProject(projDir1, proj);
         WriteProject(projDir2, proj);
-        var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
         WriteProject(projDir3, projModified);
 
         var output1 = BuildProject(projDir1, proj);
         var output2 = BuildProject(projDir2, proj);
         var output3 = BuildProject(projDir3, projModified);
         
-        Assert.That(output1.Where(x => x.Contains("CacheMiss - copying 3 files from output to cache")), Is.Not.Empty);
-        Assert.That(output2.Where(x => x.Contains("CacheHit - copying 3 files from cache")), Is.Not.Empty);
-        Assert.That(output3.Where(x => x.Contains("CacheMiss - copying 3 files from output to cache")), Is.Not.Empty);
+        Assert.That(output1.Where(x => x.Contains($"CacheMiss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
+        Assert.That(output2.Where(x => x.Contains($"CacheHit - copying {outputsCount} files from cache")), Is.Not.Empty);
+        Assert.That(output3.Where(x => x.Contains($"CacheMiss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
@@ -263,6 +268,42 @@ public class Class { }
         Assert.That(hash2, Is.EqualTo(hash1));
         Assert.That(hash3, Is.Not.EqualTo(hash2));
 
+    }
+
+    private static (ProjectFileBuilder, ProjectFileBuilder) CreateProjects(FileInfo configFile, ProjectType projectType, bool produceRefAssembly = true)
+    {
+        if (projectType == ProjectType.CSharp)
+        {
+            var source = new SourceFile("Library.cs", """
+namespace CSharp;
+public class Class { }
+""");
+            var proj =
+                new ProjectFileBuilder("C.csproj")
+                    {
+                        CompilationCacheConfigPath = configFile.FullName,
+                        ProduceReferenceAssembly = produceRefAssembly
+                    }
+                    .WithSource(source);
+            var projModified = proj with { Sources = new[] { source with { Path = "Library2.cs" } } };
+            return (proj, projModified);
+        }
+        else
+        {
+            var source = new SourceFile("Library.fs", """
+namespace CSharp
+type Foo = int
+""");
+            var proj =
+                new ProjectFileBuilder("F.fsproj")
+                    {
+                        CompilationCacheConfigPath = configFile.FullName,
+                        ProduceReferenceAssembly = produceRefAssembly
+                    }
+                    .WithSource(source);
+            var projModified = proj with { Sources = new[] { source with { Path = "Library2.fs" } } };
+            return (proj, projModified);
+        }
     }
 
     private static void WriteProject(DirectoryInfo dir, ProjectFileBuilder project)
