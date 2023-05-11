@@ -9,13 +9,22 @@ It extends the `CoreCompile` targets from the .NET SDK with caching steps and us
 3. If the file does not exist, we run compilation and then populate the cache.
 
 # How can I use it?
+> :warning: The project is in an experimental phase. It is known to have issues, like limited debugging ability and potential incorrect cache hits. Please keep that in mind before using.
+
 To use the cache, add the following to your project file (or `Directory.Build.props` in your directory structure):
 ```xml
 <PropertyGroup>
-    <CompilationCacheBaseDir>c:/machine-wide/compilation-cache/</CompilationCacheBaseDir>
+    <CompilationCacheConfigPath>c:/accessible/filesystem/location/compilation_config.json</CompilationCacheConfigPath>
 </PropertyGroup>
 
 <ItemGroup>
     <PackageReference Include="MSBuild.CompilerCache" Version="0.3.4" />
 </ItemGroup>
+```
+and create a config file like one below:
+
+```json
+{
+  "BaseCacheDir": "c:/compilation_cache"
+}
 ```
