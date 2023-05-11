@@ -136,23 +136,7 @@
     </ItemGroup>
     <PropertyGroup>
       <CanCache
-        Condition="('$(OutputType)' == 'Library' OR '$(OutputType)' == 'Exe')
-AND
-'$(AdditionalLibPaths)' == ''
-AND
-'@(AddModules)' == ''
-AND
-'$(EmitCompilerGeneratedFiles)' != 'true'
-AND
-'$(ProvideCommandLineArgs)' != 'true'
-AND
-'$(ReportAnalyzer)' != 'true'
-AND
-'$(SkipCompilerExecution)' != 'true'
-AND
-'$(SourceLink)' == ''
-AND
-'$(PublicSign)' != 'true'">true</CanCache>
+        Condition="'$(EmitCompilerGeneratedFiles)' != 'true'">true</CanCache>
     </PropertyGroup>
     <LocateCompilationCacheEntry
       Condition="'$(CanCache)' == 'true'"
