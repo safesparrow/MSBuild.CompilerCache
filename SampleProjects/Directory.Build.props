@@ -7,7 +7,7 @@
     </PropertyGroup>
     
     <PropertyGroup>
-        <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
+        <CompilationCacheConfigPath>$(MSBuildThisFileDirectory)cache_config.json</CompilationCacheConfigPath>
     </PropertyGroup>
     
     <ItemGroup>
