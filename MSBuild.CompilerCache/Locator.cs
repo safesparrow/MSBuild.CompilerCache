@@ -38,8 +38,7 @@ public class Locator
         if (decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine, decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
-            log.LogError("Some unsupported props set");
-            log.LogError(s);
+            log.LogMessage(MessageImportance.High, $"Some unsupported props set: {Environment.NewLine}{s}");
             return LocateResult.CreateNotSupported();
         }
         var configJson = File.ReadAllText(inputs.ConfigPath);
