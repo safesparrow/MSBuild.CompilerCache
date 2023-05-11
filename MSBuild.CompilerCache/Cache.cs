@@ -24,21 +24,6 @@ public record RelativePath(string Path)
     public static implicit operator string(RelativePath path) => path.Path;
 }
 
-/*
- * CacheKey - Hash of compilation inputs - property values and file contents (FullExtract)
- * FullExtract - All information used to generate a CacheKey. Does not include full paths, timestamps, hostnames.
- * LocalFullMetadata - All information about the local compilation, including local environment and all inputs.
- *
- * Information known before compilation:
- * - environment: username, host, start time
- * - local inputs: local files with their hash, and properties
- * - outputs
- *
- * Information known after compilation:
- * - same as above (with possibly new file info)
- * 
- */
-
 [Serializable]
 public record FileExtract(string Name, string Hash, long Length);
 

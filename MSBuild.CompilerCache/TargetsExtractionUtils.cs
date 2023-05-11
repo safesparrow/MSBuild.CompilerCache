@@ -182,8 +182,7 @@ public static class TargetsExtractionUtils
                 PropNotTrue("ProvideCommandLineArgs") &&
                 PropNotTrue("ReportAnalyzer") &&
                 PropNotTrue("SkipCompilerExecution") &&
-                PropEmpty("SourceLink") &&
-                PropNotTrue("PublicSign")
+                PropEmpty("SourceLink")
             ;
         }
 
