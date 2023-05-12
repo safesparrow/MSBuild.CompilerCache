@@ -136,7 +136,7 @@
     </ItemGroup>
     <PropertyGroup>
       <CanCache
-        Condition="'$(EmitCompilerGeneratedFiles)' != 'true'">true</CanCache>
+        Condition="'$(EmitCompilerGeneratedFiles)' == 'true'">false</CanCache>
     </PropertyGroup>
     <LocateCompilationCacheEntry
       Condition="'$(CanCache)' == 'true'"

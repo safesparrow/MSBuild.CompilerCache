@@ -53,9 +53,9 @@ public class TargetsExtraction
         File.WriteAllText(outputPath, text2);
     }
 
-    private static readonly string[] UseCacheConditions =
+    private static readonly string[] DoNotUseCacheConditions =
     {
-        "'$(EmitCompilerGeneratedFiles)' != 'true'",
+        "'$(EmitCompilerGeneratedFiles)' == 'true'",
     };
 
     [Explicit, Test]
@@ -154,12 +154,12 @@ public class TargetsExtraction
 
                 var startComment = new XComment("START OF CACHING EXTENSION CODE");
 
-                var fullCanCacheCondition = UseCacheConditions
-                    .StringsJoin($"{Environment.NewLine}AND{Environment.NewLine}");
+                var doNotUseCacheCondition = DoNotUseCacheConditions
+                    .StringsJoin($"{Environment.NewLine}OR{Environment.NewLine}");
                 var propertygroup = Name("PropertyGroup");
                 var firstPropsGroupElement = new XElement(propertygroup);
                 var canCacheElement =
-                    new XElement(Name("CanCache"), new XAttribute("Condition", fullCanCacheCondition), "true");
+                    new XElement(Name("CanCache"), new XAttribute("Condition", doNotUseCacheCondition), "false");
                 firstPropsGroupElement.Add(canCacheElement);
 
                 var canCacheCondition = new XAttribute("Condition", "'$(CanCache)' == 'true'");

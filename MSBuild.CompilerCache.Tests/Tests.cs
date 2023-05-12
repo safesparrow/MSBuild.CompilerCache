@@ -58,7 +58,7 @@ public sealed class BuildEnvironment : IDisposable
     </PropertyGroup>
     
     <PropertyGroup>
-        <CompilationCacheBaseDir Condition="'$(CompilationCacheBaseDir)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheBaseDir>
+        <CompilationCacheConfigPath Condition="'$(CompilationCacheConfigPath)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheConfigPath>
     </PropertyGroup>
 
 </Project>
