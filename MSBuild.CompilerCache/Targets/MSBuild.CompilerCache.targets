@@ -4,7 +4,7 @@
         <CanCache>true</CanCache>
         <ForceDisableCompilationCache Condition="'$(ForceDisableCompilationCache)' == ''">false</ForceDisableCompilationCache>
         <!-- Can't cache without cache directory specified. -->
-        <CanCache Condition="'$(CompilationCacheBaseDir)' == ''">false</CanCache>        
+        <CanCache Condition="'$(CompilationCacheConfigPath)' == ''">false</CanCache>        
         <!-- User requested to disable the cache. -->
         <CanCache Condition="'$(ForceDisableCompilationCache)' == 'true'">false</CanCache>
     </PropertyGroup>
