@@ -23,4 +23,10 @@
       <Content Include="Samples\CSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="sample_big_references.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

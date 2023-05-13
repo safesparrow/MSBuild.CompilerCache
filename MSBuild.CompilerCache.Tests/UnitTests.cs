@@ -270,22 +270,25 @@ public class InMemoryTaskBasedTests
     }
 
     [Test]
+    [Explicit]
     public void PerfTest()
     {
         var locator = new Locator();
         
-        var allProps = new Dictionary<string, string>
-        {
-            ["TargetType"] = "library",
-            ["References"] = "",
-            ["OutputAssembly"] = "output.dll"
-        };
         var config = new Config
         {
             BaseCacheDir = baseCacheDir
         };
         var configPath = SaveConfig(config);
-        
+
+        var references = File.ReadAllText("sample_big_references.txt");
+        var allProps = new Dictionary<string, string>
+        {
+            ["TargetType"] = "library",
+            ["References"] = references,
+            ["OutputAssembly"] = "output.dll"
+        };
+
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
