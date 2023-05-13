@@ -268,31 +268,4 @@ public class InMemoryTaskBasedTests
         File.WriteAllText(path, content);
         return path;
     }
-
-    [Test]
-    public void PerfTest()
-    {
-        var locator = new Locator();
-        
-        var allProps = new Dictionary<string, string>
-        {
-            ["TargetType"] = "library",
-            ["References"] = "",
-            ["OutputAssembly"] = "output.dll"
-        };
-        var config = new Config
-        {
-            BaseCacheDir = baseCacheDir
-        };
-        var configPath = SaveConfig(config);
-        
-        var baseInputs = new BaseTaskInputs(
-            ConfigPath: configPath,
-            ProjectFullPath: "",
-            AllProps: allProps
-        );
-        var result = locator.Locate(baseInputs);
-        Assert.That(result.CacheSupported, Is.True);
-        Assert.That(result.CacheHit, Is.False);
-    }
 }
