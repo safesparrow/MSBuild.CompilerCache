@@ -206,12 +206,6 @@ public static class TargetsExtractionUtils
         var inputMed = relevant
             .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
             .ToArray();
-        log?.LogMessage(MessageImportance.High, "Before");
-        foreach (var med in inputMed)
-        {
-            log?.LogMessage(MessageImportance.High, $"{med.Name}={med.Value}");
-        }
-        log?.LogMessage(MessageImportance.High, "After");
         var inputFiles =
             inputMed
                 .SelectMany(x => SplitItemList(x.Value))

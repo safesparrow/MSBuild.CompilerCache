@@ -32,13 +32,13 @@ public class Locator
     private string _hashString;
     private BaseTaskInputs _inputs;
 
-    public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper log)
+    public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
         if (decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine, decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
-            log.LogMessage(MessageImportance.High, $"Some unsupported props set: {Environment.NewLine}{s}");
+            log?.LogMessage(MessageImportance.High, $"Some unsupported props set: {Environment.NewLine}{s}");
             return LocateResult.CreateNotSupported();
         }
         var configJson = File.ReadAllText(inputs.ConfigPath);
@@ -57,11 +57,11 @@ public class Locator
         var cacheHit = cache.Exists(cacheKey);
         if (!cacheHit)
         {
-            log.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a miss.");
+            log?.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a miss.");
         }
         else
         {
-            log.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a hit.");
+            log?.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a hit.");
             cacheHit = true;
         }
 
