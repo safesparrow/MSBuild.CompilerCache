@@ -57,15 +57,6 @@ public class UnitTests
         AssertDirsSame(outputsDir, mainOutputsDir);
     }
 
-    [Test]
-    public void Testete()
-    {
-        var path = Assembly.GetExecutingAssembly().Location.Replace(".Tests.dll", ".dll");
-        var bytes = File.ReadAllBytes(path);
-        var t = new RefTrimmer();
-        var res = t.GenerateRefData(bytes.ToImmutableArray());
-    }
-
     public static void AssertDirsSame(DirectoryInfo a, DirectoryInfo b)
     {
         (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>

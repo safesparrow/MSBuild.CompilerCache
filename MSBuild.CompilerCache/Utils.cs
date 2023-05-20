@@ -3,6 +3,41 @@ using System.Security.Cryptography;
 
 namespace MSBuild.CompilerCache;
 
+public class TempFile : IDisposable
+{
+    public FileInfo File { get; }
+    public string FullName => File.FullName;
+
+    public TempFile()
+    {
+        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+    }
+
+    public void Dispose()
+    {
+        File.Delete();
+    }
+}
+
+public record RelativePath(string Path)
+{
+    public AbsolutePath ToAbsolute(AbsolutePath relativeTo) =>
+        System.IO.Path.Combine(relativeTo, Path).AsAbsolutePath();
+
+    public static implicit operator string(RelativePath path) => path.Path;
+}
+
+public record AbsolutePath(string Path)
+{
+    public static implicit operator string(AbsolutePath path) => path.Path;
+}
+
+public static class StringExtensions
+{
+    public static AbsolutePath AsAbsolutePath(this string x) => new AbsolutePath(x);
+    public static RelativePath AsRelativePath(this string x) => new RelativePath(x);
+}
+
 public static class Utils
 {
     public static string ObjectToSHA256Hex(object item)
@@ -17,7 +52,7 @@ public static class Utils
         var hashString = Convert.ToHexString(hash);
         return hashString;
     }
-    
+
     public static string ObjectToSHA256Hex(byte[] bytes)
     {
         var hash = SHA256.Create().ComputeHash(bytes);

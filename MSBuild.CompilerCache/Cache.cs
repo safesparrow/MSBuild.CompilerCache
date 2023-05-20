@@ -1,33 +1,7 @@
-using System.Collections.Immutable;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Decoding.Tests;
-using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
-using JetBrains.Refasmer;
-using JetBrains.Refasmer.Filters;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
-using CompilationOutputs = ImmutableArray<RelativePath>;
-
-public static class StringExtensions
-{
-    public static AbsolutePath AsAbsolutePath(this string x) => new AbsolutePath(x);
-    public static RelativePath AsRelativePath(this string x) => new RelativePath(x);
-}
-
-public record AbsolutePath(string Path)
-{
-    public static implicit operator string(AbsolutePath path) => path.Path;
-}
-
-public record RelativePath(string Path)
-{
-    public AbsolutePath ToAbsolute(AbsolutePath relativeTo) =>
-        System.IO.Path.Combine(relativeTo, Path).AsAbsolutePath();
-    
-    public static implicit operator string(RelativePath path) => path.Path;
-}
 
 [Serializable]
 public record FileExtract(string Name, string Hash, long Length);
@@ -56,7 +30,7 @@ public record OutputItem
     public static Regex NameRegex = new Regex("^[\\d\\w_\\-]+$", RegexOptions.Compiled);
 
     public OutputItem(string Name, string LocalPath)
-    { 
+    {
         if (!NameRegex.IsMatch(Name))
         {
             throw new ArgumentException(
@@ -69,12 +43,14 @@ public record OutputItem
     }
 
     public string CacheFileName { get; }
+
     public string GetCacheFileName()
     {
         if (Path.HasExtension(LocalPath))
         {
             return $"{Name}{Path.GetExtension(LocalPath)}";
-        } 
+        }
+
         return Name;
     }
 
@@ -91,147 +67,17 @@ public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, Ou
 {
     public FullExtract ToFullExtract()
     {
-        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props, OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
+        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
+            OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
     }
 }
 
 [Serializable]
 public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
 
-
 public record CacheKey(string Key)
 {
     public static implicit operator string(CacheKey key) => key.Key;
-}
-
-/// <summary>
-/// Information about an assembly used for hash calculations in dependant projects' compilation.
-/// </summary>
-/// <param name="PublicRefHash">Hash of a reference assembly for this assembly, that excluded internal symbols. </param>
-/// <param name="PublicAndInternalRefHash">Hash of a reference assembly for this assembly, that included internal symbols. </param>
-/// <param name="InternalsVisibleTo">A list of assembly names that can access internal symbols from this assembly, via the InternalsVisibleTo attribute.</param>
-public record RefData(string PublicRefHash, string PublicAndInternalRefHash, string[] InternalsVisibleTo);
-
-public class RefTrimmer
-{
-    public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
-    {
-        logger.Debug?.Invoke($"Reading assembly {inputPath}");
-        var peReader = new PEReader(new FileStream(inputPath, FileMode.Open, FileAccess.Read)); 
-        var metaReader = peReader.GetMetadataReader();
-
-        if (!metaReader.IsAssembly)
-            throw new Exception("File format is not supported"); 
-            
-        var result = MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false);
-
-        logger.Debug?.Invoke($"Writing result to {outputPath}");
-        if (File.Exists(outputPath))
-            File.Delete(outputPath);
-
-        File.WriteAllBytes(outputPath, result);
-    }
-
-    public enum RefType
-    {
-        Public,
-        PublicAndInternal
-    }
-    
-    
-    public static bool HasAnyInternalsVisibleToAttribute(MetadataReader reader) =>
-        // ReSharper disable once ReplaceWithSingleCallToAny
-        reader.IsAssembly && reader.GetAssemblyDefinition().GetCustomAttributes()
-            .Select(reader.GetCustomAttribute)
-            .Where(a => reader.GetFullname(reader.GetCustomAttrClass(a)) == FullNames.InternalsVisibleTo)
-            .Any();
-    
-    
-    private class CustomAttributeTypeProvider : DisassemblingTypeProvider, ICustomAttributeTypeProvider<string>
-    {
-        public string GetSystemType()
-        {
-            return "[System.Runtime]System.Type";
-        }
-
-        public bool IsSystemType(string type)
-        {
-            return type == "[System.Runtime]System.Type"  // encountered as typeref
-                   || Type.GetType(type) == typeof(Type);    // encountered as serialized to reflection notation
-        }
-
-        public string GetTypeFromSerializedName(string name)
-        {
-            return name;
-        }
-
-        public PrimitiveTypeCode GetUnderlyingEnumType(string type)
-        {
-            throw new ArgumentOutOfRangeException();
-        }
-    }
-    
-    public static CustomAttributeValue<string>[] GetInternalsVisibleTo(MetadataReader reader)
-    {
-        var provider = new CustomAttributeTypeProvider();
-        // ReSharper disable once ReplaceWithSingleCallToAny
-        if (!reader.IsAssembly) return Array.Empty<CustomAttributeValue<string>>();
-        return reader.GetAssemblyDefinition().GetCustomAttributes()
-            .Select(reader.GetCustomAttribute)
-            .Where(a => reader.GetFullname(reader.GetCustomAttrClass(a)) == FullNames.InternalsVisibleTo)
-            .Select(x => x.DecodeValue(provider))
-            .ToArray();
-    }
-
-    public static byte[] MakeRefasm(ImmutableArray<byte> content, LoggerBase logger, RefType refType)
-    {
-        var peReader = new PEReader(content); 
-        var metaReader = peReader.GetMetadataReader();
-
-        var attrs = GetInternalsVisibleTo(metaReader);
-        
-        if (!metaReader.IsAssembly)
-            throw new Exception("File format is not supported");
-
-        IImportFilter filter = refType == RefType.PublicAndInternal
-            ? new AllowPublicAndInternals()
-            : new AllowPublic();
-        
-        return MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false);
-    }
-    
-    public static string MakeRefasmAndGetHash(ImmutableArray<byte> content, LoggerBase logger, RefType refType)
-    {
-        var bytes = MakeRefasm(content, logger, refType);
-        return Utils.ObjectToSHA256Hex(bytes);
-    }
-
-    public RefData GenerateRefData(ImmutableArray<byte> content)
-    {
-        var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
-        var loggerBase = new LoggerBase(logger);
-        
-        var publicRefHash = MakeRefasmAndGetHash(content, loggerBase, RefType.Public);
-        var publicAndInternalRefHash = MakeRefasmAndGetHash(content, loggerBase, RefType.PublicAndInternal);
-        
-        return new RefData(
-            PublicRefHash: publicRefHash,
-            PublicAndInternalRefHash: publicAndInternalRefHash,
-            InternalsVisibleTo: null
-        );
-    }
-}
-
-/// <summary>
-/// A cache for storing hashes of reference assemblies (generated using Refasmer).
-/// Does not store the actual assemblies, just their hashes - used for having a more robust inputs cache that does not change when private parts of references change.
-/// Thread-safe.
-/// </summary>
-public interface IRefCache
-{
-    bool Exists(CacheKey key);
-    RefData? Get(CacheKey key);
-    void Set(CacheKey key, RefData data);
 }
 
 public interface ICache
@@ -249,10 +95,10 @@ public class Cache : ICache
     {
         _baseCacheDir = baseCacheDir;
     }
-    
+
     private string CacheDir(CacheKey key) => Path.Combine(_baseCacheDir, key);
     private string ExtractPath(CacheKey key) => Path.Combine(CacheDir(key), "extract.json");
-    
+
     public bool Exists(CacheKey key)
     {
         var markerPath = ExtractPath(key);
@@ -276,7 +122,8 @@ public class Cache : ICache
 
     public CacheKey[] GetAllExistingKeys()
     {
-        var options = new EnumerationOptions{ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false};
+        var options = new EnumerationOptions
+            { ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false };
         var fullNames = Directory.EnumerateDirectories(_baseCacheDir, "*", options);
         return fullNames.Select(full => new CacheKey(Path.GetFileName(full))).ToArray();
     }
@@ -296,7 +143,7 @@ public class Cache : ICache
         {
             AtomicCopy(resultZip.FullName, outputPath);
         }
-        
+
         if (!File.Exists(extractPath))
         {
             var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
@@ -318,7 +165,8 @@ public class Cache : ICache
                 if (outputVersionsZips.Length == 0)
                 {
                     throw new Exception($"[Cache key={key}] Extract file exists, but no output files found.");
-                } else if (outputVersionsZips.Length > 1)
+                }
+                else if (outputVersionsZips.Length > 1)
                 {
                     throw new Exception(
                         $"[Cache key={key}] Found {outputVersionsZips.Length} different outputs. Unable to pick one.");
@@ -343,21 +191,5 @@ public class Cache : ICache
     private string[] GetOutputVersions(CacheKey key)
     {
         return Directory.EnumerateFiles(CacheDir(key), "*.zip", SearchOption.TopDirectoryOnly).ToArray();
-    }
-}
-
-public class TempFile : IDisposable
-{
-    public FileInfo File { get; }
-    public string FullName => File.FullName;
-    
-    public TempFile()
-    {
-        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
-    }
-    
-    public void Dispose()
-    {
-        File.Delete();
     }
 }
