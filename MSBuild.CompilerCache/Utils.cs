@@ -17,6 +17,13 @@ public static class Utils
         var hashString = Convert.ToHexString(hash);
         return hashString;
     }
+    
+    public static string ObjectToSHA256Hex(byte[] bytes)
+    {
+        var hash = SHA256.Create().ComputeHash(bytes);
+        var hashString = Convert.ToHexString(hash);
+        return hashString;
+    }
 
     public static string FileToSHA256String(FileInfo fileInfo)
     {

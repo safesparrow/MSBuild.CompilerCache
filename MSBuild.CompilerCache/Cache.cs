@@ -1,5 +1,9 @@
 using System.Collections.Immutable;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
+using JetBrains.Refasmer;
+using JetBrains.Refasmer.Filters;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
@@ -97,6 +101,91 @@ public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs L
 public record CacheKey(string Key)
 {
     public static implicit operator string(CacheKey key) => key.Key;
+}
+
+/// <summary>
+/// Information about an assembly used for hash calculations in dependant projects' compilation.
+/// </summary>
+/// <param name="PublicRefHash">Hash of a reference assembly for this assembly, that excluded internal symbols. </param>
+/// <param name="PublicAndInternalRefHash">Hash of a reference assembly for this assembly, that included internal symbols. </param>
+/// <param name="InternalsVisibleTo">A list of assembly names that can access internal symbols from this assembly, via the InternalsVisibleTo attribute.</param>
+public record RefData(string PublicRefHash, string PublicAndInternalRefHash, string[] InternalsVisibleTo);
+
+public class RefTrimmer
+{
+    public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
+    {
+        logger.Debug?.Invoke($"Reading assembly {inputPath}");
+        var peReader = new PEReader(new FileStream(inputPath, FileMode.Open, FileAccess.Read)); 
+        var metaReader = peReader.GetMetadataReader();
+
+        if (!metaReader.IsAssembly)
+            throw new Exception("File format is not supported"); 
+            
+        var result = MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false);
+
+        logger.Debug?.Invoke($"Writing result to {outputPath}");
+        if (File.Exists(outputPath))
+            File.Delete(outputPath);
+
+        File.WriteAllBytes(outputPath, result);
+    }
+
+    public enum RefType
+    {
+        Public,
+        PublicAndInternal
+    }
+    
+    
+    
+    public static byte[] MakeRefasm(ImmutableArray<byte> content, LoggerBase logger, RefType refType)
+    {
+        var peReader = new PEReader(content); 
+        var metaReader = peReader.GetMetadataReader();
+
+        if (!metaReader.IsAssembly)
+            throw new Exception("File format is not supported");
+
+        IImportFilter filter = refType == RefType.PublicAndInternal
+            ? new AllowPublicAndInternals()
+            : new AllowPublic();
+        
+        return MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false);
+    }
+    
+    public static string MakeRefasmAndGetHash(ImmutableArray<byte> content, LoggerBase logger, RefType refType)
+    {
+        var bytes = MakeRefasm(content, logger, refType);
+        return Utils.ObjectToSHA256Hex(bytes);
+    }
+
+    public RefData GenerateRefData(ImmutableArray<byte> content)
+    {
+        var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
+        var loggerBase = new LoggerBase(logger);
+        
+        var publicRefHash = MakeRefasmAndGetHash(content, loggerBase, RefType.Public);
+        var publicAndInternalRefHash = MakeRefasmAndGetHash(content, loggerBase, RefType.PublicAndInternal);
+        
+        return new RefData(
+            PublicRefHash: publicRefHash,
+            PublicAndInternalRefHash: publicAndInternalRefHash,
+            InternalsVisibleTo: null
+        );
+    }
+}
+
+/// <summary>
+/// A cache for storing hashes of reference assemblies (generated using Refasmer).
+/// Does not store the actual assemblies, just their hashes - used for having a more robust inputs cache that does not change when private parts of references change.
+/// Thread-safe.
+/// </summary>
+public interface IRefCache
+{
+    bool Exists(CacheKey key);
+    RefData? Get(CacheKey key);
+    void Set(CacheKey key, RefData data);
 }
 
 public interface ICache

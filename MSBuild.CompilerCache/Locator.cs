@@ -54,6 +54,8 @@ public class Locator
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
+        new JetBrains.Refasmer.MetadataImporter().IsInternalsVisible()
+        
         var cacheHit = cache.Exists(cacheKey);
         if (!cacheHit)
         {

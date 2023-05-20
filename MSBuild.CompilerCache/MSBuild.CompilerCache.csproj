@@ -19,6 +19,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="MSBuild.CompilerCache.Tests" />
+        <PackageReference Include="JetBrains.Refasmer" Version="1.0.33" PrivateAssets="all" />
         <PackageReference ExcludeAssets="Runtime" PrivateAssets="all" Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
         <PackageReference PrivateAssets="all" Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
