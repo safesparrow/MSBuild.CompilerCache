@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Decoding.Tests;
 using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 using JetBrains.Refasmer;
@@ -138,12 +139,57 @@ public class RefTrimmer
     }
     
     
+    public static bool HasAnyInternalsVisibleToAttribute(MetadataReader reader) =>
+        // ReSharper disable once ReplaceWithSingleCallToAny
+        reader.IsAssembly && reader.GetAssemblyDefinition().GetCustomAttributes()
+            .Select(reader.GetCustomAttribute)
+            .Where(a => reader.GetFullname(reader.GetCustomAttrClass(a)) == FullNames.InternalsVisibleTo)
+            .Any();
     
+    
+    private class CustomAttributeTypeProvider : DisassemblingTypeProvider, ICustomAttributeTypeProvider<string>
+    {
+        public string GetSystemType()
+        {
+            return "[System.Runtime]System.Type";
+        }
+
+        public bool IsSystemType(string type)
+        {
+            return type == "[System.Runtime]System.Type"  // encountered as typeref
+                   || Type.GetType(type) == typeof(Type);    // encountered as serialized to reflection notation
+        }
+
+        public string GetTypeFromSerializedName(string name)
+        {
+            return name;
+        }
+
+        public PrimitiveTypeCode GetUnderlyingEnumType(string type)
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+    }
+    
+    public static CustomAttributeValue<string>[] GetInternalsVisibleTo(MetadataReader reader)
+    {
+        var provider = new CustomAttributeTypeProvider();
+        // ReSharper disable once ReplaceWithSingleCallToAny
+        if (!reader.IsAssembly) return Array.Empty<CustomAttributeValue<string>>();
+        return reader.GetAssemblyDefinition().GetCustomAttributes()
+            .Select(reader.GetCustomAttribute)
+            .Where(a => reader.GetFullname(reader.GetCustomAttrClass(a)) == FullNames.InternalsVisibleTo)
+            .Select(x => x.DecodeValue(provider))
+            .ToArray();
+    }
+
     public static byte[] MakeRefasm(ImmutableArray<byte> content, LoggerBase logger, RefType refType)
     {
         var peReader = new PEReader(content); 
         var metaReader = peReader.GetMetadataReader();
 
+        var attrs = GetInternalsVisibleTo(metaReader);
+        
         if (!metaReader.IsAssembly)
             throw new Exception("File format is not supported");
 

@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.IO.Compression;
+using System.Reflection;
 using Microsoft.Build.Framework;
 using Moq;
 using MSBuild.CompilerCache;
@@ -53,6 +55,15 @@ public class UnitTests
         mainOutputsDir.Create();
         UserOrPopulator.UseCachedOutputs(cachedZip!, items, DateTime.Now);
         AssertDirsSame(outputsDir, mainOutputsDir);
+    }
+
+    [Test]
+    public void Testete()
+    {
+        var path = Assembly.GetExecutingAssembly().Location.Replace(".Tests.dll", ".dll");
+        var bytes = File.ReadAllBytes(path);
+        var t = new RefTrimmer();
+        var res = t.GenerateRefData(bytes.ToImmutableArray());
     }
 
     public static void AssertDirsSame(DirectoryInfo a, DirectoryInfo b)
