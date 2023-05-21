@@ -3,26 +3,6 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
-using CompilationOutputs = ImmutableArray<RelativePath>;
-
-public static class StringExtensions
-{
-    public static AbsolutePath AsAbsolutePath(this string x) => new AbsolutePath(x);
-    public static RelativePath AsRelativePath(this string x) => new RelativePath(x);
-}
-
-public record AbsolutePath(string Path)
-{
-    public static implicit operator string(AbsolutePath path) => path.Path;
-}
-
-public record RelativePath(string Path)
-{
-    public AbsolutePath ToAbsolute(AbsolutePath relativeTo) =>
-        System.IO.Path.Combine(relativeTo, Path).AsAbsolutePath();
-    
-    public static implicit operator string(RelativePath path) => path.Path;
-}
 
 [Serializable]
 public record FileExtract(string Name, string Hash, long Length);
@@ -51,7 +31,7 @@ public record OutputItem
     public static Regex NameRegex = new Regex("^[\\d\\w_\\-]+$", RegexOptions.Compiled);
 
     public OutputItem(string Name, string LocalPath)
-    { 
+    {
         if (!NameRegex.IsMatch(Name))
         {
             throw new ArgumentException(
@@ -64,12 +44,14 @@ public record OutputItem
     }
 
     public string CacheFileName { get; }
+
     public string GetCacheFileName()
     {
         if (Path.HasExtension(LocalPath))
         {
             return $"{Name}{Path.GetExtension(LocalPath)}";
-        } 
+        }
+
         return Name;
     }
 
@@ -86,13 +68,13 @@ public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, Ou
 {
     public FullExtract ToFullExtract()
     {
-        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props, OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
+        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
+            OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
     }
 }
 
 [Serializable]
 public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
-
 
 public record CacheKey(string Key)
 {
@@ -114,10 +96,10 @@ public class Cache : ICache
     {
         _baseCacheDir = baseCacheDir;
     }
-    
+
     private string CacheDir(CacheKey key) => Path.Combine(_baseCacheDir, key);
     private string ExtractPath(CacheKey key) => Path.Combine(CacheDir(key), "extract.json");
-    
+
     public bool Exists(CacheKey key)
     {
         var markerPath = ExtractPath(key);
@@ -141,9 +123,14 @@ public class Cache : ICache
 
     public CacheKey[] GetAllExistingKeys()
     {
-        var options = new EnumerationOptions{ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false};
+        var options = new EnumerationOptions
+            { ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false };
         var fullNames = Directory.EnumerateDirectories(_baseCacheDir, "*", options);
-        return fullNames.Select(full => new CacheKey(Path.GetFileName(full))).ToArray();
+        return fullNames
+            .Select(Path.GetFileName)
+            .Where(name => !name!.StartsWith('.'))
+            .Select(name => new CacheKey(name!))
+            .ToArray();
     }
 
     public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
@@ -161,7 +148,7 @@ public class Cache : ICache
         {
             AtomicCopy(resultZip.FullName, outputPath);
         }
-        
+
         if (!File.Exists(extractPath))
         {
             var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
@@ -183,7 +170,8 @@ public class Cache : ICache
                 if (outputVersionsZips.Length == 0)
                 {
                     throw new Exception($"[Cache key={key}] Extract file exists, but no output files found.");
-                } else if (outputVersionsZips.Length > 1)
+                }
+                else if (outputVersionsZips.Length > 1)
                 {
                     throw new Exception(
                         $"[Cache key={key}] Found {outputVersionsZips.Length} different outputs. Unable to pick one.");
@@ -208,21 +196,5 @@ public class Cache : ICache
     private string[] GetOutputVersions(CacheKey key)
     {
         return Directory.EnumerateFiles(CacheDir(key), "*.zip", SearchOption.TopDirectoryOnly).ToArray();
-    }
-}
-
-public class TempFile : IDisposable
-{
-    public FileInfo File { get; }
-    public string FullName => File.FullName;
-    
-    public TempFile()
-    {
-        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
-    }
-    
-    public void Dispose()
-    {
-        File.Delete();
     }
 }

@@ -142,7 +142,8 @@
       Condition="'$(CanCache)' == 'true'"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
-      ProjectFullPath="$(MSBuildProjectFullPath)">
+      ProjectFullPath="$(MSBuildProjectFullPath)"
+      AssemblyName="$(AssemblyName)">
       <Output
         TaskParameter="CacheHit"
         PropertyName="CacheHit" />
@@ -259,6 +260,7 @@
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
+      AssemblyName="$(AssemblyName)"
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
       CacheKey="$(CacheKey)"

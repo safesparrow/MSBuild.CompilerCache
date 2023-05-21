@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.IO.Compression;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -21,10 +22,12 @@ public record UseOrPopulateInputs(
 public class UserOrPopulator
 {
     private readonly ICache _cache;
+    private readonly IRefCache _refCache;
 
-    public UserOrPopulator(ICache cache)
+    public UserOrPopulator(ICache cache, IRefCache refCache)
     {
         _cache = cache;
+        _refCache = refCache;
     }
 
     public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items, AllCompilationMetadata metadata,
@@ -85,12 +88,13 @@ public class UserOrPopulator
         return new CacheKey($"{name}_{hash}");
     }
 
-    public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
+    public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log,
+        RefTrimmingConfig trimmingConfig)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
-
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
-        var localInputs = Locator.CalculateLocalInputs(decomposed);
+        var assemblyName = inputs.Inputs.AssemblyName;
+        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;

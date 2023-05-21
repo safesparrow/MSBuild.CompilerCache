@@ -58,165 +58,176 @@ public class TargetsExtraction
         "'$(EmitCompilerGeneratedFiles)' == 'true'",
     };
 
-    [Explicit, Test]
-    public void Extract()
-    {
-        var sdks = new[]
+    private static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
-            new SDKVersion("6.0.300"),
-            new SDKVersion("7.0.202")
-        };
+            "6.0.300",
+            "7.0.202"
+        }
+        .Select(sdk => new SDKVersion(sdk))
+        .ToImmutableArray();
+
+    private static readonly ImmutableArray<SupportedLanguage> SupportedLanguages = new[]
+    {
+        SupportedLanguage.CSharp, SupportedLanguage.FSharp
+    }.ToImmutableArray();
+
+    public static readonly ImmutableArray<(SDKVersion sdk, SupportedLanguage lang)> SdkLanguages =
+        SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray(); 
+
+    [Explicit, Test]
+    [TestCaseSource(nameof(SdkLanguages))]
+    public void Extract((SDKVersion sdk, SupportedLanguage language) test)
+    {
+        var (sdk, lang) = test;
         var baseDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..",
             "..",
             "MSBuild.CompilerCache", "Targets");
         var referenceTargetsDir = Path.Combine(baseDir, "ReferenceTargets");
         Directory.CreateDirectory(referenceTargetsDir);
 
-        foreach (var sdk in sdks)
+        Console.WriteLine(
+            $"Generating targets files for {lang}, SDK {sdk}, in base directory {baseDir} and reference directory {referenceTargetsDir}.");
+
+        var allTargetsPath = Path.Combine(referenceTargetsDir, $"Targets.{sdk}.{lang}.xml");
+        GenerateAllTargets(sdk, lang, allTargetsPath);
+        var coreCompilePath = Path.Combine(referenceTargetsDir, $"CoreCompile.{sdk}.{lang}.targets");
+        var cachedPath = Path.Combine(baseDir, $"Cached.CoreCompile.{sdk}.{lang}.targets");
+        var allTargets = XDocument.Load(allTargetsPath);
+        string nmsp = "http://schemas.microsoft.com/developer/msbuild/2003";
+        XName Name(string localName) => XName.Get(localName, nmsp);
+        foreach (var commentNode in allTargets.Nodes().Where(n => n.NodeType == XmlNodeType.Comment))
         {
-            foreach (var lang in new[] { SupportedLanguage.CSharp, SupportedLanguage.FSharp })
-            {
-                Console.WriteLine(
-                    $"Generating targets files for {lang}, SDK {sdk}, in base directory {baseDir} and reference directory {referenceTargetsDir}.");
-
-                var allTargetsPath = Path.Combine(referenceTargetsDir, $"Targets.{sdk}.{lang}.xml");
-                GenerateAllTargets(sdk, lang, allTargetsPath);
-                var coreCompilePath = Path.Combine(referenceTargetsDir, $"CoreCompile.{sdk}.{lang}.targets");
-                var cachedPath = Path.Combine(baseDir, $"Cached.CoreCompile.{sdk}.{lang}.targets");
-                var allTargets = XDocument.Load(allTargetsPath);
-                string nmsp = "http://schemas.microsoft.com/developer/msbuild/2003";
-                XName Name(string localName) => XName.Get(localName, nmsp);
-                foreach (var commentNode in allTargets.Nodes().Where(n => n.NodeType == XmlNodeType.Comment))
-                {
-                    commentNode.Remove();
-                }
-
-                var root = allTargets.Root!;
-                root.Name = Name("Project");
-                var allTargetsList = allTargets.Root!.Descendants(Name("Target"));
-                var coreCompileTargetNode = allTargetsList
-                    .Single(n => n.Attribute("Name")?.Value == "CoreCompile");
-
-                var nodes = root.Nodes().ToImmutableArray();
-                foreach (var e in nodes.Where(e => e != coreCompileTargetNode))
-                {
-                    e.Remove();
-                }
-
-                {
-                    using var writer = XmlWriter.Create(coreCompilePath,
-                        new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
-                    allTargets.Save(writer);
-                }
-                var xml = File.ReadAllText(coreCompilePath);
-                xml = xml.Replace("&#xD;&#xA;", Environment.NewLine);
-                File.WriteAllText(coreCompilePath, xml);
-
-                var compilationTaskName =
-                    lang == SupportedLanguage.CSharp
-                        ? "Csc"
-                        : "Fsc";
-                var compilationTask = allTargets.Root.Descendants(Name(compilationTaskName)).Single();
-                var condition = compilationTask.Attribute("Condition");
-                if (condition == null)
-                {
-                    throw new NotSupportedException("Expected compilation task Condition attribute to be set.");
-                }
-
-                condition.Value = $"'$(CacheRunCompilation)' == 'true' AND {condition.Value}";
-
-                var regularAttributes = compilationTask.Attributes()
-                    .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
-                    .ToArray();
-
-                var itemgroup2 = Name("ItemGroup");
-                var allItemGroup = new XElement(itemgroup2);
-                var all = new XElement(Name("CacheAllCompilerProperties"),
-                    new XAttribute("Include", "___nonexistent___"));
-                all.Add(regularAttributes);
-                allItemGroup.Add(all);
-
-                var relevantAttributes =
-                    regularAttributes
-                        .Select(a => (a.Name.LocalName, a.Value,
-                            KnownAttr: TargetsExtractionUtils.Attrs.FirstOrDefault(x => x.Name == a.Name.LocalName)))
-                        .ToImmutableArray();
-
-                var unknownAttributes =
-                    relevantAttributes
-                        .Where(x => x.KnownAttr == null)
-                        .ToImmutableArray();
-                if (unknownAttributes.Length > 0)
-                {
-                    throw new Exception($"{unknownAttributes.Length} unknown attributes found:" +
-                                        $"{string.Join(",", unknownAttributes.Select(a => a.LocalName))}");
-                }
-
-                var startComment = new XComment("START OF CACHING EXTENSION CODE");
-
-                var doNotUseCacheCondition = DoNotUseCacheConditions
-                    .StringsJoin($"{Environment.NewLine}OR{Environment.NewLine}");
-                var propertygroup = Name("PropertyGroup");
-                var firstPropsGroupElement = new XElement(propertygroup);
-                var canCacheElement =
-                    new XElement(Name("CanCache"), new XAttribute("Condition", doNotUseCacheCondition), "false");
-                firstPropsGroupElement.Add(canCacheElement);
-
-                var canCacheCondition = new XAttribute("Condition", "'$(CanCache)' == 'true'");
-
-                var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
-                    canCacheCondition,
-                    new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
-                    new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
-                    new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
-                        new XAttribute("PropertyName", "CacheHit")),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
-                        new XAttribute("PropertyName", "CacheKey")),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
-                        new XAttribute("PropertyName", "LocalInputsHash")),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "RunCompilation"),
-                        new XAttribute("PropertyName", "CacheRunCompilation")),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheSupported"),
-                        new XAttribute("PropertyName", "CanCache")),
-                    new XElement(Name("Output"), new XAttribute("TaskParameter", "PreCompilationTimeTicks"),
-                        new XAttribute("PropertyName", "PreCompilationTimeTicks"))
-                );
-
-                var gElement = new XElement(propertygroup,
-                    new XElement(Name("CacheRunCompilation"), new XAttribute("Condition", "'$(CanCache)' != 'true'"), "true"));
-                var endComment = new XComment("END OF CACHING EXTENSION CODE");
-                compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement, gElement, endComment);
-
-                var useOrPopulateCacheElement =
-                    new XElement(Name("UseOrPopulateCache"),
-                        canCacheCondition,
-                        new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
-                        new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
-                        new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
-                        new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
-                        new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
-                        new XAttribute("CacheHit", "$(CacheHit)"),
-                        new XAttribute("CacheKey", "$(CacheKey)"),
-                        new XAttribute("LocalInputsHash", "$(LocalInputsHash)")
-                    );
-
-                compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
-
-                var p = compilationTask.Attribute("PathMap");
-                p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";
-
-                {
-                    using var writer = XmlWriter.Create(cachedPath,
-                        new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
-                    allTargets.Save(writer);
-                }
-
-                xml = File.ReadAllText(cachedPath);
-                xml = xml.Replace("&#xD;&#xA;", Environment.NewLine);
-                xml = xml.Replace("xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"", "");
-                File.WriteAllText(cachedPath, xml);
-            }
+            commentNode.Remove();
         }
+
+        var root = allTargets.Root!;
+        root.Name = Name("Project");
+        var allTargetsList = allTargets.Root!.Descendants(Name("Target"));
+        var coreCompileTargetNode = allTargetsList
+            .Single(n => n.Attribute("Name")?.Value == "CoreCompile");
+
+        var nodes = root.Nodes().ToImmutableArray();
+        foreach (var e in nodes.Where(e => e != coreCompileTargetNode))
+        {
+            e.Remove();
+        }
+
+        {
+            using var writer = XmlWriter.Create(coreCompilePath,
+                new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
+            allTargets.Save(writer);
+        }
+        var xml = File.ReadAllText(coreCompilePath);
+        xml = xml.Replace("&#xD;&#xA;", Environment.NewLine);
+        File.WriteAllText(coreCompilePath, xml);
+
+        var compilationTaskName =
+            lang == SupportedLanguage.CSharp
+                ? "Csc"
+                : "Fsc";
+        var compilationTask = allTargets.Root.Descendants(Name(compilationTaskName)).Single();
+        var condition = compilationTask.Attribute("Condition");
+        if (condition == null)
+        {
+            throw new NotSupportedException("Expected compilation task Condition attribute to be set.");
+        }
+
+        condition.Value = $"'$(CacheRunCompilation)' == 'true' AND {condition.Value}";
+
+        var regularAttributes = compilationTask.Attributes()
+            .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
+            .ToArray();
+
+        var itemgroup2 = Name("ItemGroup");
+        var allItemGroup = new XElement(itemgroup2);
+        var all = new XElement(Name("CacheAllCompilerProperties"),
+            new XAttribute("Include", "___nonexistent___"));
+        all.Add(regularAttributes);
+        allItemGroup.Add(all);
+
+        var relevantAttributes =
+            regularAttributes
+                .Select(a => (a.Name.LocalName, a.Value,
+                    KnownAttr: TargetsExtractionUtils.Attrs.FirstOrDefault(x => x.Name == a.Name.LocalName)))
+                .ToImmutableArray();
+
+        var unknownAttributes =
+            relevantAttributes
+                .Where(x => x.KnownAttr == null)
+                .ToImmutableArray();
+        if (unknownAttributes.Length > 0)
+        {
+            throw new Exception($"{unknownAttributes.Length} unknown attributes found:" +
+                                $"{string.Join(",", unknownAttributes.Select(a => a.LocalName))}");
+        }
+
+        var startComment = new XComment("START OF CACHING EXTENSION CODE");
+
+        var doNotUseCacheCondition = DoNotUseCacheConditions
+            .StringsJoin($"{Environment.NewLine}OR{Environment.NewLine}");
+        var propertygroup = Name("PropertyGroup");
+        var firstPropsGroupElement = new XElement(propertygroup);
+        var canCacheElement =
+            new XElement(Name("CanCache"), new XAttribute("Condition", doNotUseCacheCondition), "false");
+        firstPropsGroupElement.Add(canCacheElement);
+
+        var canCacheCondition = new XAttribute("Condition", "'$(CanCache)' == 'true'");
+
+        var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
+            canCacheCondition,
+            new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
+            new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
+            new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
+            new XAttribute("AssemblyName", "$(AssemblyName)"),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
+                new XAttribute("PropertyName", "CacheHit")),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
+                new XAttribute("PropertyName", "CacheKey")),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
+                new XAttribute("PropertyName", "LocalInputsHash")),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "RunCompilation"),
+                new XAttribute("PropertyName", "CacheRunCompilation")),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheSupported"),
+                new XAttribute("PropertyName", "CanCache")),
+            new XElement(Name("Output"), new XAttribute("TaskParameter", "PreCompilationTimeTicks"),
+                new XAttribute("PropertyName", "PreCompilationTimeTicks"))
+        );
+
+        var gElement = new XElement(propertygroup,
+            new XElement(Name("CacheRunCompilation"), new XAttribute("Condition", "'$(CanCache)' != 'true'"),
+                "true"));
+        var endComment = new XComment("END OF CACHING EXTENSION CODE");
+        compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement,
+            gElement, endComment);
+
+        var useOrPopulateCacheElement =
+            new XElement(Name("UseOrPopulateCache"),
+                canCacheCondition,
+                new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
+                new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
+                new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
+                new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
+                new XAttribute("AssemblyName", "$(AssemblyName)"),
+                new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
+                new XAttribute("CacheHit", "$(CacheHit)"),
+                new XAttribute("CacheKey", "$(CacheKey)"),
+                new XAttribute("LocalInputsHash", "$(LocalInputsHash)")
+            );
+
+        compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
+
+        var p = compilationTask.Attribute("PathMap");
+        p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";
+
+        {
+            using var writer = XmlWriter.Create(cachedPath,
+                new XmlWriterSettings { Indent = true, NewLineOnAttributes = true });
+            allTargets.Save(writer);
+        }
+
+        xml = File.ReadAllText(cachedPath);
+        xml = xml.Replace("&#xD;&#xA;", Environment.NewLine);
+        xml = xml.Replace("xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"", "");
+        File.WriteAllText(cachedPath, xml);
     }
 }

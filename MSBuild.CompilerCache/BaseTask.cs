@@ -9,6 +9,7 @@ namespace MSBuild.CompilerCache;
 public record BaseTaskInputs(
     string ConfigPath,
     string ProjectFullPath,
+    string AssemblyName,
     IDictionary<string, string> AllProps
 );
 
@@ -17,6 +18,7 @@ public abstract class BaseTask : Task
 {
     [Required] public string ConfigPath { get; set; } = null!;
     [Required] public string ProjectFullPath { get; set; } = null!;
+    [Required] public string AssemblyName { get; set; } = null!;
     [Required] public ITaskItem AllCompilerProperties { get; set; }
 
     public void SetInputs(BaseTaskInputs inputs)
@@ -32,6 +34,7 @@ public abstract class BaseTask : Task
         return new(
             ProjectFullPath: ProjectFullPath ??
                              throw new ArgumentException($"{nameof(ProjectFullPath)} cannot be null"),
+            AssemblyName: AssemblyName,
             AllProps: typedAllCompilerProps,
             ConfigPath: ConfigPath ?? throw new ArgumentException($"{nameof(ConfigPath)} cannot be null")
         );

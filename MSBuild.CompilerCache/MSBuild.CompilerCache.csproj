@@ -19,6 +19,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="MSBuild.CompilerCache.Tests" />
+        <PackageReference Include="JetBrains.Refasmer" Version="1.0.33" PrivateAssets="all" GeneratePathProperty="true" />
         <PackageReference ExcludeAssets="Runtime" PrivateAssets="all" Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
         <PackageReference PrivateAssets="all" Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
@@ -51,6 +52,7 @@
     <ItemGroup>
         <None Include="Targets/MSBuild.CompilerCache.targets" Pack="True" PackagePath="build\MSBuild.CompilerCache.targets" />
         <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
+        <None Include="$(PkgJetBrains_Refasmer)/lib/net6.0/Refasmer.dll" Pack="True" PackagePath="lib\net6.0" />
         <None Include="NuGet.README.md">
             <Pack>True</Pack>
             <PackagePath>README.md</PackagePath>

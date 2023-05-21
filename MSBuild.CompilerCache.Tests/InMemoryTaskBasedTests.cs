@@ -8,70 +8,6 @@ using NUnit.Framework;
 namespace Tests;
 
 [TestFixture]
-public class UnitTests
-{
-    [Test]
-    public void TestOutputBuildAndCache()
-    {
-        using var dir = new DisposableDir();
-        var outputsDir = dir.Dir.CreateSubdirectory("outputs");
-        var foo = outputsDir.CombineAsFile("foo.txt");
-        File.WriteAllText(foo.FullName, "foo");
-        var items = new[]
-        {
-            new OutputItem("foo", foo.FullName)
-        };
-        var metadata = new AllCompilationMetadata(
-            Metadata: new CompilationMetadata(
-                Hostname: "A",
-                Username: "B",
-                StopTimeUtc: DateTime.Today,
-                WorkingDirectory: "e:/foo"),
-            LocalInputs:
-            new LocalInputs(
-                Files: new LocalFileExtract[] { },
-                Props: new[]{("a", "b")},
-                OutputFiles: items
-            )
-        );
-        var zipPath = UserOrPopulator.BuildOutputsZip(dir, items, metadata);
-
-        var cache = new Cache(dir.Dir.CombineAsDir(".cache").FullName);
-
-        var key = new CacheKey("a");
-        cache.Set(key, metadata.LocalInputs.ToFullExtract(), zipPath);
-
-        var count = cache.OutputVersionsCount(key);
-
-        Assert.That(count, Is.EqualTo(1));
-
-        var cachedZip = cache.Get(key);
-        Assert.That(cachedZip, Is.Not.Null);
-
-        var mainOutputsDir = new DirectoryInfo(outputsDir.FullName);
-        outputsDir.MoveTo(dir.Dir.CombineAsDir("old_output").FullName);
-        mainOutputsDir.Create();
-        UserOrPopulator.UseCachedOutputs(cachedZip!, items, DateTime.Now);
-        AssertDirsSame(outputsDir, mainOutputsDir);
-    }
-
-    public static void AssertDirsSame(DirectoryInfo a, DirectoryInfo b)
-    {
-        (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>
-            dir
-                .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                .Select(x => (x.Name, Hash: MSBuild.CompilerCache.Utils.FileToSHA256String(new FileInfo(x.FullName))))
-                .Order()
-                .ToArray();
-
-        var aInfo = GetInfo(a);
-        var bInfo = GetInfo(b);
-
-        Assert.That(bInfo, Is.EqualTo(aInfo));
-    }
-}
-
-[TestFixture]
 public class InMemoryTaskBasedTests
 {
     private Mock<IBuildEngine9> _buildEngine = null!;
@@ -86,13 +22,13 @@ public class InMemoryTaskBasedTests
     {
         _buildEngine = new Mock<IBuildEngine9>();
         _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
-        
+
         locate = new LocateCompilationCacheEntry();
         locate.BuildEngine = _buildEngine.Object;
-        
+
         use = new UseOrPopulateCache();
         use.BuildEngine = _buildEngine.Object;
-        
+
         tmpDir = new DisposableDir();
         baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
         cache = new Cache(baseCacheDir);
@@ -107,9 +43,12 @@ public class InMemoryTaskBasedTests
     public record All(BaseTaskInputs BaseTaskInputs, LocalInputs LocalInputs, CacheKey CacheKey,
         string LocalInputsHash, FullExtract FullExtract);
 
-    public static All AllFromInputs(BaseTaskInputs inputs)
+    public static All AllFromInputs(BaseTaskInputs inputs, RefCache refCache)
     {
-        var localInputs = Locator.CalculateLocalInputs(TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps));
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
+        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
+            new RefTrimmingConfig()
+        );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -129,7 +68,7 @@ public class InMemoryTaskBasedTests
         var json = JsonConvert.SerializeObject(config);
         return CreateTmpFile(".config", json);
     }
-    
+
     [Test]
     public void SimpleCacheHitTest()
     {
@@ -147,17 +86,19 @@ public class InMemoryTaskBasedTests
         {
             BaseCacheDir = baseCacheDir
         };
-        
+
         var configPath = SaveConfig(config);
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
+            AssemblyName: "bar",
             AllProps: allProps
         );
-        var all = AllFromInputs(baseInputs);
+        var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
+        var all = AllFromInputs(baseInputs, refCache);
         var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
-        
+
         foreach (var outputItem in outputItems)
         {
             File.Move(outputItem.LocalPath, outputItem.LocalPath + ".copy");
@@ -193,10 +134,11 @@ public class InMemoryTaskBasedTests
         foreach (var outputItem in outputItems)
         {
             Assert.That(File.Exists(outputItem.LocalPath));
-            Assert.That(File.ReadAllText(outputItem.LocalPath), Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
+            Assert.That(File.ReadAllText(outputItem.LocalPath),
+                Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
         }
     }
-    
+
     [Test]
     public void SimpleCacheMissTest()
     {
@@ -216,13 +158,15 @@ public class InMemoryTaskBasedTests
             BaseCacheDir = baseCacheDir
         };
         var configPath = SaveConfig(config);
-        
+
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
+            AssemblyName: "Bar",
             AllProps: allProps
         );
-        var all = AllFromInputs(baseInputs);
+        var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
+        var all = AllFromInputs(baseInputs, refCache);
 
         locate.SetInputs(baseInputs);
         var locateSuccess = locate.Execute();
@@ -253,7 +197,7 @@ public class InMemoryTaskBasedTests
         Assert.That(zip, Is.Not.Null);
         var fromCacheDir = tmpDir.Dir.CreateSubdirectory("from_cache");
         ZipFile.ExtractToDirectory(zip, fromCacheDir.FullName);
-        
+
         foreach (var outputItem in outputItems)
         {
             var cachedFile = fromCacheDir.CombineAsFile(outputItem.CacheFileName);

@@ -20,14 +20,14 @@ Caching works in commandline builds as well as in the IDE.
 To use the cache, add the following to your project file (or `Directory.Build.props` in your directory structure):
 ```xml
 <PropertyGroup>
-    <CompilationCacheConfigPath>c:/accessible/filesystem/location/compilation_config.json</CompilationCacheConfigPath>
+    <CompilationCacheConfigPath>c:/accessible/filesystem/location/compilation_cache_config.json</CompilationCacheConfigPath>
 </PropertyGroup>
 
 <ItemGroup>
-    <PackageReference Include="MSBuild.CompilerCache" Version="0.6.4" />
+    <PackageReference Include="MSBuild.CompilerCache" Version="0.7.4" PrivateAssets="all" />
 </ItemGroup>
 ```
-and create a config file like one below:
+and create a config file like the one below:
 
 ```json
 {

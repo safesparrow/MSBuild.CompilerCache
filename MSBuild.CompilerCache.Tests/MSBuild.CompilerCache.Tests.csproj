@@ -13,6 +13,7 @@
       <PackageReference Include="NUnit" Version="3.13.3" />
       <PackageReference Include="NUnit3TestAdapter" Version="4.4.2" />
       <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
+      <PackageReference Include="JetBrains.Refasmer" Version="1.0.33" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
