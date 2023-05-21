@@ -29,6 +29,16 @@ public record LocateResult(
 
 public class Locator
 {
+    public static (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath)
+    {
+        var configJson = File.ReadAllText(configPath);
+        var config = JsonConvert.DeserializeObject<Config>(configJson);
+        var baseCacheDir = config.BaseCacheDir;
+        var cache = new Cache(baseCacheDir);
+        var refCache = new RefCache(config.InferRefCacheDir());
+        return (config, cache, refCache);
+    }
+    
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
@@ -40,12 +50,7 @@ public class Locator
             return LocateResult.CreateNotSupported();
         }
 
-        var configJson = File.ReadAllText(inputs.ConfigPath);
-        var config = JsonConvert.DeserializeObject<Config>(configJson);
-        var baseCacheDir = config.BaseCacheDir;
-        var cache = new Cache(baseCacheDir);
-        // TODO
-        IRefCache refCache = null;
+        var (config, cache, refCache) = CreateCaches(inputs.ConfigPath);
         var assemblyName = inputs.AssemblyName;
         var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, useRefasmer: true);
         var extract = localInputs.ToFullExtract();
@@ -102,7 +107,7 @@ public class Locator
                 .ToImmutableArray()
             : ImmutableArray.Create<LocalFileExtract>();
 
-        var allExtracts = fileExtracts.Union(refExtracts).ToImmutableArray();
+        var allExtracts = fileExtracts.Union(refExtracts).ToArray();
 
         var props = decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray();
         var outputs = decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray();

@@ -1,3 +1,6 @@
+using System.CodeDom;
+using Newtonsoft.Json;
+
 namespace MSBuild.CompilerCache;
 
 public class RefCache : IRefCache
@@ -42,8 +45,10 @@ public class RefCache : IRefCache
         }
         else
         {
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
-            File.WriteAllText(entryPath, json);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(data, Formatting.Indented);
+            using var tmpFile = new TempFile();
+            File.WriteAllText(tmpFile.FullName, json);
+            Cache.AtomicCopy(tmpFile.FullName, entryPath);
         }
     }
 }

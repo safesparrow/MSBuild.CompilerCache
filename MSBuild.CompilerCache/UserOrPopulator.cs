@@ -22,10 +22,12 @@ public record UseOrPopulateInputs(
 public class UserOrPopulator
 {
     private readonly ICache _cache;
+    private readonly IRefCache _refCache;
 
-    public UserOrPopulator(ICache cache)
+    public UserOrPopulator(ICache cache, IRefCache refCache)
     {
         _cache = cache;
+        _refCache = refCache;
     }
 
     public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items, AllCompilationMetadata metadata,
@@ -40,7 +42,7 @@ public class UserOrPopulator
                 log?.LogMessage(MessageImportance.High, $"Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
-            }).ToImmutableArray();
+            }).ToArray();
 
         var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
 
@@ -90,10 +92,8 @@ public class UserOrPopulator
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
-        // TODO
-        IRefCache refCache = null;
         var assemblyName = inputs.Inputs.AssemblyName;
-        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName, useRefasmer: true);
+        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, useRefasmer: true);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;

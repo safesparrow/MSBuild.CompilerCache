@@ -35,9 +35,8 @@ public class UseOrPopulateCache : BaseTask
                 PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
             )
         );
-        var configJson = File.ReadAllText(inputs.Inputs.ConfigPath);
-        var config = JsonConvert.DeserializeObject<Config>(configJson)!;
-        var userOrPopulator = new UserOrPopulator(new Cache(config.BaseCacheDir));
+        var (config, cache, refCache) = Locator.CreateCaches(inputs.Inputs.ConfigPath);
+        var userOrPopulator = new UserOrPopulator(cache, refCache);
         var results = userOrPopulator.UseOrPopulate(inputs, Log);
         return true;
     }

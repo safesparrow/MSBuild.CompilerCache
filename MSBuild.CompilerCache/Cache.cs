@@ -64,7 +64,7 @@ public record OutputItem
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
 [Serializable]
-public record LocalInputs(ImmutableArray<LocalFileExtract> Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
 {
     public FullExtract ToFullExtract()
     {
@@ -126,7 +126,11 @@ public class Cache : ICache
         var options = new EnumerationOptions
             { ReturnSpecialDirectories = false, IgnoreInaccessible = true, RecurseSubdirectories = false };
         var fullNames = Directory.EnumerateDirectories(_baseCacheDir, "*", options);
-        return fullNames.Select(full => new CacheKey(Path.GetFileName(full))).ToArray();
+        return fullNames
+            .Select(Path.GetFileName)
+            .Where(name => !name!.StartsWith('.'))
+            .Select(name => new CacheKey(name!))
+            .ToArray();
     }
 
     public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
