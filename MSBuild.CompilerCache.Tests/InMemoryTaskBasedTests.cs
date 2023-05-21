@@ -22,13 +22,13 @@ public class InMemoryTaskBasedTests
     {
         _buildEngine = new Mock<IBuildEngine9>();
         _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
-        
+
         locate = new LocateCompilationCacheEntry();
         locate.BuildEngine = _buildEngine.Object;
-        
+
         use = new UseOrPopulateCache();
         use.BuildEngine = _buildEngine.Object;
-        
+
         tmpDir = new DisposableDir();
         baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
         cache = new Cache(baseCacheDir);
@@ -46,7 +46,9 @@ public class InMemoryTaskBasedTests
     public static All AllFromInputs(BaseTaskInputs inputs, RefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", useRefasmer: true);
+        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
+            new RefTrimmingConfig()
+        );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -66,7 +68,7 @@ public class InMemoryTaskBasedTests
         var json = JsonConvert.SerializeObject(config);
         return CreateTmpFile(".config", json);
     }
-    
+
     [Test]
     public void SimpleCacheHitTest()
     {
@@ -84,7 +86,7 @@ public class InMemoryTaskBasedTests
         {
             BaseCacheDir = baseCacheDir
         };
-        
+
         var configPath = SaveConfig(config);
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
@@ -96,7 +98,7 @@ public class InMemoryTaskBasedTests
         var all = AllFromInputs(baseInputs, refCache);
         var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
-        
+
         foreach (var outputItem in outputItems)
         {
             File.Move(outputItem.LocalPath, outputItem.LocalPath + ".copy");
@@ -132,10 +134,11 @@ public class InMemoryTaskBasedTests
         foreach (var outputItem in outputItems)
         {
             Assert.That(File.Exists(outputItem.LocalPath));
-            Assert.That(File.ReadAllText(outputItem.LocalPath), Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
+            Assert.That(File.ReadAllText(outputItem.LocalPath),
+                Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
         }
     }
-    
+
     [Test]
     public void SimpleCacheMissTest()
     {
@@ -155,7 +158,7 @@ public class InMemoryTaskBasedTests
             BaseCacheDir = baseCacheDir
         };
         var configPath = SaveConfig(config);
-        
+
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
@@ -194,7 +197,7 @@ public class InMemoryTaskBasedTests
         Assert.That(zip, Is.Not.Null);
         var fromCacheDir = tmpDir.Dir.CreateSubdirectory("from_cache");
         ZipFile.ExtractToDirectory(zip, fromCacheDir.FullName);
-        
+
         foreach (var outputItem in outputItems)
         {
             var cachedFile = fromCacheDir.CombineAsFile(outputItem.CacheFileName);

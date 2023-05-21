@@ -37,7 +37,7 @@ public class UseOrPopulateCache : BaseTask
         );
         var (config, cache, refCache) = Locator.CreateCaches(inputs.Inputs.ConfigPath);
         var userOrPopulator = new UserOrPopulator(cache, refCache);
-        var results = userOrPopulator.UseOrPopulate(inputs, Log);
+        var results = userOrPopulator.UseOrPopulate(inputs, Log, config.RefTrimming);
         return true;
     }
 

@@ -88,12 +88,13 @@ public class UserOrPopulator
         return new CacheKey($"{name}_{hash}");
     }
 
-    public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
+    public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log,
+        RefTrimmingConfig trimmingConfig)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
         var assemblyName = inputs.Inputs.AssemblyName;
-        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, useRefasmer: true);
+        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;

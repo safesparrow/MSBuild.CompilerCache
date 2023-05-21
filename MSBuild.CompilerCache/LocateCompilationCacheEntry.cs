@@ -10,7 +10,6 @@ using Microsoft.Build.Utilities;
 // ReSharper disable once ClassNeverInstantiated.Global
 public class LocateCompilationCacheEntry : BaseTask
 {
-    private readonly Locator _locator;
 #pragma warning disable CS8618
     // ReSharper disable UnusedAutoPropertyAccessor.Global
     [Output] public bool RunCompilation { get; private set; }
@@ -22,13 +21,9 @@ public class LocateCompilationCacheEntry : BaseTask
     // ReSharper restore UnusedAutoPropertyAccessor.Global
 #pragma warning restore CS8618
 
-    public LocateCompilationCacheEntry()
-    {
-        _locator = new Locator();
-    }
-    
     public override bool Execute()
     {
+        var _locator = new Locator();
         var inputs = GatherInputs();
         var results = _locator.Locate(inputs, Log);
 

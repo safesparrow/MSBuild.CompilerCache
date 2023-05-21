@@ -38,7 +38,7 @@ public class Locator
         var refCache = new RefCache(config.InferRefCacheDir());
         return (config, cache, refCache);
     }
-    
+
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
@@ -52,7 +52,7 @@ public class Locator
 
         var (config, cache, refCache) = CreateCaches(inputs.ConfigPath);
         var assemblyName = inputs.AssemblyName;
-        var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, useRefasmer: true);
+        var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, config.RefTrimming);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -82,10 +82,12 @@ public class Locator
     }
 
     public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string assemblyName, bool useRefasmer = false)
+        string assemblyName, RefTrimmingConfig trimmingConfig)
     {
         var nonReferenceFileInputs = decomposed.FileInputs;
-        var fileInputs = useRefasmer ? nonReferenceFileInputs : nonReferenceFileInputs.Union(decomposed.References);
+        var fileInputs = trimmingConfig.Enabled
+            ? nonReferenceFileInputs
+            : nonReferenceFileInputs.Union(decomposed.References);
         var fileExtracts =
             fileInputs
                 .OrderBy(file => file)
@@ -94,7 +96,7 @@ public class Locator
                 .Select(GetLocalFileExtract)
                 .ToImmutableArray();
 
-        var refExtracts = useRefasmer
+        var refExtracts = trimmingConfig.Enabled
             ? decomposed.References
                 .OrderBy(dll => dll)
                 .AsParallel()
@@ -102,7 +104,7 @@ public class Locator
                 .Select(dll =>
                 {
                     var allRefData = GetAllRefData(dll, refCache);
-                    return AllRefDataToExtract(allRefData, assemblyName);
+                    return AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
                 })
                 .ToImmutableArray()
             : ImmutableArray.Create<LocalFileExtract>();
@@ -111,7 +113,7 @@ public class Locator
 
         var props = decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray();
         var outputs = decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray();
-        
+
         return new LocalInputs(allExtracts, props, outputs);
     }
 
@@ -168,13 +170,16 @@ public class Locator
         );
     }
 
-    public static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName)
+    public static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName,
+        bool ignoreInternalsIfPossible)
     {
         bool internalsVisibleToOurAssembly =
             data.InternalsVisibleToAssemblies.Any(x =>
                 string.Equals(x, assemblyName, StringComparison.OrdinalIgnoreCase));
 
-        var trimmedHash = internalsVisibleToOurAssembly ? data.PublicAndInternalsRefHash : data.PublicRefHash;
+        var ignoreInternals = ignoreInternalsIfPossible || !internalsVisibleToOurAssembly;
+        var trimmedHash =
+            ignoreInternals ? data.PublicAndInternalsRefHash : data.PublicRefHash;
 
         // TODO It's not very clean that we keep other properties of the original dll and only modify the hash, but it's enough for caching to work.
         return data.Original with { Hash = trimmedHash };
