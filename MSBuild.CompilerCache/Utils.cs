@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 
@@ -53,11 +54,16 @@ public static class Utils
         return hashString;
     }
 
-    public static string ObjectToSHA256Hex(byte[] bytes)
+    public static string BytesToSHA256Hex(byte[] bytes)
     {
-        var hash = SHA256.Create().ComputeHash(bytes);
-        var hashString = Convert.ToHexString(hash);
-        return hashString;
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash);
+    }
+    
+    public static string BytesToSHA256Hex(ImmutableArray<byte> bytes)
+    {
+        var hash = SHA256.HashData(bytes.AsSpan());
+        return Convert.ToHexString(hash);
     }
 
     public static string FileToSHA256String(FileInfo fileInfo)

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
-using System.Reflection.Metadata.Decoding.Tests;
 using System.Reflection.PortableExecutable;
 using JetBrains.Refasmer;
 using JetBrains.Refasmer.Filters;
@@ -47,43 +46,10 @@ public class RefTrimmer
         File.WriteAllBytes(outputPath, result);
     }
 
-    public enum RefType
+    public enum RefAsmType
     {
         Public,
         PublicAndInternal
-    }
-
-
-    public static bool HasAnyInternalsVisibleToAttribute(MetadataReader reader) =>
-        // ReSharper disable once ReplaceWithSingleCallToAny
-        reader.IsAssembly && reader.GetAssemblyDefinition().GetCustomAttributes()
-            .Select(reader.GetCustomAttribute)
-            .Where(a => reader.GetFullname(reader.GetCustomAttrClass(a)) == FullNames.InternalsVisibleTo)
-            .Any();
-
-
-    private class CustomAttributeTypeProvider : DisassemblingTypeProvider, ICustomAttributeTypeProvider<string>
-    {
-        public string GetSystemType()
-        {
-            return "[System.Runtime]System.Type";
-        }
-
-        public bool IsSystemType(string type)
-        {
-            return type == "[System.Runtime]System.Type" // encountered as typeref
-                   || Type.GetType(type) == typeof(Type); // encountered as serialized to reflection notation
-        }
-
-        public string GetTypeFromSerializedName(string name)
-        {
-            return name;
-        }
-
-        public PrimitiveTypeCode GetUnderlyingEnumType(string type)
-        {
-            throw new ArgumentOutOfRangeException();
-        }
     }
 
     public static ImmutableArray<string> GetInternalsVisibleToAssemblies(MetadataReader reader)
@@ -117,8 +83,8 @@ public class RefTrimmer
                 .ToImmutableArray();
     }
 
-    public static (byte[] res, ImmutableArray<string> internalsVisibleToAssemblies) MakeRefasm(
-        ImmutableArray<byte> content, LoggerBase logger, RefType refType)
+    public static (ImmutableArray<byte> bytes, ImmutableArray<string> internalsVisibleToAssemblies) MakeRefasm(
+        ImmutableArray<byte> content, LoggerBase logger, RefAsmType refAsmType)
     {
         var peReader = new PEReader(content);
         var metaReader = peReader.GetMetadataReader();
@@ -128,24 +94,20 @@ public class RefTrimmer
         if (!metaReader.IsAssembly)
             throw new Exception("File format is not supported");
 
-        IImportFilter filter = refType == RefType.PublicAndInternal
+        IImportFilter filter = refAsmType == RefAsmType.PublicAndInternal
             ? new AllowPublicAndInternals()
             : new AllowPublic();
 
-        byte[] res = null;
-        for (int i = 0; i < 5; i++)
-        {
-            res = MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false)!;
-        }
+        var refBytes = MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false)!;
 
-        return (res, internalsVisibleToAssemblies);
+        return (ImmutableArray.Create(refBytes), internalsVisibleToAssemblies);
     }
 
     public static (string hash, ImmutableArray<string> internalsVisibleToAssemblies) MakeRefasmAndGetHash(
-        ImmutableArray<byte> content, LoggerBase logger, RefType refType)
+        ImmutableArray<byte> content, LoggerBase logger, RefAsmType refAsmType)
     {
-        var (bytes, internalsVisibleToAssemblies) = MakeRefasm(content, logger, refType);
-        var hash = Utils.ObjectToSHA256Hex(bytes);
+        var (bytes, internalsVisibleToAssemblies) = MakeRefasm(content, logger, refAsmType);
+        var hash = Utils.BytesToSHA256Hex(bytes);
         return (hash, internalsVisibleToAssemblies);
     }
 
@@ -154,8 +116,8 @@ public class RefTrimmer
         var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
         var loggerBase = new LoggerBase(logger);
 
-        var (publicRefHash, internalsVisibleToAssemblies) = MakeRefasmAndGetHash(content, loggerBase, RefType.Public);
-        var (publicAndInternalRefHash, _) = MakeRefasmAndGetHash(content, loggerBase, RefType.PublicAndInternal);
+        var (publicRefHash, internalsVisibleToAssemblies) = MakeRefasmAndGetHash(content, loggerBase, RefAsmType.Public);
+        var (publicAndInternalRefHash, _) = MakeRefasmAndGetHash(content, loggerBase, RefAsmType.PublicAndInternal);
 
         return new RefData(
             PublicRefHash: publicRefHash,
