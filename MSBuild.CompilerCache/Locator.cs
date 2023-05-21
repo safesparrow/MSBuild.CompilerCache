@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
@@ -28,29 +29,27 @@ public record LocateResult(
 
 public class Locator
 {
-    private FullExtract _extract;
-    private string _hashString;
-    private BaseTaskInputs _inputs;
-
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
         if (decomposed.UnsupportedPropsSet.Any())
         {
-            var s = string.Join(Environment.NewLine, decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
+            var s = string.Join(Environment.NewLine,
+                decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
             log?.LogMessage(MessageImportance.High, $"Some unsupported props set: {Environment.NewLine}{s}");
             return LocateResult.CreateNotSupported();
         }
+
         var configJson = File.ReadAllText(inputs.ConfigPath);
         var config = JsonConvert.DeserializeObject<Config>(configJson);
         var baseCacheDir = config.BaseCacheDir;
         var cache = new Cache(baseCacheDir);
-        var localInputs = CalculateLocalInputs(decomposed);
+        // TODO
+        IRefCache refCache = null;
+        var assemblyName = inputs.AssemblyName;
+        var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, useRefasmer: true);
         var extract = localInputs.ToFullExtract();
-        _inputs = inputs;
-        _extract = extract;
         var hashString = Utils.ObjectToSHA256Hex(extract);
-        _hashString = hashString; 
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
@@ -66,7 +65,7 @@ public class Locator
         }
 
         var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
-        
+
         return new LocateResult(
             CacheSupported: true,
             CacheHit: cacheHit,
@@ -77,13 +76,38 @@ public class Locator
         );
     }
 
-    public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed)
+    public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
+        string assemblyName, bool useRefasmer = false)
     {
-        var allFileInputs = decomposed.FileInputs.Union(decomposed.References);
-        var fileExtracts = allFileInputs.OrderBy(file => file).AsParallel().AsOrdered().Select(GetLocalFileExtract)
-            .ToArray();
+        var nonReferenceFileInputs = decomposed.FileInputs;
+        var fileInputs = useRefasmer ? nonReferenceFileInputs : nonReferenceFileInputs.Union(decomposed.References);
+        var fileExtracts =
+            fileInputs
+                .OrderBy(file => file)
+                .AsParallel()
+                .AsOrdered()
+                .Select(GetLocalFileExtract)
+                .ToImmutableArray();
 
-        return new LocalInputs(fileExtracts, decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray(), decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray());
+        var refExtracts = useRefasmer
+            ? decomposed.References
+                .OrderBy(dll => dll)
+                .AsParallel()
+                .AsOrdered()
+                .Select(dll =>
+                {
+                    var allRefData = GetAllRefData(dll, refCache);
+                    return AllRefDataToExtract(allRefData, assemblyName);
+                })
+                .ToImmutableArray()
+            : ImmutableArray.Create<LocalFileExtract>();
+
+        var allExtracts = fileExtracts.Union(refExtracts).ToImmutableArray();
+
+        var props = decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray();
+        var outputs = decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray();
+        
+        return new LocalInputs(allExtracts, props, outputs);
     }
 
     public static LocalFileExtract GetLocalFileExtract(string filepath)
@@ -105,4 +129,51 @@ public class Locator
             StopTimeUtc: postCompilationTimeUtc,
             WorkingDirectory: Environment.CurrentDirectory
         );
+
+
+    public static AllRefData GetAllRefData(string filepath, IRefCache refCache)
+    {
+        var fileInfo = new FileInfo(filepath);
+        if (!fileInfo.Exists)
+        {
+            throw new Exception($"Reference file does not exist: '{filepath}'");
+        }
+
+        var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
+        var hashString = Utils.BytesToSHA256Hex(bytes);
+        var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
+
+        var cacheKey = BuildRefCacheKey(name, hashString);
+        var cached = refCache.Get(cacheKey);
+        if (cached == null)
+        {
+            var trimmer = new RefTrimmer();
+            var toBeCached = trimmer.GenerateRefData(bytes);
+            var x = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
+            refCache.Set(cacheKey, x);
+            cached = x;
+        }
+
+        return new AllRefData(
+            Original: extract,
+            InternalsVisibleToAssemblies: cached.Ref.InternalsVisibleTo,
+            PublicRefHash: cached.Ref.PublicRefHash,
+            PublicAndInternalsRefHash: cached.Ref.PublicAndInternalRefHash
+        );
+    }
+
+    public static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName)
+    {
+        bool internalsVisibleToOurAssembly =
+            data.InternalsVisibleToAssemblies.Any(x =>
+                string.Equals(x, assemblyName, StringComparison.OrdinalIgnoreCase));
+
+        var trimmedHash = internalsVisibleToOurAssembly ? data.PublicAndInternalsRefHash : data.PublicRefHash;
+
+        // TODO It's not very clean that we keep other properties of the original dll and only modify the hash, but it's enough for caching to work.
+        return data.Original with { Hash = trimmedHash };
+    }
+
+    public static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
 }

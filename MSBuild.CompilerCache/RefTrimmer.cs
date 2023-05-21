@@ -14,6 +14,8 @@ namespace MSBuild.CompilerCache;
 /// <param name="InternalsVisibleTo">A list of assembly names that can access internal symbols from this assembly, via the InternalsVisibleTo attribute.</param>
 public record RefData(string PublicRefHash, string PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
 
+public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original);
+
 /// <summary>
 /// A cache for storing hashes of reference assemblies (generated using Refasmer).
 /// Does not store the actual assemblies, just their hashes - used for having a more robust inputs cache that does not change when private parts of references change.
@@ -22,8 +24,8 @@ public record RefData(string PublicRefHash, string PublicAndInternalRefHash, Imm
 public interface IRefCache
 {
     bool Exists(CacheKey key);
-    RefData? Get(CacheKey key);
-    void Set(CacheKey key, RefData data);
+    RefDataWithOriginalExtract? Get(CacheKey key);
+    void Set(CacheKey key, RefDataWithOriginalExtract data);
 }
 
 public class RefTrimmer

@@ -31,7 +31,7 @@ public class UnitTests
                 WorkingDirectory: "e:/foo"),
             LocalInputs:
             new LocalInputs(
-                Files: new LocalFileExtract[] { },
+                Files: ImmutableArray<LocalFileExtract>.Empty,
                 Props: new[]{("a", "b")},
                 OutputFiles: items
             )
@@ -111,7 +111,9 @@ public class InMemoryTaskBasedTests
 
     public static All AllFromInputs(BaseTaskInputs inputs)
     {
-        var localInputs = Locator.CalculateLocalInputs(TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps));
+        IRefCache refCache = null;
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
+        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", useRefasmer: false);
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
@@ -154,6 +156,7 @@ public class InMemoryTaskBasedTests
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
+            AssemblyName: "bar",
             AllProps: allProps
         );
         var all = AllFromInputs(baseInputs);
@@ -222,6 +225,7 @@ public class InMemoryTaskBasedTests
         var baseInputs = new BaseTaskInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
+            AssemblyName: "Bar",
             AllProps: allProps
         );
         var all = AllFromInputs(baseInputs);

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.IO.Compression;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -39,7 +40,7 @@ public class UserOrPopulator
                 log?.LogMessage(MessageImportance.High, $"Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
-            }).ToArray();
+            }).ToImmutableArray();
 
         var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
 
@@ -88,9 +89,11 @@ public class UserOrPopulator
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
-
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
-        var localInputs = Locator.CalculateLocalInputs(decomposed);
+        // TODO
+        IRefCache refCache = null;
+        var assemblyName = inputs.Inputs.AssemblyName;
+        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName, useRefasmer: true);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;

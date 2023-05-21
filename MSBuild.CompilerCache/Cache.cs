@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
@@ -63,7 +64,7 @@ public record OutputItem
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
 [Serializable]
-public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(ImmutableArray<LocalFileExtract> Files, (string, string)[] Props, OutputItem[] OutputFiles)
 {
     public FullExtract ToFullExtract()
     {

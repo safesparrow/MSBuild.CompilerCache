@@ -15,35 +15,43 @@ public class TrimmingTests
         var bytes = File.ReadAllBytes(path);
         var t = new RefTrimmer();
         var res = t.GenerateRefData(bytes.ToImmutableArray());
-        
-        Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[]{"MSBuild.CompilerCache.Tests"}));
+
+        Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[] { "MSBuild.CompilerCache.Tests" }));
         Assert.That(res.PublicRefHash, Is.Not.EqualTo(res.PublicAndInternalRefHash));
+    }
+}
+
+public class RefCache : IRefCache
+{
+    public bool Exists(CacheKey key)
+    {
+        throw new NotImplementedException();
+    }
+
+    public RefDataWithOriginalExtract? Get(CacheKey key)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Set(CacheKey key, RefDataWithOriginalExtract data)
+    {
+        throw new NotImplementedException();
     }
 }
 
 [TestFixture]
 public class CachedTrimmingTests
 {
-    public record AllRefData(
-        string Path,
-        string Name,
-        string Hash,
-        ImmutableArray<string> InternalsVisibleToAssemblies,
-        string PublicRefHash,
-        string PublicAndInternalsRefHash
-    );
-    
     [Test]
     public void METHOD()
     {
         IRefCache cache = null;
 
-        var dlls = new[] { "a", "b" };
-        var res = dlls.AsParallel().WithDegreeOfParallelism(4).Select(GetAllRefData).ToImmutableArray();
-
-        AllRefData GetAllRefData(string dllPath)
-        {
-            
-        }
+        var dlls = new[] { Assembly.GetExecutingAssembly().Location.Replace(".Tests.dll", ".dll") };
+        var res = dlls
+            .AsParallel()
+            .WithDegreeOfParallelism(4)
+            .Select(filepath => Locator.GetAllRefData(filepath, cache))
+            .ToImmutableArray();
     }
 }
