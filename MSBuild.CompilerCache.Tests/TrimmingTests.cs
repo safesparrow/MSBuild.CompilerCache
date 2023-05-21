@@ -17,5 +17,33 @@ public class TrimmingTests
         var res = t.GenerateRefData(bytes.ToImmutableArray());
         
         Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[]{"MSBuild.CompilerCache.Tests"}));
+        Assert.That(res.PublicRefHash, Is.Not.EqualTo(res.PublicAndInternalRefHash));
+    }
+}
+
+[TestFixture]
+public class CachedTrimmingTests
+{
+    public record AllRefData(
+        string Path,
+        string Name,
+        string Hash,
+        ImmutableArray<string> InternalsVisibleToAssemblies,
+        string PublicRefHash,
+        string PublicAndInternalsRefHash
+    );
+    
+    [Test]
+    public void METHOD()
+    {
+        IRefCache cache = null;
+
+        var dlls = new[] { "a", "b" };
+        var res = dlls.AsParallel().WithDegreeOfParallelism(4).Select(GetAllRefData).ToImmutableArray();
+
+        AllRefData GetAllRefData(string dllPath)
+        {
+            
+        }
     }
 }
