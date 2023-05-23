@@ -249,9 +249,9 @@ public class EndToEndTests
         var output2 = BuildProject(projDir2, proj);
         var output3 = BuildProject(projDir3, projModified);
         
-        Assert.That(output1.Where(x => x.Contains($"CacheMiss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
-        Assert.That(output2.Where(x => x.Contains($"CacheHit - copying {outputsCount} files from cache")), Is.Not.Empty);
-        Assert.That(output3.Where(x => x.Contains($"CacheMiss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
+        Assert.That(output1.Where(x => x.Contains($"miss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
+        Assert.That(output2.Where(x => x.Contains($"hit - copying {outputsCount} files from cache")), Is.Not.Empty);
+        Assert.That(output3.Where(x => x.Contains($"miss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",
@@ -326,6 +326,6 @@ type Foo = int
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
-        return Utils.RunProcess("dotnet", $"build", dir);
+        return Utils.RunProcess("dotnet", $"build -verbosity:detailed", dir);
     }
 }

@@ -26,14 +26,41 @@ public class RefCache : IRefCache
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
-            var json = File.ReadAllText(entryPath);
-            var data = Newtonsoft.Json.JsonConvert.DeserializeObject<RefDataWithOriginalExtract>(json);
+            var json = ReadFileWithRetries(entryPath);
+            var data = JsonConvert.DeserializeObject<RefDataWithOriginalExtract>(json);
             return data;
         }
         else
         {
             return null;
         }
+    }
+
+    private static string ReadFileWithRetries(string entryPath)
+    {
+        var attempts = 5;
+        var retryDelay = 50;
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            try
+            {
+                return File.ReadAllText(entryPath);
+            }
+            catch(IOException e) 
+            {
+                if (attempt < attempts)
+                {
+                    var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
+                    Thread.Sleep(delay);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        throw new InvalidOperationException("Unexpected code location reached");
     }
 
     public void Set(CacheKey key, RefDataWithOriginalExtract data)
