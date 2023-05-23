@@ -106,14 +106,25 @@ public class Cache : ICache
         return File.Exists(markerPath);
     }
 
-    public static void AtomicCopy(string source, string destination)
+    public static void AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
     {
         var dir = Path.GetDirectoryName(destination)!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
         File.Copy(source, tmpDestination);
         try
         {
-            File.Move(tmpDestination, destination, true);
+            File.Move(tmpDestination, destination, overwrite: false);
+        }
+        catch (IOException e)
+        {
+            if (!throwIfDestinationExists && File.Exists(destination))
+            {
+                return;
+            }
+            else
+            {
+                throw;
+            }
         }
         finally
         {
@@ -146,7 +157,7 @@ public class Cache : ICache
         var outputPath = Path.Combine(dir.FullName, resultZip.Name);
         if (!File.Exists(outputPath))
         {
-            AtomicCopy(resultZip.FullName, outputPath);
+            AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
         }
 
         if (!File.Exists(extractPath))
@@ -154,7 +165,7 @@ public class Cache : ICache
             var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
             using var tmpFile = new TempFile();
             File.WriteAllText(tmpFile.FullName, json);
-            AtomicCopy(tmpFile.FullName, extractPath);
+            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
         }
     }
 

@@ -75,7 +75,7 @@ public class RefCache : IRefCache
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(data, Formatting.Indented);
             using var tmpFile = new TempFile();
             File.WriteAllText(tmpFile.FullName, json);
-            Cache.AtomicCopy(tmpFile.FullName, entryPath);
+            Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
         }
     }
 }
