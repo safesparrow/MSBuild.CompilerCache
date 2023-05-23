@@ -46,7 +46,7 @@ public class Locator
         {
             var s = string.Join(Environment.NewLine,
                 decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
-            log?.LogMessage(MessageImportance.High, $"Some unsupported props set: {Environment.NewLine}{s}");
+            log?.LogMessage(MessageImportance.Low, $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
             return LocateResult.CreateNotSupported();
         }
 
@@ -61,11 +61,11 @@ public class Locator
         var cacheHit = cache.Exists(cacheKey);
         if (!cacheHit)
         {
-            log?.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a miss.");
+            log?.LogMessage(MessageImportance.Low, $"CompilationCache: Locate for {cacheKey} was a miss.");
         }
         else
         {
-            log?.LogMessage(MessageImportance.High, $"Locate for {cacheKey} was a hit.");
+            log?.LogMessage(MessageImportance.Low, $"CompilationCache: Locate for {cacheKey} was a hit.");
             cacheHit = true;
         }
 
