@@ -190,13 +190,41 @@ public class Cache : ICache
                 else
                 {
                     var tmpPath = Path.GetTempFileName();
-                    File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
+                    ActionWithRetries(() => File.Copy(outputVersionsZips[0], tmpPath, overwrite: true));
                     return tmpPath;
                 }
             }
         }
 
         return null;
+    }
+    
+    private static void ActionWithRetries(Action action)
+    {
+        var attempts = 5;
+        var retryDelay = 50;
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch(IOException e) 
+            {
+                if (attempt < attempts)
+                {
+                    var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
+                    Thread.Sleep(delay);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        throw new InvalidOperationException("Unexpected code location reached");
     }
 
     public int OutputVersionsCount(CacheKey key)
