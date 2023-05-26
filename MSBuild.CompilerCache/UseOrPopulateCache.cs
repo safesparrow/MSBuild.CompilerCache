@@ -8,7 +8,6 @@ using Microsoft.Build.Framework;
 // ReSharper disable once UnusedType.Global
 /// <summary>
 /// Either use results from an existing cache entry, or populate it with newly compiled outputs.
-/// Example usage: <UseOrPopulateCache OutputsToCache="@(CompileOutputsToCache)" CacheHit="$(CacheHit)" CacheDir="$(CacheDir)" IntermediateOutputPath="..." />
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class UseOrPopulateCache : BaseTask
@@ -48,6 +47,6 @@ public class UseOrPopulateCache : BaseTask
         LocalInputsHash = inputs.LocatorLocalInputsHash;
         CheckCompileOutputAgainstCache = inputs.CheckCompileOutputAgainstCache;
         PreCompilationTimeTicks = inputs.LocateResult.PreCompilationTimeUtc.Ticks.ToString();
-        base.SetInputs(inputs.Inputs);
+        SetInputs(inputs.Inputs);
     }
 }

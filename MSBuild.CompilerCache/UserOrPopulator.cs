@@ -30,7 +30,8 @@ public class UserOrPopulator
         _refCache = refCache;
     }
 
-    public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items, AllCompilationMetadata metadata,
+    public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
+        AllCompilationMetadata metadata,
         TaskLoggingHelper? log = null)
     {
         var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
@@ -39,7 +40,8 @@ public class UserOrPopulator
             items.Select(item =>
             {
                 var tempPath = outputsDir.CombineAsFile(item.CacheFileName);
-                log?.LogMessage(MessageImportance.Low, $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
+                log?.LogMessage(MessageImportance.Low,
+                    $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
             }).ToArray();
@@ -93,43 +95,36 @@ public class UserOrPopulator
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
-        var assemblyName = inputs.Inputs.AssemblyName;
-        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
-        var extract = localInputs.ToFullExtract();
-        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
-        var cacheKey = inputs.CacheKey;
-        var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
-        log.LogMessage(MessageImportance.Low,
-            $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
-
-        var compilationHappened =
-            !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
+        
+        // TODO Take into account the original condition from CoreCompile which can also cause compilation to be skipped.
+        var compilationHappened = !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
         var outputs = decomposed.OutputsToCache;
         if (!compilationHappened)
         {
-            if (hashesMatch)
-            {
-                log.LogMessage(MessageImportance.Low, $"CompilationCache hit - copying {outputs.Length} files from cache");
+            log.LogMessage(MessageImportance.Low, $"CompilationCache hit - copying {outputs.Length} files from cache");
 
-                var cachedOutputTmpZip = _cache.Get(cacheKey);
-                try
-                {
-                    UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
-                }
-                finally
-                {
-                    File.Delete(cachedOutputTmpZip);
-                }
-            }
-            else
+            var cachedOutputTmpZip = _cache.Get(inputs.CacheKey);
+            try
             {
-                throw new InvalidOperationException(
-                    $"Initial inputs generated a CacheHit, but inputs changed since then. Since compilation was already skipped, we are unable to proceed.");
+                UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
+            }
+            finally
+            {
+                File.Delete(cachedOutputTmpZip);
             }
         }
         else // Compilation happened
         {
+            var assemblyName = inputs.Inputs.AssemblyName;
+            var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
+            var extract = localInputs.ToFullExtract();
+            var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+            var cacheKey = inputs.CacheKey;
+            var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
+            log.LogMessage(MessageImportance.Low,
+                $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
+
             if (hashesMatch)
             {
                 log.LogMessage(MessageImportance.Low,
