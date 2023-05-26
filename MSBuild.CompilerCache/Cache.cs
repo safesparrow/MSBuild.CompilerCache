@@ -106,14 +106,25 @@ public class Cache : ICache
         return File.Exists(markerPath);
     }
 
-    public static void AtomicCopy(string source, string destination)
+    public static void AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
     {
         var dir = Path.GetDirectoryName(destination)!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
         File.Copy(source, tmpDestination);
         try
         {
-            File.Move(tmpDestination, destination, true);
+            File.Move(tmpDestination, destination, overwrite: false);
+        }
+        catch (IOException e)
+        {
+            if (!throwIfDestinationExists && File.Exists(destination))
+            {
+                return;
+            }
+            else
+            {
+                throw;
+            }
         }
         finally
         {
@@ -146,7 +157,7 @@ public class Cache : ICache
         var outputPath = Path.Combine(dir.FullName, resultZip.Name);
         if (!File.Exists(outputPath))
         {
-            AtomicCopy(resultZip.FullName, outputPath);
+            AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
         }
 
         if (!File.Exists(extractPath))
@@ -154,7 +165,7 @@ public class Cache : ICache
             var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
             using var tmpFile = new TempFile();
             File.WriteAllText(tmpFile.FullName, json);
-            AtomicCopy(tmpFile.FullName, extractPath);
+            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
         }
     }
 
@@ -179,13 +190,41 @@ public class Cache : ICache
                 else
                 {
                     var tmpPath = Path.GetTempFileName();
-                    File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
+                    ActionWithRetries(() => File.Copy(outputVersionsZips[0], tmpPath, overwrite: true));
                     return tmpPath;
                 }
             }
         }
 
         return null;
+    }
+    
+    private static void ActionWithRetries(Action action)
+    {
+        var attempts = 5;
+        var retryDelay = 50;
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch(IOException e) 
+            {
+                if (attempt < attempts)
+                {
+                    var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
+                    Thread.Sleep(delay);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        throw new InvalidOperationException("Unexpected code location reached");
     }
 
     public int OutputVersionsCount(CacheKey key)
