@@ -79,15 +79,6 @@ public class TargetsExtraction
     public static readonly ImmutableArray<(SDKVersion sdk, SupportedLanguage lang)> SdkLanguages =
         SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray();
 
-    [Test]
-    public void F()
-    {
-        var x = SdkLanguages.ToImmutableArray();
-        var y = SdkLanguages.ToImmutableArray();
-        Environment.GetFolderPath("").Replace("a", "b");
-        Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-    }
-
     [Explicit, Test]
     [TestCaseSource(nameof(SdkLanguages))]
     public void Extract((SDKVersion sdk, SupportedLanguage language) test)
