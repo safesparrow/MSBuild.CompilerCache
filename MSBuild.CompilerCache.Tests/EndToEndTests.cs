@@ -314,6 +314,6 @@ type Foo = int
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
         Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
-        return Utils.RunProcess("dotnet", $"build -verbosity:detailed", dir);
+        return Utils.RunProcess("dotnet", $"build -verbosity:normal", dir);
     }
 }

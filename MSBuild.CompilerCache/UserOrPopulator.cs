@@ -39,7 +39,7 @@ public class UserOrPopulator
             items.Select(item =>
             {
                 var tempPath = outputsDir.CombineAsFile(item.CacheFileName);
-                log?.LogMessage(MessageImportance.Low, $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
+                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
                 return Locator.GetLocalFileExtract(tempPath.FullName).ToFileExtract();
             }).ToArray();
@@ -99,7 +99,7 @@ public class UserOrPopulator
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
         var cacheKey = inputs.CacheKey;
         var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
-        log.LogMessage(MessageImportance.Low,
+        log.LogMessage(MessageImportance.Normal,
             $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
 
         var compilationHappened =
@@ -110,7 +110,7 @@ public class UserOrPopulator
         {
             if (hashesMatch)
             {
-                log.LogMessage(MessageImportance.Low, $"CompilationCache hit - copying {outputs.Length} files from cache");
+                log.LogMessage(MessageImportance.Normal, $"CompilationCache hit - copying {outputs.Length} files from cache");
 
                 var cachedOutputTmpZip = _cache.Get(cacheKey);
                 try
@@ -132,7 +132,7 @@ public class UserOrPopulator
         {
             if (hashesMatch)
             {
-                log.LogMessage(MessageImportance.Low,
+                log.LogMessage(MessageImportance.Normal,
                     $"CompilationCache miss - copying {outputs.Length} files from output to cache");
                 var meta = Locator.GetCompilationMetadata(postCompilationTimeUtc);
                 var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: localInputs);
@@ -142,7 +142,7 @@ public class UserOrPopulator
             }
             else
             {
-                log.LogMessage(MessageImportance.Low,
+                log.LogMessage(MessageImportance.Normal,
                     $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
             }
         }
