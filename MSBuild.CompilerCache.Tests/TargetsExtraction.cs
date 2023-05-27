@@ -80,7 +80,7 @@ public class TargetsExtraction
 
     [Explicit, Test]
     [TestCaseSource(nameof(SdkLanguages))]
-    public void Extract((SDKVersion sdk, SupportedLanguage language) test)
+    public void  Extract((SDKVersion sdk, SupportedLanguage language) test)
     {
         var (sdk, lang) = test;
         var baseDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..",

@@ -188,6 +188,7 @@ public record ProjectFileBuilder
 public record SourceFile(string Path, string Text);
 
 [TestFixture]
+[Parallelizable(ParallelScope.Children)]
 public class EndToEndTests
 {
     public static (SDKVersion, SupportedLanguage)[] SDKs()

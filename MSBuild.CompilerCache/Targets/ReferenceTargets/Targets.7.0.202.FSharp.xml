@@ -1,6 +1,6 @@
 <!--
 ============================================================================================================================================
-%TempPath%\9f51b73e-1e55-405f-93db-59ddd6bb4a30\project.fsproj
+%TempPath%/e76e8577-7a29-4318-813c-ab97995c3d47/project.fsproj
 ============================================================================================================================================
 -->
 <Project DefaultTargets="Build">
@@ -9,7 +9,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk">
   This import was added implicitly because the Project element's Sdk attribute specified "Microsoft.NET.Sdk".
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -50,7 +50,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(AlternateCommonProps)' == ''">
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.props
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.props
 ============================================================================================================================================
 -->
   <!--
@@ -153,7 +153,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NuGetPropsFile)" Condition="Exists('$(NuGetPropsFile)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\NuGet.props
+/home/janis/.dotnet/sdk/7.0.202/NuGet.props
 ============================================================================================================================================
 -->
   <!--
@@ -192,7 +192,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.props
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.props
 ============================================================================================================================================
 -->
   <PropertyGroup Condition=" '$(MSBuildLogVerboseTaskParameters)' != 'true' ">
@@ -214,14 +214,14 @@ C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.props
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -339,7 +339,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.DefaultItems.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
 ============================================================================================================================================
 -->
   <!--
@@ -360,7 +360,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NETCoreSdkBundledVersionsProps)" Condition="Exists('$(NETCoreSdkBundledVersionsProps)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.NETCoreSdk.BundledVersions.props
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.NETCoreSdk.BundledVersions.props
 ============================================================================================================================================
 -->
   <!--
@@ -375,7 +375,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ***********************************************************************************************
 -->
   <PropertyGroup>
-    <NetCoreRoot Condition="'$(NetCoreRoot)' == ''">$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\..\'))</NetCoreRoot>
+    <NetCoreRoot Condition="'$(NetCoreRoot)' == ''">$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../../'))</NetCoreRoot>
     <NetCoreTargetingPackRoot Condition="'$(NetCoreTargetingPackRoot)' == ''">$([MSBuild]::EnsureTrailingSlash('$(NetCoreRoot)'))packs</NetCoreTargetingPackRoot>
     <NETCoreAppMaximumVersion>7.0</NETCoreAppMaximumVersion>
     <BundledNETCoreAppTargetFrameworkVersion>7.0</BundledNETCoreAppTargetFrameworkVersion>
@@ -385,8 +385,8 @@ Copyright (c) .NET Foundation. All rights reserved.
     <BundledNETCorePlatformsPackageVersion>7.0.1</BundledNETCorePlatformsPackageVersion>
     <BundledRuntimeIdentifierGraphFile>$(MSBuildThisFileDirectory)RuntimeIdentifierGraph.json</BundledRuntimeIdentifierGraphFile>
     <NETCoreSdkVersion>7.0.202</NETCoreSdkVersion>
-    <NETCoreSdkRuntimeIdentifier>win-x64</NETCoreSdkRuntimeIdentifier>
-    <NETCoreSdkPortableRuntimeIdentifier>win-x64</NETCoreSdkPortableRuntimeIdentifier>
+    <NETCoreSdkRuntimeIdentifier>linux-x64</NETCoreSdkRuntimeIdentifier>
+    <NETCoreSdkPortableRuntimeIdentifier>linux-x64</NETCoreSdkPortableRuntimeIdentifier>
     <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>
   </PropertyGroup>
   <ItemGroup>
@@ -469,7 +469,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.DefaultItems.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -525,7 +525,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- Put workload resolution behind a feature flag.  It can be enabled either by setting the MSBuildEnableWorkloadResolver environment variable to true, or by
@@ -540,7 +540,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.ImportWorkloads.props" Condition="'$(MSBuildEnableWorkloadResolver)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.ImportWorkloads.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.props
 ============================================================================================================================================
 -->
   <!--
@@ -560,7 +560,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported .NET Core and .NET Standard TFMs -->
@@ -568,7 +568,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.SupportedTargetFrameworks.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.SupportedTargetFrameworks.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedTargetFrameworks.props
 ============================================================================================================================================
 -->
   <!--
@@ -635,7 +635,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported target platforms -->
@@ -643,7 +643,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.SupportedPlatforms.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.SupportedPlatforms.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedPlatforms.props
 ============================================================================================================================================
 -->
   <!--
@@ -667,7 +667,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported .NET windows target platform versions -->
@@ -675,7 +675,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props
 ============================================================================================================================================
 -->
   <!--
@@ -705,7 +705,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.CSharp.props" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />-->
@@ -714,7 +714,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.FSharp.props" Condition="'$(MSBuildProjectExtension)' == '.fsproj'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharp.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharp.props
 ============================================================================================================================================
 -->
   <!--
@@ -745,7 +745,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(FSharpPropsShim)" Condition=" '$(UseBundledFSharpTargets)' == 'true' and Exists('$(FSharpPropsShim)') ">
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.props
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.NetSdk.props
 ============================================================================================================================================
 -->
   <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
@@ -819,7 +819,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 ============================================================================================================================================
   <Import Project="Microsoft.FSharp.Core.NetSdk.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.Core.NetSdk.props
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.Core.NetSdk.props
 ============================================================================================================================================
 -->
   <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
@@ -848,7 +848,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.props
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.NetSdk.props
 ============================================================================================================================================
 -->
   <!-- Sets initial value of FSharp.Core -->
@@ -875,21 +875,21 @@ C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.props
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharp.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharp.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Sdk.props" Sdk="Microsoft.DotNet.ILCompiler" Condition="'$(PublishAotSupported)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.DotNet.ILCompiler\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.DotNet.ILCompiler/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -912,7 +912,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\build\Microsoft.DotNet.ILCompiler.props" Condition="'$(ILCompilerTargetsPath)' == ''">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.DotNet.ILCompiler\build\Microsoft.DotNet.ILCompiler.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.DotNet.ILCompiler/build/Microsoft.DotNet.ILCompiler.props
 ============================================================================================================================================
 -->
   <!--
@@ -935,21 +935,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.DotNet.ILCompiler\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.DotNet.ILCompiler/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Sdk.props" Sdk="Microsoft.NET.ILLink.Tasks">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.ILLink.Tasks\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -968,7 +968,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\build\Microsoft.NET.ILLink.Tasks.props" Condition="'$(ILLinkTargetsPath)' == ''">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.ILLink.Tasks\build\Microsoft.NET.ILLink.Tasks.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.ILLink.Tasks/build/Microsoft.NET.ILLink.Tasks.props
 ============================================================================================================================================
 -->
   <!--
@@ -996,21 +996,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.ILLink.Tasks\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackTool.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.PackTool.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.props
 ============================================================================================================================================
 -->
   <!--
@@ -1031,14 +1031,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackProjectTool.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.PackProjectTool.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.props
 ============================================================================================================================================
 -->
   <!--
@@ -1059,14 +1059,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)../../Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props" Condition="Exists('$(MSBuildThisFileDirectory)../../Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <ItemDefinitionGroup Condition=" '$(_EnableWindowsDesktopGlobbing)' == 'true' ">
@@ -1207,7 +1207,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\target
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
 ============================================================================================================================================
 -->
   <!--
@@ -1238,7 +1238,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\target
 ============================================================================================================================================
   <Import Project="System.Windows.Forms.Analyzers.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\System.Windows.Forms.Analyzers.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/System.Windows.Forms.Analyzers.props
 ============================================================================================================================================
 -->
   <!--
@@ -1267,21 +1267,21 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\target
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.WindowsDesktop.WPF.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.WPF.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WPF.props
 ============================================================================================================================================
 -->
   <!--
@@ -1295,21 +1295,21 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\target
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.NET.Sdk.WindowsDesktop.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Windows.props">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Windows.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.props
 ============================================================================================================================================
 -->
   <!--
@@ -1336,21 +1336,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.props
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%TempPath%\9f51b73e-1e55-405f-93db-59ddd6bb4a30\project.fsproj
+%TempPath%/e76e8577-7a29-4318-813c-ab97995c3d47/project.fsproj
 ============================================================================================================================================
 -->
   <!--
@@ -1358,7 +1358,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.props
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk">
   This import was added implicitly because the Project element's Sdk attribute specified "Microsoft.NET.Sdk".
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1381,7 +1381,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.BeforeCommon.targets" Condition="'$(IsCrossTargetingBuild)' != 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1414,7 +1414,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DefaultAssemblyInfo.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.DefaultAssemblyInfo.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultAssemblyInfo.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1443,7 +1443,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Set default intermediate and output paths -->
@@ -1451,7 +1451,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DefaultOutputPaths.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.DefaultOutputPaths.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultOutputPaths.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1500,7 +1500,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Before any additional SDK targets are imported, import the publish profile.
@@ -1510,7 +1510,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.ImportPublishProfile.targets" Condition="'$(PublishProfileImported)' != 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.ImportPublishProfile.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportPublishProfile.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1546,7 +1546,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1557,7 +1557,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.TargetFrameworkInference.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.TargetFrameworkInference.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.TargetFrameworkInference.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1744,7 +1744,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Related issue: https://github.com/dotnet/sdk/issues/12324-->
@@ -1768,7 +1768,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.ImportWorkloads.targets" Condition="'$(MSBuildEnableWorkloadResolver)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.ImportWorkloads.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1788,7 +1788,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.android\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.android/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition=" '$(TargetPlatformIdentifier)' == 'android' ">-->
@@ -1810,7 +1810,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.android\Workload
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.ios\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.ios/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition=" '$(TargetPlatformIdentifier)' == 'iOS' ">-->
@@ -1834,7 +1834,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.ios\WorkloadMani
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.maccatalyst\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.maccatalyst/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition=" '$(TargetPlatformIdentifier)' == 'MacCatalyst' ">-->
@@ -1856,7 +1856,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.maccatalyst\Work
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.macos\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.macos/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition=" '$(TargetPlatformIdentifier)' == 'macOS' ">-->
@@ -1878,7 +1878,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.macos\WorkloadMa
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.maui\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.maui/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <ItemGroup Condition=" '$(UseMaui)' == 'true' or '$(UseMauiCore)' == 'true' ">
@@ -1906,7 +1906,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.maui\WorkloadMan
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.tvos\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.sdk.tvos/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition=" '$(TargetPlatformIdentifier)' == 'tvOS' ">-->
@@ -1928,7 +1928,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.sdk.tvos\WorkloadMan
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.mono.toolchain.net6\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.workload.mono.toolchain.net6/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <PropertyGroup>
@@ -2042,7 +2042,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.mono.toolch
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.mono.toolchain.net7\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.workload.mono.toolchain.net7/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <PropertyGroup>
@@ -2160,7 +2160,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.mono.toolch
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.emscripten.net6\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.workload.emscripten.net6/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(UsingBrowserRuntimeWorkload)' == 'true' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and $([MSBuild]::VersionEquals('$(TargetFrameworkVersion)', '6.0'))">-->
@@ -2177,7 +2177,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.emscripten.
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.emscripten.net7\WorkloadManifest.targets
+/home/janis/.dotnet/sdk-manifests/7.0.100/microsoft.net.workload.emscripten.net7/WorkloadManifest.targets
 ============================================================================================================================================
 -->
   <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
@@ -2206,7 +2206,7 @@ C:\Program Files\dotnet\sdk-manifests\7.0.100\microsoft.net.workload.emscripten.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.ImportWorkloads.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="ShowMissingWorkloads" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -2236,7 +2236,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2247,7 +2247,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.RuntimeIdentifierInference.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2460,7 +2460,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Checks for EOL frameworks -->
@@ -2468,7 +2468,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.EolTargetFrameworks.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.EolTargetFrameworks.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2500,7 +2500,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Check if the Target Framework is coreclr based -->
@@ -2548,7 +2548,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.NuGetOfflineCache.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.NuGetOfflineCache.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.NuGetOfflineCache.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2579,7 +2579,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.BeforeCommon.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <ItemGroup Condition=" '$(DisableImplicitFrameworkReferences)' != 'true' and '$(TargetFrameworkIdentifier)' == '.NETFramework'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2689,7 +2689,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup Condition="'$(LanguageTargets)' == ''" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2707,7 +2707,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
 ============================================================================================================================================
   <Import Project="$(LanguageTargets)">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharpTargetsShim.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2725,7 +2725,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.Before.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Managed.Before.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Managed.Before.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2752,7 +2752,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharpTargetsShim.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
 ============================================================================================================================================
 -->
   <PropertyGroup Condition=" '$(UseBundledFSharpTargets)' == 'true' " xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2796,7 +2796,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(FSharpTargetsShim)" Condition=" '$(UseBundledFSharpTargets)' == 'true' and  '$(IsCrossTargetingBuild)' != 'true' and Exists('$(FSharpTargetsShim)') ">
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.targets
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.NetSdk.targets
 ============================================================================================================================================
 -->
   <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
@@ -2839,7 +2839,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 ============================================================================================================================================
   <Import Project="Microsoft.FSharp.Targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.Targets
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.Targets
 ============================================================================================================================================
 -->
   <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
@@ -3061,7 +3061,7 @@ this file.
 ============================================================================================================================================
   <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -3086,7 +3086,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(CommonTargetsPath)">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.CurrentVersion.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--
@@ -7670,7 +7670,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NuGetRestoreTargets)" Condition="'$(IsRestoreTargetsFileLoaded)' != 'true' and Exists('$(NuGetRestoreTargets)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\NuGet.targets
+/home/janis/.dotnet/sdk/7.0.202/NuGet.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8600,7 +8600,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.CurrentVersion.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(CustomAfterMicrosoftCommonTargets)" Condition="'$(CustomAfterMicrosoftCommonTargets)' != '' and Exists('$(CustomAfterMicrosoftCommonTargets)')" />-->
@@ -8608,7 +8608,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.targets\ImportAfter\Microsoft.NET.Build.Extensions.targets
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8629,7 +8629,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MicrosoftNETBuildExtensionsTargets)" Condition="Exists('$(MicrosoftNETBuildExtensionsTargets)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft\Microsoft.NET.Build.Extensions\Microsoft.NET.Build.Extensions.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft/Microsoft.NET.Build.Extensions/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8657,7 +8657,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.targets\ImportAfter\Microsoft.NET.Build.Extensions.targets
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8669,7 +8669,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.targets\ImportAfter
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.targets\ImportAfter\Microsoft.TestPlatform.ImportAfter.targets
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8692,7 +8692,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(VSTestTargets)" Condition="Exists('$(VSTestTargets)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.TestPlatform.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.TestPlatform.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8766,14 +8766,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Current\Microsoft.Common.targets\ImportAfter\Microsoft.TestPlatform.ImportAfter.targets
+/home/janis/.dotnet/sdk/7.0.202/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.CurrentVersion.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportUserLocationsByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')" />-->
@@ -8781,7 +8781,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8812,7 +8812,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Common.targets
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.Targets
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.Targets
 ============================================================================================================================================
 -->
   <!--
@@ -8899,7 +8899,7 @@ C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.Targets
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.targets
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.NetSdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup Condition="'$(PackProjectInputFile)' == ''" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -9022,14 +9022,14 @@ C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.NetSdk.targets
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharpTargetsShim.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.After.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.Managed.After.targets
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.Managed.After.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9091,14 +9091,14 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharpTargetsShim.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharpTargetsShim.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.CrossTargeting.targets" Condition="'$(IsCrossTargetingBuild)' == 'true'" />-->
@@ -9106,7 +9106,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.targets" Condition="'$(IsCrossTargetingBuild)' != 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9122,7 +9122,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.Common.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.Common.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9178,7 +9178,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -9189,7 +9189,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolution.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolution.targets') and ('$(Language)' != 'C++' or '$(_EnablePackageReferencesInVCProjects)' == 'true')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9564,7 +9564,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolutionStubs.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolutionStubs.targets') and ('$(Language)' == 'C++' and '$(_EnablePackageReferencesInVCProjects)' != 'true')" />-->
@@ -9573,7 +9573,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.DefaultItems.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9627,7 +9627,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.Shared.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.DefaultItems.Shared.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.Shared.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9792,7 +9792,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.DefaultItems.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
 ============================================================================================================================================
 -->
   <!-- This target runs before build but not before restore, to avoid duplicating these warnings
@@ -9868,14 +9868,14 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.FrameworkReferenceResolution.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FrameworkReferenceResolution.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10181,7 +10181,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="GenerateDepsFile" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -10227,7 +10227,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.Shared.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.Shared.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Shared.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10297,7 +10297,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -10938,7 +10938,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DesignerSupport.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.DesignerSupport.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DesignerSupport.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11015,14 +11015,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateAssemblyInfo.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.GenerateAssemblyInfo.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateAssemblyInfo.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11209,7 +11209,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateGlobalUsings.targets" Condition="'$(Language)' == 'C#'" />-->
@@ -11217,7 +11217,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateSupportedRuntime.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.GenerateSupportedRuntime.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateSupportedRuntime.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11256,14 +11256,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ComposeStore.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ComposeStore.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ComposeStore.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11558,14 +11558,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.CrossGen.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.CrossGen.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.CrossGen.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11887,14 +11887,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ObsoleteReferences.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ObsoleteReferences.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11915,7 +11915,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NETCoreSdkBundledCliToolsProps)" Condition="Exists('$(NETCoreSdkBundledCliToolsProps)')">
 
-C:\Program Files\dotnet\sdk\7.0.202\Microsoft.NETCoreSdk.BundledCliTools.props
+/home/janis/.dotnet/sdk/7.0.202/Microsoft.NETCoreSdk.BundledCliTools.props
 ============================================================================================================================================
 -->
   <!--
@@ -11934,7 +11934,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ObsoleteReferences.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
 ============================================================================================================================================
 -->
   <ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -11949,14 +11949,14 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Publish.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Publish.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Publish.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12674,7 +12674,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackStubs.targets" Condition="('$(Language)' == 'C++' and '$(_EnablePackageReferencesInVCProjects)' != 'true')" />-->
@@ -12682,7 +12682,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackTool.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.PackTool.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12811,14 +12811,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackProjectTool.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.PackProjectTool.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12839,14 +12839,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PreserveCompilationContext.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.PreserveCompilationContext.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PreserveCompilationContext.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12920,14 +12920,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ConflictResolution.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ConflictResolution.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12945,7 +12945,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.DefaultPackageConflictOverrides.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.DefaultPackageConflictOverrides.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultPackageConflictOverrides.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13182,7 +13182,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ConflictResolution.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="ResolvePackageFileConflicts" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -13253,7 +13253,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.CSharp.targets" Condition="'$(Language)' == 'C#'" />-->
@@ -13262,7 +13262,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.FSharp.targets" Condition="'$(Language)' == 'F#'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharp.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharp.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13290,7 +13290,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(FSharpOverridesTargetsShim)" Condition=" '$(UseBundledFSharpTargets)' == 'true' and  '$(IsCrossTargetingBuild)' != 'true' and Exists('$(FSharpOverridesTargetsShim)') ">
 
-C:\Program Files\dotnet\sdk\7.0.202\FSharp\Microsoft.FSharp.Overrides.NetSdk.targets
+/home/janis/.dotnet/sdk/7.0.202/FSharp/Microsoft.FSharp.Overrides.NetSdk.targets
 ============================================================================================================================================
 -->
   <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
@@ -13322,7 +13322,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.FSharp.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FSharp.targets
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -13332,7 +13332,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(ILCompilerTargetsPath)" Condition="'$(PublishAot)' == 'true' and '$(PublishAotSupported)' == 'true'" />-->
@@ -13340,7 +13340,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(ILLinkTargetsPath)" Condition="'$(Language)' != 'C++'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.ILLink.Tasks\build\Microsoft.NET.ILLink.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.ILLink.Tasks/build/Microsoft.NET.ILLink.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13610,7 +13610,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.Analyzers.targets" Condition="'$(Language)' == 'C#' or '$(Language)' == 'VB'" />-->
@@ -13630,7 +13630,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Windows.targets" Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Windows.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13691,7 +13691,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!-- TargetPlatformMoniker and TargetPlatformDisplayName would normally be set in Microsoft.Common.CurrentVersion.targets.  However, the
@@ -13714,14 +13714,14 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.ApiCompat.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ApiCompat.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13747,7 +13747,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.ApiCompat.Common.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ApiCompat.Common.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13795,14 +13795,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ApiCompat.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Microsoft.NET.ApiCompat.ValidatePackage.targets">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ApiCompat.ValidatePackage.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13849,7 +13849,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.ApiCompat.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.targets
 ============================================================================================================================================
 -->
   <!--</ImportGroup>-->
@@ -13857,7 +13857,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!-- Import targets from NuGet.Build.Tasks.Pack package/Sdk -->
@@ -13870,7 +13870,7 @@ C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
 ============================================================================================================================================
   <Import Project="$(NuGetBuildTasksPackTargets)" Condition="Exists('$(NuGetBuildTasksPackTargets)') AND '$(ImportNuGetBuildTasksPackTargetsFromSdk)' == 'true'">
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\NuGet.Build.Tasks.Pack\build\NuGet.Build.Tasks.Pack.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/NuGet.Build.Tasks.Pack/build/NuGet.Build.Tasks.Pack.targets
 ============================================================================================================================================
 -->
   <!--
@@ -14204,14 +14204,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-C:\Program Files\dotnet\sdk\7.0.202\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets
+/home/janis/.dotnet/sdk/7.0.202/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%TempPath%\9f51b73e-1e55-405f-93db-59ddd6bb4a30\project.fsproj
+%TempPath%/e76e8577-7a29-4318-813c-ab97995c3d47/project.fsproj
 ============================================================================================================================================
 -->
 </Project>
