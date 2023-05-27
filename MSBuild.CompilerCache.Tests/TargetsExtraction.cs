@@ -49,6 +49,7 @@ public class TargetsExtraction
 
         var text = File.ReadAllText(targetsPath);
         var text2 = text.Replace(Path.GetTempPath(), "%TempPath%" + Path.DirectorySeparatorChar);
+        text2 = text2.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "%UserProfile%" + Path.DirectorySeparatorChar);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         File.WriteAllText(outputPath, text2);
     }
@@ -58,21 +59,25 @@ public class TargetsExtraction
         "'$(EmitCompilerGeneratedFiles)' == 'true'",
     };
 
-    private static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
+    internal static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
+            "7.0.302",
+            "7.0.203",
+            "7.0.202",
+            "7.0.105",
+            "6.0.408",
             "6.0.300",
-            "7.0.202"
         }
         .Select(sdk => new SDKVersion(sdk))
         .ToImmutableArray();
 
-    private static readonly ImmutableArray<SupportedLanguage> SupportedLanguages = new[]
+    internal static readonly ImmutableArray<SupportedLanguage> SupportedLanguages = new[]
     {
         SupportedLanguage.CSharp, SupportedLanguage.FSharp
     }.ToImmutableArray();
 
     public static readonly ImmutableArray<(SDKVersion sdk, SupportedLanguage lang)> SdkLanguages =
-        SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray(); 
+        SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray();
 
     [Explicit, Test]
     [TestCaseSource(nameof(SdkLanguages))]

@@ -1,6 +1,6 @@
 <!--
 ============================================================================================================================================
-%TempPath%/e24ed951-ab63-41ff-a83f-cf55e6988371/project.csproj
+%TempPath%/b3804022-dddb-4c90-8ef5-51ccada52d45/project.csproj
 ============================================================================================================================================
 -->
 <Project DefaultTargets="Build">
@@ -9,7 +9,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk">
   This import was added implicitly because the Project element's Sdk attribute specified "Microsoft.NET.Sdk".
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -50,7 +50,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="'$(AlternateCommonProps)' == ''">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.props
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.props
 ============================================================================================================================================
 -->
   <!--
@@ -72,9 +72,9 @@ Copyright (C) Microsoft Corporation. All rights reserved.
     <ImportDirectoryBuildProps Condition="'$(ImportDirectoryBuildProps)' == ''">true</ImportDirectoryBuildProps>
   </PropertyGroup>
   <!--
-        Determine the path to the directory build props file if the user did not disable $(ImportDirectoryBuildProps) and
-        they did not already specify an absolute path to use via $(DirectoryBuildPropsPath)
-    -->
+      Determine the path to the directory build props file if the user did not disable $(ImportDirectoryBuildProps) and
+      they did not already specify an absolute path to use via $(DirectoryBuildPropsPath)
+  -->
   <PropertyGroup Condition="'$(ImportDirectoryBuildProps)' == 'true' and '$(DirectoryBuildPropsPath)' == ''">
     <_DirectoryBuildPropsFile Condition="'$(_DirectoryBuildPropsFile)' == ''">Directory.Build.props</_DirectoryBuildPropsFile>
     <_DirectoryBuildPropsBasePath Condition="'$(_DirectoryBuildPropsBasePath)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '$(_DirectoryBuildPropsFile)'))</_DirectoryBuildPropsBasePath>
@@ -82,17 +82,17 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   </PropertyGroup>
   <!--<Import Project="$(DirectoryBuildPropsPath)" Condition="'$(ImportDirectoryBuildProps)' == 'true' and exists('$(DirectoryBuildPropsPath)')" />-->
   <!--
-        Prepare to import project extensions which usually come from packages.  Package management systems will create a file at:
-          $(MSBuildProjectExtensionsPath)\$(MSBuildProjectFile).<SomethingUnique>.props
+      Prepare to import project extensions which usually come from packages.  Package management systems will create a file at:
+        $(MSBuildProjectExtensionsPath)\$(MSBuildProjectFile).<SomethingUnique>.props
 
-        Each package management system should use a unique moniker to avoid collisions.  It is a wild-card import so the package
-        management system can write out multiple files but the order of the import is alphabetic because MSBuild sorts the list.
-    -->
+      Each package management system should use a unique moniker to avoid collisions.  It is a wild-card import so the package
+      management system can write out multiple files but the order of the import is alphabetic because MSBuild sorts the list.
+  -->
   <PropertyGroup>
     <!--
-            The declaration of $(BaseIntermediateOutputPath) had to be moved up from Microsoft.Common.CurrentVersion.targets
-            in order for the $(MSBuildProjectExtensionsPath) to use it as a default.
-        -->
+        The declaration of $(BaseIntermediateOutputPath) had to be moved up from Microsoft.Common.CurrentVersion.targets
+        in order for the $(MSBuildProjectExtensionsPath) to use it as a default.
+    -->
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">obj\</BaseIntermediateOutputPath>
     <BaseIntermediateOutputPath Condition="!HasTrailingSlash('$(BaseIntermediateOutputPath)')">$(BaseIntermediateOutputPath)\</BaseIntermediateOutputPath>
     <_InitialBaseIntermediateOutputPath>$(BaseIntermediateOutputPath)</_InitialBaseIntermediateOutputPath>
@@ -101,7 +101,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
         Import paths that are relative default to be relative to the importing file.  However, since MSBuildExtensionsPath
         defaults to BaseIntermediateOutputPath we expect it to be relative to the project directory.  So if the path is relative
         it needs to be made absolute based on the project directory.
-      -->
+    -->
     <MSBuildProjectExtensionsPath Condition="'$([System.IO.Path]::IsPathRooted($(MSBuildProjectExtensionsPath)))' == 'false'">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(MSBuildProjectExtensionsPath)'))</MSBuildProjectExtensionsPath>
     <MSBuildProjectExtensionsPath Condition="!HasTrailingSlash('$(MSBuildProjectExtensionsPath)')">$(MSBuildProjectExtensionsPath)\</MSBuildProjectExtensionsPath>
     <ImportProjectExtensionProps Condition="'$(ImportProjectExtensionProps)' == ''">true</ImportProjectExtensionProps>
@@ -109,12 +109,13 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   </PropertyGroup>
   <!--<Import Project="$(MSBuildProjectExtensionsPath)$(MSBuildProjectFile).*.props" Condition="'$(ImportProjectExtensionProps)' == 'true' and exists('$(MSBuildProjectExtensionsPath)')" />-->
   <!--
-          Wildcard imports come from $(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ directory.
-          This is very similar to the same extension point used in Microsoft.Common.targets, which is located in
-          the $(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ directory.
-          Unfortunately, there is already a file named "Microsoft.Common.props" in this directory,
-          so we have to have a slightly different directory name to hold extensions.
-    -->
+      Wildcard imports come from $(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ directory.
+      This is very similar to the same extension point used in Microsoft.Common.targets, which is located in
+      the $(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ directory.
+
+      Unfortunately, there is already a file named "Microsoft.Common.props" in this directory,
+      so we have to have a slightly different directory name to hold extensions.
+  -->
   <!--<Import Project="$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportBefore\*" Condition="'$(ImportUserLocationsByWildcardBeforeMicrosoftCommonProps)' == 'true' and exists('$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportBefore')" />-->
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportBefore\*" Condition="'$(ImportByWildcardBeforeMicrosoftCommonProps)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportBefore')" />-->
   <PropertyGroup>
@@ -123,8 +124,8 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   </PropertyGroup>
   <!--<Import Project="$(CustomBeforeMicrosoftCommonProps)" Condition="'$(CustomBeforeMicrosoftCommonProps)' != '' and Exists('$(CustomBeforeMicrosoftCommonProps)')" />-->
   <!-- This is used to determine whether Microsoft.Common.targets needs to import
-         Microsoft.Common.props itself, or whether it has been imported previously,
-         e.g. by the project itself. -->
+      Microsoft.Common.props itself, or whether it has been imported previously,
+      e.g. by the project itself. -->
   <PropertyGroup>
     <MicrosoftCommonPropsHasBeenImported>true</MicrosoftCommonPropsHasBeenImported>
   </PropertyGroup>
@@ -141,8 +142,8 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   <!--<Import Project="$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportAfter\*" Condition="'$(ImportUserLocationsByWildcardAfterMicrosoftCommonProps)' == 'true' and exists('$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportAfter')" />-->
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftCommonProps)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Imports\Microsoft.Common.props\ImportAfter')" />-->
   <!--
-        Import NuGet.props file.
-    -->
+      Import NuGet.props file.
+  -->
   <PropertyGroup>
     <MSBuildUseVisualStudioDirectoryLayout Condition="'$(MSBuildUseVisualStudioDirectoryLayout)'==''">$([MSBuild]::IsRunningFromVisualStudio())</MSBuildUseVisualStudioDirectoryLayout>
     <NuGetPropsFile Condition="'$(NuGetPropsFile)'=='' and '$(MSBuildUseVisualStudioDirectoryLayout)'=='true'">$([MSBuild]::GetToolsDirectory32())\..\..\..\Common7\IDE\CommonExtensions\Microsoft\NuGet\NuGet.props</NuGetPropsFile>
@@ -152,7 +153,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NuGetPropsFile)" Condition="Exists('$(NuGetPropsFile)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/NuGet.props
+%UserProfile%//.dotnet/sdk/6.0.408/NuGet.props
 ============================================================================================================================================
 -->
   <!--
@@ -191,7 +192,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.props
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.props
 ============================================================================================================================================
 -->
   <PropertyGroup Condition=" '$(MSBuildLogVerboseTaskParameters)' != 'true' ">
@@ -213,14 +214,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -287,6 +288,9 @@ Copyright (c) .NET Foundation. All rights reserved.
   <PropertyGroup Condition=" '$(_PlatformWithoutConfigurationInference)' == 'ARM' " xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PlatformTarget Condition=" '$(PlatformTarget)' == '' ">ARM</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(_PlatformWithoutConfigurationInference)' == 'arm64' " xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PlatformTarget Condition=" '$(PlatformTarget)' == '' ">arm64</PlatformTarget>
+  </PropertyGroup>
   <!-- Default settings for all projects built with this Sdk package -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
@@ -328,7 +332,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
 ============================================================================================================================================
 -->
   <!--
@@ -349,7 +353,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NETCoreSdkBundledVersionsProps)" Condition="Exists('$(NETCoreSdkBundledVersionsProps)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.NETCoreSdk.BundledVersions.props
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.NETCoreSdk.BundledVersions.props
 ============================================================================================================================================
 -->
   <!--
@@ -368,12 +372,12 @@ Copyright (c) .NET Foundation. All rights reserved.
     <NetCoreTargetingPackRoot Condition="'$(NetCoreTargetingPackRoot)' == ''">$([MSBuild]::EnsureTrailingSlash('$(NetCoreRoot)'))packs</NetCoreTargetingPackRoot>
     <NETCoreAppMaximumVersion>6.0</NETCoreAppMaximumVersion>
     <BundledNETCoreAppTargetFrameworkVersion>6.0</BundledNETCoreAppTargetFrameworkVersion>
-    <BundledNETCoreAppPackageVersion>6.0.5</BundledNETCoreAppPackageVersion>
+    <BundledNETCoreAppPackageVersion>6.0.16</BundledNETCoreAppPackageVersion>
     <BundledNETStandardTargetFrameworkVersion>2.1</BundledNETStandardTargetFrameworkVersion>
     <BundledNETStandardPackageVersion>2.1.0</BundledNETStandardPackageVersion>
-    <BundledNETCorePlatformsPackageVersion>6.0.3</BundledNETCorePlatformsPackageVersion>
+    <BundledNETCorePlatformsPackageVersion>6.0.9</BundledNETCorePlatformsPackageVersion>
     <BundledRuntimeIdentifierGraphFile>$(MSBuildThisFileDirectory)RuntimeIdentifierGraph.json</BundledRuntimeIdentifierGraphFile>
-    <NETCoreSdkVersion>6.0.300</NETCoreSdkVersion>
+    <NETCoreSdkVersion>6.0.408</NETCoreSdkVersion>
     <NETCoreSdkRuntimeIdentifier>linux-x64</NETCoreSdkRuntimeIdentifier>
     <NETCoreSdkPortableRuntimeIdentifier>linux-x64</NETCoreSdkPortableRuntimeIdentifier>
     <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>
@@ -389,17 +393,17 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ImplicitPackageReferenceVersion Include="Microsoft.AspNetCore.App" TargetFrameworkVersion="2.2" DefaultVersion="2.2.0" LatestVersion="2.2.8" />
     <ImplicitPackageReferenceVersion Include="Microsoft.AspNetCore.All" TargetFrameworkVersion="2.2" DefaultVersion="2.2.0" LatestVersion="2.2.8" />
     <!-- .NET 6.0 -->
-    <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.5" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="6.0.5" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;maccatalyst-x64;maccatalyst-arm64;linux-s390x" />
-    <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="net6.0" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="6.0.5" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;linux-s390x" />
-    <KnownCrossgen2Pack Include="Microsoft.NETCore.App.Crossgen2" TargetFramework="net6.0" Crossgen2PackNamePattern="Microsoft.NETCore.App.Crossgen2.**RID**" Crossgen2PackVersion="6.0.5" Crossgen2RuntimeIdentifiers="linux-musl-x64;linux-x64;win-x64;linux-arm;linux-arm64;linux-musl-arm;linux-musl-arm64;osx-arm64;osx-x64;win-arm;win-arm64;win-x86" />
-    <KnownRuntimePack Include="Microsoft.NETCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.NETCore.App" LatestRuntimeFrameworkVersion="6.0.5" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.Mono.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;maccatalyst-x64;maccatalyst-arm64;linux-s390x;browser-wasm;ios-arm64;ios-arm;iossimulator-arm64;iossimulator-x64;iossimulator-x86;tvos-arm64;tvossimulator-arm64;tvossimulator-x64;android-arm64;android-arm;android-x64;android-x86" RuntimePackLabels="Mono" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.5" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.5" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.5" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.5" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WPF" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.5" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.5" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WindowsForms" />
-    <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.5" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="6.0.5" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-arm;win-arm64;osx-arm64;linux-s390x" RuntimePackExcludedRuntimeIdentifiers="android" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.17763.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.17763.25" LatestRuntimeFrameworkVersion="10.0.17763.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.17763.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.18362.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.18362.25" LatestRuntimeFrameworkVersion="10.0.18362.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.18362.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.19041.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.19041.25" LatestRuntimeFrameworkVersion="10.0.19041.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.19041.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.16" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="6.0.16" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;maccatalyst-x64;maccatalyst-arm64;linux-s390x" />
+    <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="net6.0" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="6.0.16" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;linux-s390x" ExcludedRuntimeIdentifiers="android" />
+    <KnownCrossgen2Pack Include="Microsoft.NETCore.App.Crossgen2" TargetFramework="net6.0" Crossgen2PackNamePattern="Microsoft.NETCore.App.Crossgen2.**RID**" Crossgen2PackVersion="6.0.16" Crossgen2RuntimeIdentifiers="linux-musl-x64;linux-x64;win-x64;linux-arm;linux-arm64;linux-musl-arm;linux-musl-arm64;osx-arm64;osx-x64;win-arm;win-arm64;win-x86" />
+    <KnownRuntimePack Include="Microsoft.NETCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.NETCore.App" LatestRuntimeFrameworkVersion="6.0.16" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.Mono.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;osx-arm64;maccatalyst-x64;maccatalyst-arm64;linux-s390x;browser-wasm;ios-arm64;ios-arm;iossimulator-arm64;iossimulator-x64;iossimulator-x86;tvos-arm64;tvossimulator-arm64;tvossimulator-x64;android-arm64;android-arm;android-x64;android-x86" RuntimePackLabels="Mono" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.16" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.16" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.16" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.16" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WPF" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.16" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="6.0.16" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WindowsForms" />
+    <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="net6.0" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="6.0.0" LatestRuntimeFrameworkVersion="6.0.16" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="6.0.16" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-arm;win-arm64;osx-arm64;linux-s390x" RuntimePackExcludedRuntimeIdentifiers="android" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.17763.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.17763.28" LatestRuntimeFrameworkVersion="10.0.17763.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.17763.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.18362.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.18362.28" LatestRuntimeFrameworkVersion="10.0.18362.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.18362.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net6.0-windows10.0.19041.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.19041.28" LatestRuntimeFrameworkVersion="10.0.19041.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.19041.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
     <!-- .NET 5.0 -->
     <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="net5.0" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="5.0.0" LatestRuntimeFrameworkVersion="5.0.17" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="5.0.0" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm;browser-wasm" IsTrimmable="true" />
     <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="net5.0" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="5.0.17" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86;linux-musl-arm" />
@@ -408,16 +412,16 @@ Copyright (c) .NET Foundation. All rights reserved.
     <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" TargetFramework="net5.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="5.0.0" LatestRuntimeFrameworkVersion="5.0.17" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="5.0.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WPF" />
     <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" TargetFramework="net5.0" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="5.0.0" LatestRuntimeFrameworkVersion="5.0.17" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="5.0.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm64" IsWindowsOnly="true" Profile="WindowsForms" />
     <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="net5.0" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="5.0.0" LatestRuntimeFrameworkVersion="5.0.17" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="5.0.0" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-arm;win-arm64" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.17763.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.17763.25" LatestRuntimeFrameworkVersion="10.0.17763.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.17763.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.18362.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.18362.25" LatestRuntimeFrameworkVersion="10.0.18362.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.18362.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.19041.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.19041.25" LatestRuntimeFrameworkVersion="10.0.19041.25" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.19041.25" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.17763.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.17763.28" LatestRuntimeFrameworkVersion="10.0.17763.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.17763.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.18362.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.18362.28" LatestRuntimeFrameworkVersion="10.0.18362.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.18362.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" TargetFramework="net5.0-windows10.0.19041.0" RuntimeFrameworkName="Microsoft.Windows.SDK.NET.Ref" DefaultRuntimeFrameworkVersion="10.0.19041.28" LatestRuntimeFrameworkVersion="10.0.19041.28" TargetingPackName="Microsoft.Windows.SDK.NET.Ref" TargetingPackVersion="10.0.19041.28" RuntimePackAlwaysCopyLocal="true" RuntimePackNamePatterns="Microsoft.Windows.SDK.NET.Ref" RuntimePackRuntimeIdentifiers="any" IsWindowsOnly="true" />
     <!-- .NET Core 3.1  -->
-    <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.25" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" IsTrimmable="true" />
-    <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.1" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="3.1.25" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.25" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.25" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" Profile="WPF" />
-    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.25" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" Profile="WindowsForms" />
-    <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.25" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="3.1.10" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64" />
+    <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.32" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" IsTrimmable="true" />
+    <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.1" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="3.1.32" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.32" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.32" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" Profile="WPF" />
+    <KnownFrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.WindowsDesktop.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.32" TargetingPackName="Microsoft.WindowsDesktop.App.Ref" TargetingPackVersion="3.1.0" RuntimePackNamePatterns="Microsoft.WindowsDesktop.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86" IsWindowsOnly="true" Profile="WindowsForms" />
+    <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="netcoreapp3.1" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="3.1.0" LatestRuntimeFrameworkVersion="3.1.32" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="3.1.10" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64" />
     <!-- .NET Core 3.0 -->
     <KnownFrameworkReference Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.0" RuntimeFrameworkName="Microsoft.NETCore.App" DefaultRuntimeFrameworkVersion="3.0.0" LatestRuntimeFrameworkVersion="3.0.3" TargetingPackName="Microsoft.NETCore.App.Ref" TargetingPackVersion="3.0.0" RuntimePackNamePatterns="Microsoft.NETCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" IsTrimmable="true" />
     <KnownAppHostPack Include="Microsoft.NETCore.App" TargetFramework="netcoreapp3.0" AppHostPackNamePattern="Microsoft.NETCore.App.Host.**RID**" AppHostPackVersion="3.0.3" AppHostRuntimeIdentifiers="linux-arm;linux-arm64;linux-musl-arm64;linux-musl-x64;linux-x64;osx-x64;rhel.6-x64;tizen.4.0.0-armel;tizen.5.0.0-armel;win-arm;win-arm64;win-x64;win-x86" />
@@ -427,11 +431,17 @@ Copyright (c) .NET Foundation. All rights reserved.
     <KnownFrameworkReference Include="Microsoft.AspNetCore.App" TargetFramework="netcoreapp3.0" RuntimeFrameworkName="Microsoft.AspNetCore.App" DefaultRuntimeFrameworkVersion="3.0.0" LatestRuntimeFrameworkVersion="3.0.3" TargetingPackName="Microsoft.AspNetCore.App.Ref" TargetingPackVersion="3.0.1" RuntimePackNamePatterns="Microsoft.AspNetCore.App.Runtime.**RID**" RuntimePackRuntimeIdentifiers="win-x64;win-x86;win-arm;osx-x64;linux-musl-x64;linux-musl-arm64;linux-x64;linux-arm;linux-arm64" />
     <KnownFrameworkReference Include="NETStandard.Library" TargetFramework="netstandard2.1" TargetingPackName="NETStandard.Library.Ref" TargetingPackVersion="2.1.0" />
     <!-- Supported Windows versions -->
-    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.22000.0" WindowsSdkPackageVersion="10.0.22000.25" MinimumNETVersion="5.0" />
-    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.20348.0" WindowsSdkPackageVersion="10.0.20348.25" MinimumNETVersion="5.0" />
-    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.19041.0" WindowsSdkPackageVersion="10.0.19041.25" MinimumNETVersion="5.0" />
-    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.18362.0" WindowsSdkPackageVersion="10.0.18362.25" MinimumNETVersion="5.0" />
-    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.17763.0" WindowsSdkPackageVersion="10.0.17763.25" MinimumNETVersion="5.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.22621.0" WindowsSdkPackageVersion="10.0.22621.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.22000.0" WindowsSdkPackageVersion="10.0.22000.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.20348.0" WindowsSdkPackageVersion="10.0.20348.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.19041.0" WindowsSdkPackageVersion="10.0.19041.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.18362.0" WindowsSdkPackageVersion="10.0.18362.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.17763.0" WindowsSdkPackageVersion="10.0.17763.28" MinimumNETVersion="6.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.22000.0" WindowsSdkPackageVersion="10.0.22000.26" MinimumNETVersion="5.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.20348.0" WindowsSdkPackageVersion="10.0.20348.26" MinimumNETVersion="5.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.19041.0" WindowsSdkPackageVersion="10.0.19041.26" MinimumNETVersion="5.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.18362.0" WindowsSdkPackageVersion="10.0.18362.26" MinimumNETVersion="5.0" />
+    <WindowsSdkSupportedTargetPlatformVersion Include="10.0.17763.0" WindowsSdkPackageVersion="10.0.17763.26" MinimumNETVersion="5.0" />
     <WindowsSdkSupportedTargetPlatformVersion Include="8.0" />
     <WindowsSdkSupportedTargetPlatformVersion Include="7.0" />
   </ItemGroup>
@@ -439,7 +449,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.props
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -495,7 +505,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- Put workload resolution behind a feature flag.  It can be enabled either by setting the MSBuildEnableWorkloadResolver environment variable to true, or by
@@ -510,7 +520,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.ImportWorkloads.props" Condition="'$(MSBuildEnableWorkloadResolver)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.props
 ============================================================================================================================================
 -->
   <!--
@@ -530,7 +540,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported .NET Core and .NET Standard TFMs -->
@@ -538,7 +548,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.SupportedTargetFrameworks.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedTargetFrameworks.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedTargetFrameworks.props
 ============================================================================================================================================
 -->
   <!--
@@ -594,6 +604,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     <SupportedNETFrameworkTargetFramework Include=".NETFramework,Version=v4.7.1" DisplayName=".NET Framework 4.7.1" Alias="net471" />
     <SupportedNETFrameworkTargetFramework Include=".NETFramework,Version=v4.7.2" DisplayName=".NET Framework 4.7.2" Alias="net472" />
     <SupportedNETFrameworkTargetFramework Include=".NETFramework,Version=v4.8" DisplayName=".NET Framework 4.8" Alias="net48" />
+    <SupportedNETFrameworkTargetFramework Include=".NETFramework,Version=v4.8.1" DisplayName=".NET Framework 4.8.1" Alias="net481" />
   </ItemGroup>
   <!-- All supported target frameworks -->
   <ItemGroup>
@@ -603,7 +614,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported target platforms -->
@@ -611,7 +622,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.SupportedPlatforms.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedPlatforms.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.SupportedPlatforms.props
 ============================================================================================================================================
 -->
   <!--
@@ -635,7 +646,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!-- List of supported .NET windows target platform versions -->
@@ -643,7 +654,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.WindowsSdkSupportedTargetPlatforms.props
 ============================================================================================================================================
 -->
   <!--
@@ -673,14 +684,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.CSharp.props" Condition="'$(MSBuildProjectExtension)' == '.csproj'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.CSharp.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.CSharp.props
 ============================================================================================================================================
 -->
   <!--
@@ -718,7 +729,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.VisualBasic.props" Condition="'$(MSBuildProjectExtension)' == '.vbproj'" />-->
@@ -727,7 +738,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ILLink.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.props
 ============================================================================================================================================
 -->
   <!--
@@ -745,7 +756,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Sdk.props" Sdk="Microsoft.NET.ILLink.Tasks">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
@@ -764,7 +775,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\build\Microsoft.NET.ILLink.Tasks.props" Condition="'$(UsingILLinkTasksSdk)' != 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.ILLink.Tasks/build/Microsoft.NET.ILLink.Tasks.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.ILLink.Tasks/build/Microsoft.NET.ILLink.Tasks.props
 ============================================================================================================================================
 -->
   <!--
@@ -787,28 +798,28 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.ILLink.Tasks/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Compatibility.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.props
 ============================================================================================================================================
 -->
   <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. -->
@@ -820,14 +831,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackTool.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.props
 ============================================================================================================================================
 -->
   <!--
@@ -848,14 +859,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackProjectTool.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.props
 ============================================================================================================================================
 -->
   <!--
@@ -876,14 +887,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)../../Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props" Condition="Exists('$(MSBuildThisFileDirectory)../../Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <ItemGroup Condition=" '$(_EnableWindowsDesktopGlobbing)' == 'true' ">
@@ -1021,7 +1032,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
 ============================================================================================================================================
 -->
   <!--
@@ -1052,7 +1063,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="System.Windows.Forms.Analyzers.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/System.Windows.Forms.Analyzers.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/System.Windows.Forms.Analyzers.props
 ============================================================================================================================================
 -->
   <!--
@@ -1081,21 +1092,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.WindowsDesktop.WPF.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WPF.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.WPF.props
 ============================================================================================================================================
 -->
   <!--
@@ -1109,21 +1120,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk.WindowsDesktop/targets/Microsoft.NET.Sdk.WindowsDesktop.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Windows.props">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.props
 ============================================================================================================================================
 -->
   <!--
@@ -1150,21 +1161,21 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.props
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%TempPath%/e24ed951-ab63-41ff-a83f-cf55e6988371/project.csproj
+%TempPath%/b3804022-dddb-4c90-8ef5-51ccada52d45/project.csproj
 ============================================================================================================================================
 -->
   <!--
@@ -1172,7 +1183,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk">
   This import was added implicitly because the Project element's Sdk attribute specified "Microsoft.NET.Sdk".
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1195,7 +1206,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.BeforeCommon.targets" Condition="'$(IsCrossTargetingBuild)' != 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1228,7 +1239,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DefaultAssemblyInfo.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultAssemblyInfo.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultAssemblyInfo.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1257,7 +1268,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Set default intermediate and output paths -->
@@ -1265,7 +1276,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DefaultOutputPaths.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultOutputPaths.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultOutputPaths.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1314,7 +1325,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Before any additional SDK targets are imported, import the publish profile.
@@ -1324,7 +1335,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.ImportPublishProfile.targets" Condition="'$(PublishProfileImported)' != 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportPublishProfile.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportPublishProfile.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1360,7 +1371,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1371,7 +1382,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.TargetFrameworkInference.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.TargetFrameworkInference.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.TargetFrameworkInference.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1557,7 +1568,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Related issue: https://github.com/dotnet/sdk/issues/12324-->
@@ -1581,7 +1592,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.ImportWorkloads.targets" Condition="'$(MSBuildEnableWorkloadResolver)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1597,56 +1608,6 @@ Copyright (c) .NET Foundation. All rights reserved.
 -->
   <!-- Workload support -->
   <!-- Import workload manifests -->
-  <!--
-============================================================================================================================================
-  <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
-
-%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.maui/WorkloadManifest.targets
-============================================================================================================================================
--->
-  <ItemGroup Condition=" '$(UseMaui)' == 'true' or '$(UseMauiCore)' == 'true' ">
-    <ProjectCapability Include="UseMauiCore" />
-    <ProjectCapability Condition=" '$(UseMaui)' == 'true' " Include="UseMaui" />
-  </ItemGroup>
-  <!--<Import Project="Sdk.targets" Sdk="Microsoft.Maui.Sdk" Condition=" '$(UseMaui)' == 'true' or '$(UseMauiCore)' == 'true' or '$(UseMauiEssentials)' == 'true' or '$(UseMauiAssets)' == 'true' " />-->
-  <!--<Import Project="Sdk.targets" Sdk="Microsoft.Maui.Resizetizer.Sdk" Condition=" '$(UseMaui)' == 'true' or '$(UseMauiAssets)' == 'true' " />-->
-  <!--
-============================================================================================================================================
-  </Import>
-============================================================================================================================================
--->
-  <!--
-============================================================================================================================================
-  <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
-
-%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.workload.emscripten/WorkloadManifest.targets
-============================================================================================================================================
--->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
-    <BrowserWorkloadDisabled Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and !$([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', '6.0'))">true</BrowserWorkloadDisabled>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(BrowserWorkloadDisabled)' == 'true'">
-    <_NativeBuildNeeded Condition="'$(RunAOTCompilation)' == 'true'">true</_NativeBuildNeeded>
-    <WorkloadDisabledWithReason Condition="'$(_NativeBuildNeeded)' == 'true'">WebAssembly workloads (required for AOT) are only supported for projects targeting net6.0+</WorkloadDisabledWithReason>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(BrowserWorkloadDisabled)' != 'true'">
-    <UsingBrowserRuntimeWorkload Condition="'$(RunAOTCompilation)' == 'true' or '$(UsingMicrosoftNETSdkBlazorWebAssembly)' != 'true'">true</UsingBrowserRuntimeWorkload>
-    <UsingBrowserRuntimeWorkload Condition="'$(UsingBrowserRuntimeWorkload)' == ''">$(WasmNativeWorkload)</UsingBrowserRuntimeWorkload>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(BrowserWorkloadDisabled)' == 'true'">
-    <UsingBrowserRuntimeWorkload>false</UsingBrowserRuntimeWorkload>
-    <WasmNativeWorkload>false</WasmNativeWorkload>
-  </PropertyGroup>
-  <!--<ImportGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(UsingBrowserRuntimeWorkload)' == 'true'">-->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Python" Condition="!$([MSBuild]::IsOsPlatform('Linux'))" />-->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Node" />-->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Sdk" />-->
-  <!--</ImportGroup>-->
-  <!--
-============================================================================================================================================
-  </Import>
-============================================================================================================================================
--->
   <!--
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
@@ -1667,12 +1628,13 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.macos/WorkloadManifest.targets
+%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.ios/WorkloadManifest.targets
 ============================================================================================================================================
 -->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.macOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'macOS'" />-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.iOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'iOS'" />-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.iOS.Windows.Sdk.Aliased" Condition=" '$(TargetPlatformIdentifier)' == 'iOS' and $([MSBuild]::IsOSPlatform('windows'))" />-->
   <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and $([MSBuild]::VersionGreaterThanOrEquals($(TargetFrameworkVersion), '6.0')) ">
-    <SdkSupportedTargetPlatformIdentifier Include="macos" DisplayName="macOS" />
+    <SdkSupportedTargetPlatformIdentifier Include="ios" DisplayName="iOS" />
   </ItemGroup>
   <!--
 ============================================================================================================================================
@@ -1699,13 +1661,46 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.ios/WorkloadManifest.targets
+%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.macos/WorkloadManifest.targets
 ============================================================================================================================================
 -->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.iOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'iOS'" />-->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.iOS.Windows.Sdk.Aliased" Condition=" '$(TargetPlatformIdentifier)' == 'iOS' and $([MSBuild]::IsOSPlatform('windows'))" />-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.macOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'macOS'" />-->
   <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and $([MSBuild]::VersionGreaterThanOrEquals($(TargetFrameworkVersion), '6.0')) ">
-    <SdkSupportedTargetPlatformIdentifier Include="ios" DisplayName="iOS" />
+    <SdkSupportedTargetPlatformIdentifier Include="macos" DisplayName="macOS" />
+  </ItemGroup>
+  <!--
+============================================================================================================================================
+  </Import>
+============================================================================================================================================
+-->
+  <!--
+============================================================================================================================================
+  <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
+
+%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.maui/WorkloadManifest.targets
+============================================================================================================================================
+-->
+  <ItemGroup Condition=" '$(UseMaui)' == 'true' or '$(UseMauiCore)' == 'true' ">
+    <ProjectCapability Include="UseMauiCore" />
+    <ProjectCapability Condition=" '$(UseMaui)' == 'true' " Include="UseMaui" />
+  </ItemGroup>
+  <!--<Import Project="Sdk.targets" Sdk="Microsoft.Maui.Sdk" Condition=" '$(UseMaui)' == 'true' or '$(UseMauiCore)' == 'true' or '$(UseMauiEssentials)' == 'true' or '$(UseMauiAssets)' == 'true' " />-->
+  <!--<Import Project="Sdk.targets" Sdk="Microsoft.Maui.Resizetizer.Sdk" Condition=" '$(UseMaui)' == 'true' or '$(UseMauiAssets)' == 'true' " />-->
+  <!--
+============================================================================================================================================
+  </Import>
+============================================================================================================================================
+-->
+  <!--
+============================================================================================================================================
+  <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
+
+%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.tvos/WorkloadManifest.targets
+============================================================================================================================================
+-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.tvOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'tvOS'" />-->
+  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and $([MSBuild]::VersionGreaterThanOrEquals($(TargetFrameworkVersion), '6.0')) ">
+    <SdkSupportedTargetPlatformIdentifier Include="tvos" DisplayName="tvOS" />
   </ItemGroup>
   <!--
 ============================================================================================================================================
@@ -1818,18 +1813,34 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="WorkloadManifest.targets" Sdk="Microsoft.NET.SDK.WorkloadManifestTargetsLocator">
 
-%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.sdk.tvos/WorkloadManifest.targets
+%UserProfile%//.dotnet/sdk-manifests/6.0.300/microsoft.net.workload.emscripten/WorkloadManifest.targets
 ============================================================================================================================================
 -->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.tvOS.Sdk" Condition="'$(TargetPlatformIdentifier)' == 'tvOS'" />-->
-  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and $([MSBuild]::VersionGreaterThanOrEquals($(TargetFrameworkVersion), '6.0')) ">
-    <SdkSupportedTargetPlatformIdentifier Include="tvos" DisplayName="tvOS" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <BrowserWorkloadDisabled Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and !$([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', '6.0'))">true</BrowserWorkloadDisabled>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(BrowserWorkloadDisabled)' == 'true'">
+    <_NativeBuildNeeded Condition="'$(RunAOTCompilation)' == 'true'">true</_NativeBuildNeeded>
+    <WorkloadDisabledWithReason Condition="'$(_NativeBuildNeeded)' == 'true'">WebAssembly workloads (required for AOT) are only supported for projects targeting net6.0+</WorkloadDisabledWithReason>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(BrowserWorkloadDisabled)' != 'true'">
+    <UsingBrowserRuntimeWorkload Condition="'$(RunAOTCompilation)' == 'true' or '$(UsingMicrosoftNETSdkBlazorWebAssembly)' != 'true'">true</UsingBrowserRuntimeWorkload>
+    <UsingBrowserRuntimeWorkload Condition="'$(UsingBrowserRuntimeWorkload)' == ''">$(WasmNativeWorkload)</UsingBrowserRuntimeWorkload>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(BrowserWorkloadDisabled)' == 'true'">
+    <UsingBrowserRuntimeWorkload>false</UsingBrowserRuntimeWorkload>
+    <WasmNativeWorkload>false</WasmNativeWorkload>
+  </PropertyGroup>
+  <!--<ImportGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(UsingBrowserRuntimeWorkload)' == 'true'">-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Python" Condition="!$([MSBuild]::IsOsPlatform('Linux'))" />-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Node" />-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Runtime.Emscripten.Sdk" />-->
+  <!--</ImportGroup>-->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.ImportWorkloads.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="ShowMissingWorkloads" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -1859,7 +1870,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1870,7 +1881,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.RuntimeIdentifierInference.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets
 ============================================================================================================================================
 -->
   <!--
@@ -1970,8 +1981,11 @@ Copyright (c) .NET Foundation. All rights reserved.
     Default SelfContained based on the RuntimeIdentifier, so projects don't have to explicitly set SelfContained.
     This avoids a breaking change from 1.0 behavior.
     -->
-  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(HasRuntimeOutput)' == 'true'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- Detecting property presence is not harmful and can be done in an unconditioned way -->
     <_SelfContainedWasSpecified Condition="'$(SelfContained)' != ''">true</_SelfContainedWasSpecified>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(HasRuntimeOutput)' == 'true'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <SelfContained Condition="'$(SelfContained)' == '' and '$(RuntimeIdentifier)' != ''">true</SelfContained>
     <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
     <_RuntimeIdentifierUsesAppHost Condition="$(RuntimeIdentifier.StartsWith('ios')) or $(RuntimeIdentifier.StartsWith('tvos')) or $(RuntimeIdentifier.StartsWith('maccatalyst')) or $(RuntimeIdentifier.StartsWith('android')) or $(RuntimeIdentifier.StartsWith('browser'))">false</_RuntimeIdentifierUsesAppHost>
@@ -2049,7 +2063,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Checks for EOL frameworks -->
@@ -2057,7 +2071,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.EolTargetFrameworks.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2080,7 +2094,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     receive servicing updates and security fixes.
   -->
   <ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <_EolNetCoreTargetFrameworkVersions Include="1.0;1.1;2.0;2.1;2.2;3.0" />
+    <_EolNetCoreTargetFrameworkVersions Include="1.0;1.1;2.0;2.1;2.2;3.0;5.0" />
   </ItemGroup>
   <Target Name="_CheckForEolTargetFrameworks" AfterTargets="_CheckForUnsupportedNETCoreVersion" Condition="'@(_EolNetCoreTargetFrameworkVersions-&gt;AnyHaveMetadataValue('Identity', '$(_TargetFrameworkVersionWithoutV)'))' and '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(CheckEolTargetFramework)' == 'true'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <NETSdkWarning ResourceName="TargetFrameworkIsEol" FormatArguments="$(TargetFramework.ToLowerInvariant());https://aka.ms/dotnet-core-support" />
@@ -2089,7 +2103,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <!-- Check if the Target Framework is coreclr based -->
@@ -2137,7 +2151,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.NuGetOfflineCache.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.NuGetOfflineCache.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.NuGetOfflineCache.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2168,7 +2182,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.BeforeCommon.targets
 ============================================================================================================================================
 -->
   <ItemGroup Condition=" '$(DisableImplicitFrameworkReferences)' != 'true' and '$(TargetFrameworkIdentifier)' == '.NETFramework'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2201,7 +2215,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DisableImplicitAssetTargetFallback)' != 'true' and '$(_IsNETCoreOrNETStandard)' == 'true' and '$(_TargetFrameworkVersionWithoutV)' &gt;= '2.0'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <AssetTargetFallback>$(AssetTargetFallback);net461;net462;net47;net471;net472;net48</AssetTargetFallback>
+    <AssetTargetFallback>$(AssetTargetFallback);net461;net462;net47;net471;net472;net48;net481</AssetTargetFallback>
   </PropertyGroup>
   <!-- Add conditional compilation symbols for the target framework (for example NET461, NETSTANDARD2_0, NETCOREAPP1_0) -->
   <PropertyGroup Condition=" '$(DisableImplicitFrameworkDefines)' != 'true' and '$(TargetFrameworkIdentifier)' != '.NETPortable' and '$(TargetFrameworkIdentifier)' != ''" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2281,7 +2295,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup Condition="'$(LanguageTargets)' == ''" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2299,7 +2313,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(LanguageTargets)">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2334,7 +2348,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.Before.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Managed.Before.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Managed.Before.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2350,10 +2364,10 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ***********************************************************************************************
 -->
   <!--
-        We are doing a cross-targeting build if there is a non-empty list of target frameworks specified
-        and there is no current target framework being built individually. In that case, a multitargeting
-        project file like Microsoft.<language>.CrossTargeting.targets gets imported.
-   -->
+      We are doing a cross-targeting build if there is a non-empty list of target frameworks specified
+      and there is no current target framework being built individually. In that case, a multitargeting
+      project file like Microsoft.<language>.CrossTargeting.targets gets imported.
+  -->
   <PropertyGroup Condition="'$(TargetFrameworks)' != '' and '$(TargetFramework)' == ''">
     <IsCrossTargetingBuild>true</IsCrossTargetingBuild>
   </PropertyGroup>
@@ -2361,14 +2375,14 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(CSharpTargetsPath)">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2550,7 +2564,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(CSharpCoreTargetsPath)">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Roslyn/Microsoft.CSharp.Core.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Roslyn/Microsoft.CSharp.Core.targets
 ============================================================================================================================================
 -->
   <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. See the LICENSE file in the project root for more information. -->
@@ -2558,7 +2572,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.Managed.Core.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Roslyn/Microsoft.Managed.Core.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Roslyn/Microsoft.Managed.Core.targets
 ============================================================================================================================================
 -->
   <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. See the LICENSE file in the project root for more information. -->
@@ -2570,17 +2584,17 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.Managed.Core.CurrentVersions.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Roslyn/Microsoft.Managed.Core.CurrentVersions.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Roslyn/Microsoft.Managed.Core.CurrentVersions.targets
 ============================================================================================================================================
 -->
   <PropertyGroup>
-    <CompilerApiVersion>roslyn4.2</CompilerApiVersion>
+    <CompilerApiVersion>roslyn4.3</CompilerApiVersion>
   </PropertyGroup>
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Roslyn/Microsoft.Managed.Core.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Roslyn/Microsoft.Managed.Core.targets
 ============================================================================================================================================
 -->
   <Target Name="ShimReferencePathsWhenCommonTargetsDoesNotUnderstandReferenceAssemblies" BeforeTargets="CoreCompile" Condition="'@(ReferencePathWithRefAssemblies)' == ''" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2858,7 +2872,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Roslyn/Microsoft.CSharp.Core.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Roslyn/Microsoft.CSharp.Core.targets
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2904,7 +2918,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!-- Import design time targets for Roslyn Project System. These are only available if Visual Studio is installed. -->
@@ -2917,7 +2931,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.Common.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Common.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -2942,7 +2956,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(CommonTargetsPath)">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Common.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--
@@ -4432,10 +4446,11 @@ Copyright (C) Microsoft Corporation. All rights reserved.
         <IsRidAgnostic Condition=" '$(RuntimeIdentifier)' == '' and '$(RuntimeIdentifiers)' == '' ">true</IsRidAgnostic>
         <!-- Extract necessary information for SetPlatform negotiation -->
         <IsVcxOrNativeProj Condition="'$(MSBuildProjectExtension)' == '.vcxproj' or '$(MSBuildProjectExtension)' == '.nativeproj'">true</IsVcxOrNativeProj>
+        <Platform Condition="$([MSBuild]::AreFeaturesEnabled('17.4'))">$(Platform)</Platform>
         <Platforms>$(Platforms)</Platforms>
         <!-- .vcxproj and .nativeproj contain a `ProjectConfiguration` item that have `Platform` metadata within.
              Build the `Platforms` property from that. -->
-        <Platforms Condition="'@(ProjectConfiguration)' != '' and ('$(MSBuildProjectExtension)' == '.vcxproj' or '$(MSBuildProjectExtension)' == '.nativeproj')">@(ProjectConfiguration-&gt;'%(Platform)'-&gt;Distinct())</Platforms>
+        <Platforms Condition="'$(UsePlatformFromProjectConfiguration)' != 'false' and '@(ProjectConfiguration)' != '' and ('$(MSBuildProjectExtension)' == '.vcxproj' or '$(MSBuildProjectExtension)' == '.nativeproj')">@(ProjectConfiguration-&gt;'%(Platform)'-&gt;Distinct())</Platforms>
       </_ThisProjectBuildMetadata>
     </ItemGroup>
   </Target>
@@ -6037,9 +6052,9 @@ Copyright (C) Microsoft Corporation. All rights reserved.
       <_ClickOnceRuntimeCopyLocalItems Remove="@(_DeploymentReferencePaths)" />
       <_ClickOnceFiles Include="@(ContentWithTargetPath);@(_DeploymentManifestIconFile);@(AppConfigWithTargetPath);@(NetCoreRuntimeJsonFilesForClickOnce);@(_ClickOnceRuntimeCopyLocalItems)" />
     </ItemGroup>
-    <!-- For single file publish, we need to include the SF bundle EXE and files excluded from the bundle EXE in the clickonce manifest -->
+    <!-- For single file publish, we need to include the SF bundle EXE, application icon file and files excluded from the bundle EXE in the clickonce manifest -->
     <ItemGroup Condition="'$(PublishSingleFile)' == 'true'">
-      <_ClickOnceFiles Include="$(PublishedSingleFilePath)" />
+      <_ClickOnceFiles Include="$(PublishedSingleFilePath);@(_DeploymentManifestIconFile)" />
       <_ClickOnceFiles Include="@(_FilesExcludedFromBundle)" />
       <!-- Include file association icons from Content as loose files -->
       <_FileAssociationIcons Include="%(FileAssociation.DefaultIcon)" />
@@ -7079,7 +7094,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
     </ItemGroup>
     <!-- This item represents the native manifest, example: WindowsApplication1.exe.manifest or Native.ClassLibrary1.manifest -->
     <ItemGroup>
-      <_BuiltProjectOutputGroupOutputIntermediate Include="$(OutDir)$(_DeploymentTargetApplicationManifestFileName)" Condition="'@(NativeReference)'!='' or '@(_IsolatedComReference)'!=''">
+      <_BuiltProjectOutputGroupOutputIntermediate Include="$(OutDir)$(_DeploymentTargetApplicationManifestFileName)" Condition="('@(NativeReference)'!='' or '@(_IsolatedComReference)'!='') And Exists('$(OutDir)$(_DeploymentTargetApplicationManifestFileName)')">
         <TargetPath>$(_DeploymentTargetApplicationManifestFileName)</TargetPath>
         <!-- For compatibility with 2.0 -->
         <OriginalItemSpec>$(OutDir)$(_DeploymentTargetApplicationManifestFileName)</OriginalItemSpec>
@@ -7487,7 +7502,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NuGetRestoreTargets)" Condition="'$(IsRestoreTargetsFileLoaded)' != 'true' and Exists('$(NuGetRestoreTargets)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/NuGet.targets
+%UserProfile%//.dotnet/sdk/6.0.408/NuGet.targets
 ============================================================================================================================================
 -->
   <!--
@@ -7595,6 +7610,8 @@ Copyright (c) .NET Foundation. All rights reserved.
   <UsingTask TaskName="NuGet.Build.Tasks.GetReferenceNearestTargetFrameworkTask" AssemblyFile="$(RestoreTaskAssemblyFile)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
   <UsingTask TaskName="NuGet.Build.Tasks.GetRestoreProjectStyleTask" AssemblyFile="$(RestoreTaskAssemblyFile)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
   <UsingTask TaskName="NuGet.Build.Tasks.NuGetMessageTask" AssemblyFile="$(RestoreTaskAssemblyFile)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+  <UsingTask TaskName="NuGet.Build.Tasks.CheckForDuplicateNuGetItemsTask" AssemblyFile="$(RestoreTaskAssemblyFile)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+  <UsingTask TaskName="NuGet.Build.Tasks.GetGlobalPropertyValueTask" AssemblyFile="$(RestoreTaskAssemblyFile)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
   <!--
     ============================================================
     Restore
@@ -7633,14 +7650,40 @@ Copyright (c) .NET Foundation. All rights reserved.
     package references before NuGet reads them.
     ============================================================
   -->
-  <Target Name="CollectPackageReferences" Returns="@(PackageReference)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+  <Target Name="CollectPackageReferences" Returns="@(PackageReference)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- NOTE for design-time builds we need to ensure that we continue on error. -->
+    <PropertyGroup>
+      <CollectPackageReferencesContinueOnError>$(ContinueOnError)</CollectPackageReferencesContinueOnError>
+      <CollectPackageReferencesContinueOnError Condition="'$(ContinueOnError)' == '' ">false</CollectPackageReferencesContinueOnError>
+    </PropertyGroup>
+    <CheckForDuplicateNuGetItemsTask Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' " Items="@(PackageReference)" ItemName="PackageReference" LogCode="NU1504" MSBuildProjectFullPath="$(MSBuildProjectFullPath)" TreatWarningsAsErrors="$(TreatWarningsAsErrors)" WarningsAsErrors="$(WarningsAsErrors)" NoWarn="$(NoWarn)" ContinueOnError="$(CollectPackageReferencesContinueOnError)">
+      <Output TaskParameter="DeduplicatedItems" ItemName="DeduplicatedPackageReferences" />
+    </CheckForDuplicateNuGetItemsTask>
+    <ItemGroup Condition="'@(DeduplicatedPackageReferences)' != ''">
+      <PackageReference Remove="@(PackageReference)" />
+      <PackageReference Include="@(DeduplicatedPackageReferences)" />
+    </ItemGroup>
+  </Target>
   <!--
     ============================================================
     CollectCentralPackageVersions
     Gathers all PackageVersion items from the central package versions file.
     ============================================================
   -->
-  <Target Name="CollectCentralPackageVersions" Returns="@(PackageVersion)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+  <Target Name="CollectCentralPackageVersions" Returns="@(PackageVersion)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- NOTE for design-time builds we need to ensure that we continue on error. -->
+    <PropertyGroup>
+      <CollectCentralPackageVersionsContinueOnError>$(ContinueOnError)</CollectCentralPackageVersionsContinueOnError>
+      <CollectCentralPackageVersionsContinueOnError Condition="'$(ContinueOnError)' == '' ">false</CollectCentralPackageVersionsContinueOnError>
+    </PropertyGroup>
+    <CheckForDuplicateNuGetItemsTask Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' " Items="@(PackageVersion)" ItemName="PackageVersion" LogCode="NU1506" MSBuildProjectFullPath="$(MSBuildProjectFullPath)" TreatWarningsAsErrors="$(TreatWarningsAsErrors)" WarningsAsErrors="$(WarningsAsErrors)" NoWarn="$(NoWarn)" ContinueOnError="$(CollectCentralPackageVersionsContinueOnError)">
+      <Output TaskParameter="DeduplicatedItems" ItemName="DeduplicatedPackageVersions" />
+    </CheckForDuplicateNuGetItemsTask>
+    <ItemGroup Condition="'@(DeduplicatedPackageVersions)' != ''">
+      <PackageVersion Remove="@(PackageVersion)" />
+      <PackageVersion Include="@(DeduplicatedPackageVersions)" />
+    </ItemGroup>
+  </Target>
   <!--
     ============================================================
     CollectPackageDownloads
@@ -7649,7 +7692,20 @@ Copyright (c) .NET Foundation. All rights reserved.
     package downloads before NuGet reads them.
     ============================================================
   -->
-  <Target Name="CollectPackageDownloads" Returns="@(PackageDownload)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
+  <Target Name="CollectPackageDownloads" Returns="@(PackageDownload)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- NOTE for design-time builds we need to ensure that we continue on error. -->
+    <PropertyGroup>
+      <CollectPackageDownloadsContinueOnError>$(ContinueOnError)</CollectPackageDownloadsContinueOnError>
+      <CollectPackageDownloadsContinueOnError Condition="'$(ContinueOnError)' == '' ">false</CollectPackageDownloadsContinueOnError>
+    </PropertyGroup>
+    <CheckForDuplicateNuGetItemsTask Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' " Items="@(PackageDownload)" ItemName="PackageDownload" LogCode="NU1505" MSBuildProjectFullPath="$(MSBuildProjectFullPath)" TreatWarningsAsErrors="$(TreatWarningsAsErrors)" WarningsAsErrors="$(WarningsAsErrors)" NoWarn="$(NoWarn)" ContinueOnError="$(CollectPackageDownloadsContinueOnError)">
+      <Output TaskParameter="DeduplicatedItems" ItemName="DeduplicatedPackageDownloads" />
+    </CheckForDuplicateNuGetItemsTask>
+    <ItemGroup Condition="'@(DeduplicatedPackageDownloads)' != ''">
+      <PackageDownload Remove="@(PackageDownload)" />
+      <PackageDownload Include="@(DeduplicatedPackageDownloads)" />
+    </ItemGroup>
+  </Target>
   <!--
     ============================================================
     CollectFrameworkReferences
@@ -7840,12 +7896,13 @@ Copyright (c) .NET Foundation. All rights reserved.
     Non-NETCore project frameworks will be returned.
     ============================================================
   -->
-  <Target Name="_GetRestoreTargetFrameworksOutput" DependsOnTargets="_GetRestoreProjectStyle" Returns="@(_RestoreTargetFrameworksOutputFiltered)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="_GetRestoreTargetFrameworksOutput" DependsOnTargets="_GetRestoreProjectStyle;_GetRestoreTargetFrameworkOverride" Returns="@(_RestoreTargetFrameworksOutputFiltered)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
       <_RestoreProjectFramework />
+      <_TargetFrameworkToBeUsed Condition=" '$(_TargetFrameworkOverride)' == '' ">$(TargetFrameworks)</_TargetFrameworkToBeUsed>
     </PropertyGroup>
     <!-- For project.json projects target frameworks will be read from project.json. -->
-    <GetProjectTargetFrameworksTask Condition=" '$(RestoreProjectStyle)' != 'ProjectJson'" ProjectPath="$(MSBuildProjectFullPath)" TargetFrameworks="$(TargetFrameworks)" TargetFramework="$(TargetFramework)" TargetFrameworkMoniker="$(TargetFrameworkMoniker)" TargetPlatformIdentifier="$(TargetPlatformIdentifier)" TargetPlatformVersion="$(TargetPlatformVersion)" TargetPlatformMinVersion="$(TargetPlatformMinVersion)">
+    <GetProjectTargetFrameworksTask Condition=" '$(RestoreProjectStyle)' != 'ProjectJson'" ProjectPath="$(MSBuildProjectFullPath)" TargetFrameworks="$(_TargetFrameworkToBeUsed)" TargetFramework="$(TargetFramework)" TargetFrameworkMoniker="$(TargetFrameworkMoniker)" TargetPlatformIdentifier="$(TargetPlatformIdentifier)" TargetPlatformVersion="$(TargetPlatformVersion)" TargetPlatformMinVersion="$(TargetPlatformMinVersion)">
       <Output TaskParameter="ProjectTargetFrameworks" PropertyName="_RestoreProjectFramework" />
     </GetProjectTargetFrameworksTask>
     <ItemGroup Condition=" '$(_RestoreProjectFramework)' != '' ">
@@ -7857,11 +7914,15 @@ Copyright (c) .NET Foundation. All rights reserved.
     _GetRestoreTargetFrameworksAsItems
     Read $(TargetFrameworks) from the project as items.
     Projects that do not have $(TargetFrameworks) will noop.
+    If $(TargetFramework) is specified globally, it'll be preferred over $(TargetFrameworks)
     ============================================================
   -->
-  <Target Name="_GetRestoreTargetFrameworksAsItems" DependsOnTargets="_GetRestoreProjectStyle" Returns="@(_RestoreTargetFrameworkItems)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <ItemGroup Condition=" '$(TargetFrameworks)' != '' ">
+  <Target Name="_GetRestoreTargetFrameworksAsItems" DependsOnTargets="_GetRestoreProjectStyle;_GetRestoreTargetFrameworkOverride" Returns="@(_RestoreTargetFrameworkItems)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Condition=" '$(TargetFrameworks)' != '' AND '$(_TargetFrameworkOverride)' == '' ">
       <_RestoreTargetFrameworkItems Include="$(TargetFrameworks.Split(';'))" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFrameworks)' != '' AND '$(_TargetFrameworkOverride)' != '' ">
+      <_RestoreTargetFrameworkItems Include="$(_TargetFrameworkOverride)" />
     </ItemGroup>
   </Target>
   <!--
@@ -7891,8 +7952,8 @@ Copyright (c) .NET Foundation. All rights reserved.
   <Target Name="_GetRestoreSettingsCurrentProject" Condition=" '$(TargetFrameworks)' == '' AND '$(PackageReferenceCompatibleProjectStyle)' == 'true' " DependsOnTargets="_GetRestoreSettingsPerFramework" Returns="@(_RestoreSettingsPerFramework)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
   <!--
     ============================================================
-    _GetRestoreSettingsCurrentProject
-    Generate items for a single framework.
+    _GetRestoreSettingsAllFrameworks
+    Generate items for all frameworks.
     ============================================================
   -->
   <Target Name="_GetRestoreSettingsAllFrameworks" Condition=" '$(TargetFrameworks)' != '' AND '$(PackageReferenceCompatibleProjectStyle)' == 'true' " DependsOnTargets="_GetRestoreTargetFrameworksAsItems;_GetRestoreProjectStyle" Returns="@(_RestoreSettingsPerFramework)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -8303,6 +8364,27 @@ Copyright (c) .NET Foundation. All rights reserved.
   </Target>
   <!--
     ============================================================
+    _GetRestoreTargetFrameworkOverride
+    ============================================================
+  -->
+  <Target Name="_GetRestoreTargetFrameworkOverride" Condition=" '$(_DisableNuGetRestoreTargetFrameworksOverride)' != 'true' " Returns="$(_TargetFrameworkOverride)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <GetGlobalPropertyValueTask PropertyName="TargetFramework" Condition=" '$(TargetFrameworks)' != '' ">
+      <Output TaskParameter="GlobalPropertyValue" PropertyName="_TargetFrameworkOverride" />
+    </GetGlobalPropertyValueTask>
+    <!-- Only set the override if TargetFrameworks has not been overriden as well. In that case, prefer it. -->
+  </Target>
+  <!--
+    ============================================================
+    _GetTargetFrameworkOverrides
+    ============================================================
+  -->
+  <Target Name="_GetTargetFrameworkOverrides" Returns="$(_TargetFrameworkOverride)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+      <_TargetFrameworkOverride Condition=" '$(TargetFrameworks)' == '' ">$(TargetFramework)</_TargetFrameworkOverride>
+    </PropertyGroup>
+  </Target>
+  <!--
+    ============================================================
     _IsProjectRestoreSupported
     Verify restore targets exist in the project.
     ============================================================
@@ -8327,7 +8409,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Common.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(CustomAfterMicrosoftCommonTargets)" Condition="'$(CustomAfterMicrosoftCommonTargets)' != '' and Exists('$(CustomAfterMicrosoftCommonTargets)')" />-->
@@ -8335,7 +8417,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8356,7 +8438,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MicrosoftNETBuildExtensionsTargets)" Condition="Exists('$(MicrosoftNETBuildExtensionsTargets)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft/Microsoft.NET.Build.Extensions/Microsoft.NET.Build.Extensions.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft/Microsoft.NET.Build.Extensions/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8384,7 +8466,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.targets/ImportAfter/Microsoft.NET.Build.Extensions.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8396,7 +8478,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8419,7 +8501,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(VSTestTargets)" Condition="Exists('$(VSTestTargets)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.TestPlatform.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.TestPlatform.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8493,14 +8575,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Current/Microsoft.Common.targets/ImportAfter/Microsoft.TestPlatform.ImportAfter.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Common.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Common.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition="'$(ImportUserLocationsByWildcardAfterMicrosoftCommonTargets)' == 'true' and exists('$(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter')" />-->
@@ -8508,7 +8590,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Common.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8517,7 +8599,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 
         Each package management system should use a unique moniker to avoid collisions.  It is a wild-card import so the package
         management system can write out multiple files but the order of the import is alphabetic because MSBuild sorts the list.
-    -->
+  -->
   <PropertyGroup>
     <ImportProjectExtensionTargets Condition="'$(ImportProjectExtensionTargets)' == ''">true</ImportProjectExtensionTargets>
   </PropertyGroup>
@@ -8526,9 +8608,9 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ImportDirectoryBuildTargets Condition="'$(ImportDirectoryBuildTargets)' == ''">true</ImportDirectoryBuildTargets>
   </PropertyGroup>
   <!--
-        Determine the path to the directory build targets file if the user did not disable $(ImportDirectoryBuildTargets) and
-        they did not already specify an absolute path to use via $(DirectoryBuildTargetsPath)
-    -->
+      Determine the path to the directory build targets file if the user did not disable $(ImportDirectoryBuildTargets) and
+      they did not already specify an absolute path to use via $(DirectoryBuildTargetsPath)
+  -->
   <PropertyGroup Condition="'$(ImportDirectoryBuildTargets)' == 'true' and '$(DirectoryBuildTargetsPath)' == ''">
     <_DirectoryBuildTargetsFile Condition="'$(_DirectoryBuildTargetsFile)' == ''">Directory.Build.targets</_DirectoryBuildTargetsFile>
     <_DirectoryBuildTargetsBasePath Condition="'$(_DirectoryBuildTargetsBasePath)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '$(_DirectoryBuildTargetsFile)'))</_DirectoryBuildTargetsBasePath>
@@ -8539,7 +8621,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.CurrentVersion.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.CurrentVersion.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildToolsPath)\Microsoft.ServiceModel.targets" Condition="('$(TargetFrameworkVersion)' != 'v2.0' and '$(TargetFrameworkVersion)' != 'v3.0' and '$(TargetFrameworkVersion)' != 'v3.5') and Exists('$(MSBuildToolsPath)\Microsoft.ServiceModel.targets')" />-->
@@ -8583,14 +8665,14 @@ using System.Reflection%3b
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.After.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.Managed.After.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.Managed.After.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8615,14 +8697,14 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   </PropertyGroup>
   <ItemGroup Condition="'$(IsGraphBuild)' == 'true'">
     <!-- WPF projects generate a project with a random name at build time and then build the project via the IBuildEngine callbacks.
-           Detect WPF, and exclude the generated project from static graph isolation constraint checking.
-           Escape the item to avoid eager evaluation of the wildcards.
-      -->
+        Detect WPF, and exclude the generated project from static graph isolation constraint checking.
+        Escape the item to avoid eager evaluation of the wildcards.
+    -->
     <GraphIsolationExemptReference Condition="'$(UseWPF)' == 'true' or '@(Page)' != '' or '@(ApplicationDefinition)' != '' or '@(XamlPage)' != '' or '@(XamlAppDef)' != ''" Include="$([MSBuild]::Escape('$(MSBuildProjectDirectory)\$(MSBuildProjectName)*_wpftmp$(MSBuildProjectExtension)'))" />
   </ItemGroup>
   <!--
-    Properties for extension of ProjectReferenceTargets.
-    Append any current value which may have been provided in a Directory.Build.props since the intent was likely to append, not prepend.
+      Properties for extension of ProjectReferenceTargets.
+      Append any current value which may have been provided in a Directory.Build.props since the intent was likely to append, not prepend.
   -->
   <PropertyGroup Condition="'$(IsGraphBuild)' == 'true'">
     <!-- Empty case is for outer builds which do not import the target files that set BuildProjectReferences -->
@@ -8651,14 +8733,14 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.CSharp.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.CSharp.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.CrossTargeting.targets" Condition="'$(IsCrossTargetingBuild)' == 'true'" />-->
@@ -8666,7 +8748,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Sdk.targets" Condition="'$(IsCrossTargetingBuild)' != 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8682,7 +8764,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.Common.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Common.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Common.targets
 ============================================================================================================================================
 -->
   <!--
@@ -8738,7 +8820,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<ImportGroup>-->
@@ -8746,7 +8828,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolution.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolution.targets') and ('$(Language)' != 'C++' or '$(_EnablePackageReferencesInVCProjects)' == 'true')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.PackageDependencyResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9117,7 +9199,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolutionStubs.targets" Condition="Exists('$(MSBuildThisFileDirectory)Microsoft.PackageDependencyResolutionStubs.targets') and ('$(Language)' == 'C++' and '$(_EnablePackageReferencesInVCProjects)' != 'true')" />-->
@@ -9126,7 +9208,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9179,7 +9261,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.DefaultItems.Shared.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.Shared.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.Shared.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9344,7 +9426,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.targets
 ============================================================================================================================================
 -->
   <!-- This target runs before build but not before restore, to avoid duplicating these warnings
@@ -9417,14 +9499,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.FrameworkReferenceResolution.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9489,7 +9571,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ItemGroup>
       <_PackAsToolShimRuntimeIdentifiers Condition="@(_PackAsToolShimRuntimeIdentifiers) ==''" Include="$(PackAsToolShimRuntimeIdentifiers)" />
     </ItemGroup>
-    <ProcessFrameworkReferences FrameworkReferences="@(FrameworkReference)" KnownFrameworkReferences="@(KnownFrameworkReference)" KnownRuntimePacks="@(KnownRuntimePack)" TargetFrameworkIdentifier="$(TargetFrameworkIdentifier)" TargetFrameworkVersion="$(_TargetFrameworkVersionWithoutV)" TargetPlatformIdentifier="$(TargetPlatformIdentifier)" TargetPlatformVersion="$(TargetPlatformVersion)" TargetingPackRoot="$(NetCoreTargetingPackRoot)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" SelfContained="$(SelfContained)" ReadyToRunEnabled="$(PublishReadyToRun)" ReadyToRunUseCrossgen2="$(PublishReadyToRunUseCrossgen2)" RuntimeIdentifier="$(RuntimeIdentifier)" RuntimeIdentifiers="$(RuntimeIdentifiers)" RuntimeFrameworkVersion="$(RuntimeFrameworkVersion)" TargetLatestRuntimePatch="$(TargetLatestRuntimePatch)" TargetLatestRuntimePatchIsDefault="$(_TargetLatestRuntimePatchIsDefault)" EnableTargetingPackDownload="$(EnableTargetingPackDownload)" EnableRuntimePackDownload="$(EnableRuntimePackDownload)" KnownCrossgen2Packs="@(KnownCrossgen2Pack)" NETCoreSdkRuntimeIdentifier="$(NETCoreSdkRuntimeIdentifier)" NetCoreRoot="$(NetCoreRoot)" NETCoreSdkVersion="$(NETCoreSdkVersion)">
+    <ProcessFrameworkReferences FrameworkReferences="@(FrameworkReference)" KnownFrameworkReferences="@(KnownFrameworkReference)" KnownRuntimePacks="@(KnownRuntimePack)" TargetFrameworkIdentifier="$(TargetFrameworkIdentifier)" TargetFrameworkVersion="$(_TargetFrameworkVersionWithoutV)" TargetPlatformIdentifier="$(TargetPlatformIdentifier)" TargetPlatformVersion="$(TargetPlatformVersion)" TargetingPackRoot="$(NetCoreTargetingPackRoot)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" SelfContained="$(SelfContained)" ReadyToRunEnabled="$(PublishReadyToRun)" ReadyToRunUseCrossgen2="$(PublishReadyToRunUseCrossgen2)" RuntimeIdentifier="$(RuntimeIdentifier)" RuntimeIdentifiers="$(RuntimeIdentifiers)" RuntimeFrameworkVersion="$(RuntimeFrameworkVersion)" TargetLatestRuntimePatch="$(TargetLatestRuntimePatch)" TargetLatestRuntimePatchIsDefault="$(_TargetLatestRuntimePatchIsDefault)" EnableTargetingPackDownload="$(EnableTargetingPackDownload)" EnableRuntimePackDownload="$(EnableRuntimePackDownload)" EnableWindowsTargeting="$(EnableWindowsTargeting)" DisableTransitiveFrameworkReferenceDownloads="$(DisableTransitiveFrameworkReferenceDownloads)" KnownCrossgen2Packs="@(KnownCrossgen2Pack)" NETCoreSdkRuntimeIdentifier="$(NETCoreSdkRuntimeIdentifier)" NetCoreRoot="$(NetCoreRoot)" NETCoreSdkVersion="$(NETCoreSdkVersion)">
       <Output TaskParameter="PackagesToDownload" ItemName="_PackageToDownload" />
       <Output TaskParameter="RuntimeFrameworks" ItemName="RuntimeFramework" />
       <Output TaskParameter="TargetingPacks" ItemName="TargetingPack" />
@@ -9636,7 +9718,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       <GenerateErrorForMissingTargetingPacks>true</GenerateErrorForMissingTargetingPacks>
       <GenerateErrorForMissingTargetingPacks Condition="'$(DesignTimeBuild)' == 'true'">false</GenerateErrorForMissingTargetingPacks>
     </PropertyGroup>
-    <ResolveTargetingPackAssets FrameworkReferences="@(FrameworkReference)" ProjectLanguage="$(Language)" ResolvedTargetingPacks="@(ResolvedTargetingPack)" RuntimeFrameworks="@(RuntimeFramework)" GenerateErrorForMissingTargetingPacks="$(GenerateErrorForMissingTargetingPacks)" NuGetRestoreSupported="$(_NuGetRestoreSupported)" NetCoreTargetingPackRoot="$(NetCoreTargetingPackRoot)">
+    <ResolveTargetingPackAssets FrameworkReferences="@(FrameworkReference)" ProjectLanguage="$(Language)" ResolvedTargetingPacks="@(ResolvedTargetingPack)" RuntimeFrameworks="@(RuntimeFramework)" GenerateErrorForMissingTargetingPacks="$(GenerateErrorForMissingTargetingPacks)" NuGetRestoreSupported="$(_NuGetRestoreSupported)" DisableTransitiveFrameworkReferenceDownloads="$(DisableTransitiveFrameworkReferenceDownloads)" NetCoreTargetingPackRoot="$(NetCoreTargetingPackRoot)">
       <Output TaskParameter="ReferencesToAdd" ItemName="Reference" />
       <Output TaskParameter="AnalyzersToAdd" ItemName="Analyzer" />
       <Output TaskParameter="PlatformManifests" ItemName="PlatformManifestsFromTargetingPacks" />
@@ -9682,7 +9764,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     ============================================================
     -->
   <Target Name="ResolveRuntimePackAssets" DependsOnTargets="ResolveFrameworkReferences" Condition="'@(RuntimePack)' != ''">
-    <ResolveRuntimePackAssets FrameworkReferences="@(FrameworkReference)" ResolvedRuntimePacks="@(ResolvedRuntimePack)" UnavailableRuntimePacks="@(UnavailableRuntimePack)" SatelliteResourceLanguages="$(SatelliteResourceLanguages)" DesignTimeBuild="$(DesignTimeBuild)">
+    <ResolveRuntimePackAssets FrameworkReferences="@(FrameworkReference)" ResolvedRuntimePacks="@(ResolvedRuntimePack)" UnavailableRuntimePacks="@(UnavailableRuntimePack)" SatelliteResourceLanguages="$(SatelliteResourceLanguages)" DesignTimeBuild="$(DesignTimeBuild)" DisableTransitiveFrameworkReferenceDownloads="$(DisableTransitiveFrameworkReferenceDownloads)">
       <Output TaskParameter="RuntimePackAssets" ItemName="RuntimePackAsset" />
     </ResolveRuntimePackAssets>
     <ItemGroup>
@@ -9722,7 +9804,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="GenerateDepsFile" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -9766,7 +9848,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Sdk.Shared.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Shared.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Shared.targets
 ============================================================================================================================================
 -->
   <!--
@@ -9836,7 +9918,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -9869,6 +9951,10 @@ Copyright (c) .NET Foundation. All rights reserved.
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <!-- Turn off support for metadata updates in non-Debug builds by default. -->
     <MetadataUpdaterSupport Condition="'$(MetadataUpdaterSupport)' == '' and '$(Configuration)' != 'Debug'">false</MetadataUpdaterSupport>
+  </PropertyGroup>
+  <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- Turn off IncludeProjectsNotInAssetsFileInDepsFile by default. -->
+    <IncludeProjectsNotInAssetsFileInDepsFile Condition="'$(IncludeProjectsNotInAssetsFileInDepsFile)' == ''">false</IncludeProjectsNotInAssetsFileInDepsFile>
   </PropertyGroup>
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <CoreBuildDependsOn>
@@ -9915,7 +10001,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       <RuntimeTargetsCopyLocalItems Remove="@(_ConflictPackageFiles)" Condition="'%(_ConflictPackageFiles.ConflictItemType)' != 'Reference'" />
       <RuntimePackAsset Remove="@(_ConflictPackageFiles)" Condition="'%(_ConflictPackageFiles.ConflictItemType)' != 'Reference'" />
     </ItemGroup>
-    <GenerateDepsFile ProjectPath="$(MSBuildProjectFullPath)" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(ProjectDepsFilePath)" TargetFramework="$(TargetFramework)" AssemblyName="$(AssemblyName)" AssemblyExtension="$(TargetExt)" AssemblyVersion="$(Version)" AssemblySatelliteAssemblies="@(IntermediateSatelliteAssembliesWithTargetPath)" ReferencePaths="@(ReferencePath)" ReferenceDependencyPaths="@(ReferenceDependencyPaths)" ReferenceSatellitePaths="@(ReferenceSatellitePaths)" ReferenceAssemblies="@(_ReferenceAssemblies)" RuntimePackAssets="@(RuntimePackAsset)" IncludeMainProject="$(IncludeMainProjectInDepsFile)" RuntimeIdentifier="$(RuntimeIdentifier)" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" RuntimeFrameworks="@(RuntimeFramework)" CompilerOptions="@(DependencyFileCompilerOptions)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(NativeCopyLocalItems);@(ResourceCopyLocalItems);@(RuntimeCopyLocalItems)" UserRuntimeAssemblies="@(UserRuntimeAssembly)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" IsSelfContained="$(SelfContained)" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" />
+    <GenerateDepsFile ProjectPath="$(MSBuildProjectFullPath)" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(ProjectDepsFilePath)" TargetFramework="$(TargetFramework)" AssemblyName="$(AssemblyName)" AssemblyExtension="$(TargetExt)" AssemblyVersion="$(Version)" AssemblySatelliteAssemblies="@(IntermediateSatelliteAssembliesWithTargetPath)" ReferencePaths="@(ReferencePath)" ReferenceDependencyPaths="@(ReferenceDependencyPaths)" ReferenceSatellitePaths="@(ReferenceSatellitePaths)" ReferenceAssemblies="@(_ReferenceAssemblies)" RuntimePackAssets="@(RuntimePackAsset)" IncludeMainProject="$(IncludeMainProjectInDepsFile)" RuntimeIdentifier="$(RuntimeIdentifier)" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" RuntimeFrameworks="@(RuntimeFramework)" CompilerOptions="@(DependencyFileCompilerOptions)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(NativeCopyLocalItems);@(ResourceCopyLocalItems);@(RuntimeCopyLocalItems)" UserRuntimeAssemblies="@(UserRuntimeAssembly)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" IsSelfContained="$(SelfContained)" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" IncludeProjectsNotInAssetsFile="$(IncludeProjectsNotInAssetsFileInDepsFile)" />
     <ItemGroup>
       <!-- Do this in an ItemGroup instead of as an output parameter of the GenerateDepsFile task so that it still gets added to the item set
            during incremental builds when the task is skipped -->
@@ -10464,7 +10550,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.DesignerSupport.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DesignerSupport.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DesignerSupport.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10504,7 +10590,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       non-NuGet assets from shadow copied app base directory. This further
       allows loading of designer dll(s) that are not seen by the build.
     -->
-    <GenerateDepsFile AssemblyName="_" AssemblyExtension="_" AssemblyVersion="_" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(_DesignerDepsFilePath)" IncludeMainProject="false" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" IsSelfContained="false" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" ProjectPath="$(MSBuildProjectFullPath)" RuntimeFrameworks="@(RuntimeFramework)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(NativeCopyLocalItems);@(ResourceCopyLocalItems);@(RuntimeCopyLocalItems)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" TargetFramework="$(TargetFramework)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" />
+    <GenerateDepsFile AssemblyName="_" AssemblyExtension="_" AssemblyVersion="_" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(_DesignerDepsFilePath)" IncludeMainProject="false" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" IsSelfContained="false" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" ProjectPath="$(MSBuildProjectFullPath)" RuntimeFrameworks="@(RuntimeFramework)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(NativeCopyLocalItems);@(ResourceCopyLocalItems);@(RuntimeCopyLocalItems)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" TargetFramework="$(TargetFramework)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" IncludeProjectsNotInAssetsFile="$(IncludeProjectsNotInAssetsFileInDepsFile)" />
     <ItemGroup>
       <!-- Designer will rename to <surface process name>.deps.json -->
       <DesignerRuntimeImplementationProjectOutputGroupOutput Include="$([MSBuild]::NormalizePath($(_DesignerDepsFilePath)))" TargetPath="$(_DesignerDepsFileName)" />
@@ -10538,14 +10624,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateAssemblyInfo.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateAssemblyInfo.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateAssemblyInfo.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10729,14 +10815,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateGlobalUsings.targets" Condition="'$(Language)' == 'C#'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateGlobalUsings.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateGlobalUsings.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10785,14 +10871,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.GenerateSupportedRuntime.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateSupportedRuntime.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.GenerateSupportedRuntime.targets
 ============================================================================================================================================
 -->
   <!--
@@ -10831,14 +10917,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ComposeStore.targets" Condition="'$(UsingNETSdkDefaults)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ComposeStore.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ComposeStore.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11133,14 +11219,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.CrossGen.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.CrossGen.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.CrossGen.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11332,7 +11418,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     <GetPackageDirectory Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '3.0'" Items="@(RuntimePack)" AssetsFileWithAdditionalPackageFolders="$(_CrossProjAssetsFile)">
       <Output TaskParameter="Output" ItemName="_CrossgenRuntimePack" />
     </GetPackageDirectory>
-    <ResolveRuntimePackAssets Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '3.0'" FrameworkReferences="@(FrameworkReference)" ResolvedRuntimePacks="@(_CrossgenRuntimePack)">
+    <ResolveRuntimePackAssets Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '3.0'" FrameworkReferences="@(FrameworkReference)" ResolvedRuntimePacks="@(_CrossgenRuntimePack)" DisableTransitiveFrameworkReferenceDownloads="$(DisableTransitiveFrameworkReferenceDownloads)">
       <Output TaskParameter="RuntimePackAssets" ItemName="CrossgenResolvedAssembliesToPublish" />
     </ResolveRuntimePackAssets>
     <!-- Copy managed files to  a flat temp directory for passing it as ref for crossgen -->
@@ -11424,7 +11510,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     ============================================================
     -->
   <UsingTask Condition="'$(Crossgen2TasksOverriden)' != 'true'" TaskName="RunReadyToRunCompiler" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
-  <Target Name="_CreateR2RImages" Inputs="@(_ReadyToRunCompileList);@(_ReadyToRunCompositeBuildInput);@(_ReadyToRunPgoFiles)" Outputs="%(_ReadyToRunCompileList.OutputR2RImage);%(_ReadyToRunCompileList.OutputPDBImage)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="_CreateR2RImages" Inputs="$(MSBuildAllProjects);@(_ReadyToRunCompileList);@(_ReadyToRunCompositeBuildInput);@(_ReadyToRunPgoFiles)" Outputs="%(_ReadyToRunCompileList.OutputR2RImage);%(_ReadyToRunCompileList.OutputPDBImage)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <RunReadyToRunCompiler CrossgenTool="@(CrossgenTool)" Crossgen2Tool="@(Crossgen2Tool)" UseCrossgen2="$(PublishReadyToRunUseCrossgen2)" Crossgen2PgoFiles="@(_ReadyToRunPgoFiles)" Crossgen2ExtraCommandLineArgs="$(PublishReadyToRunCrossgen2ExtraArgs)" ImplementationAssemblyReferences="@(_ReadyToRunAssembliesToReference)" ShowCompilerWarnings="$(PublishReadyToRunShowWarnings)" CompilationEntry="@(_ReadyToRunCompileList)" ContinueOnError="ErrorAndContinue" ReadyToRunCompositeBuildReferences="@(_ReadyToRunCompositeBuildReferences)" ReadyToRunCompositeBuildInput="@(_ReadyToRunCompositeBuildInput)">
       <Output TaskParameter="ExitCode" PropertyName="_ReadyToRunCompilerExitCode" />
       <Output TaskParameter="WarningsDetected" PropertyName="_ReadyToRunWarningsDetected" />
@@ -11444,7 +11530,7 @@ Copyright (c) .NET Foundation. All rights reserved.
     Emit native symbols for ReadyToRun images in the _ReadyToRunSymbolsCompileList list
     ============================================================
     -->
-  <Target Name="_CreateR2RSymbols" Inputs="@(_ReadyToRunSymbolsCompileList)" Outputs="%(_ReadyToRunSymbolsCompileList.OutputPDBImage)" Condition="'$(PublishReadyToRunUseCrossgen2)' != 'true' or '@(Crossgen2Tool -> '%(IsVersion5)')' == 'true'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="_CreateR2RSymbols" Inputs="$(MSBuildAllProjects);@(_ReadyToRunSymbolsCompileList)" Outputs="%(_ReadyToRunSymbolsCompileList.OutputPDBImage)" Condition="'$(PublishReadyToRunUseCrossgen2)' != 'true' or '@(Crossgen2Tool -> '%(IsVersion5)')' == 'true'" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <RunReadyToRunCompiler CrossgenTool="@(CrossgenTool)" Crossgen2Tool="@(Crossgen2Tool)" UseCrossgen2="$(PublishReadyToRunUseCrossgen2)" Crossgen2ExtraCommandLineArgs="$(PublishReadyToRunCrossgen2ExtraArgs)" ImplementationAssemblyReferences="@(_ReadyToRunAssembliesToReference)" ShowCompilerWarnings="$(PublishReadyToRunShowWarnings)" CompilationEntry="@(_ReadyToRunSymbolsCompileList)" ContinueOnError="ErrorAndContinue">
       <Output TaskParameter="ExitCode" PropertyName="_ReadyToRunCompilerExitCode" />
       <Output TaskParameter="WarningsDetected" PropertyName="_ReadyToRunWarningsDetected" />
@@ -11461,14 +11547,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ObsoleteReferences.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
 ============================================================================================================================================
 -->
   <!--
@@ -11489,7 +11575,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NETCoreSdkBundledCliToolsProps)" Condition="Exists('$(NETCoreSdkBundledCliToolsProps)')">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Microsoft.NETCoreSdk.BundledCliTools.props
+%UserProfile%//.dotnet/sdk/6.0.408/Microsoft.NETCoreSdk.BundledCliTools.props
 ============================================================================================================================================
 -->
   <!--
@@ -11508,7 +11594,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ObsoleteReferences.targets
 ============================================================================================================================================
 -->
   <ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -11523,14 +11609,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Publish.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Publish.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Publish.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12162,7 +12248,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_ResolvedNuGetFilesForPublish Include="@(RuntimeCopyLocalItems)" Condition="'%(RuntimeCopyLocalItems.CopyToPublishDirectory)' != 'false'" />
       <_ResolvedNuGetFilesForPublish Remove="@(_PublishConflictPackageFiles)" Condition="'%(_PublishConflictPackageFiles.ConflictItemType)' != 'Reference'" />
     </ItemGroup>
-    <GenerateDepsFile ProjectPath="$(MSBuildProjectFullPath)" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(IntermediateDepsFilePath)" TargetFramework="$(TargetFramework)" AssemblyName="$(AssemblyName)" AssemblyExtension="$(TargetExt)" AssemblyVersion="$(Version)" AssemblySatelliteAssemblies="@(IntermediateSatelliteAssembliesWithTargetPath)" ReferencePaths="@(ReferencePath)" ReferenceDependencyPaths="@(ReferenceDependencyPaths)" ReferenceSatellitePaths="@(ReferenceSatellitePaths)" ReferenceAssemblies="@(_ReferenceAssemblies)" RuntimePackAssets="@(RuntimePackAsset)" IncludeMainProject="$(IncludeMainProjectInDepsFile)" RuntimeIdentifier="$(RuntimeIdentifier)" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" RuntimeFrameworks="@(RuntimeFramework)" CompilerOptions="@(DependencyFileCompilerOptions)" RuntimeStorePackages="@(RuntimeStorePackages)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(_ResolvedNuGetFilesForPublish)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" UserRuntimeAssemblies="@(UserRuntimeAssembly)" IsSelfContained="$(SelfContained)" IsSingleFile="$(_IsSingleFilePublish)" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" />
+    <GenerateDepsFile ProjectPath="$(MSBuildProjectFullPath)" AssetsFilePath="$(ProjectAssetsFile)" DepsFilePath="$(IntermediateDepsFilePath)" TargetFramework="$(TargetFramework)" AssemblyName="$(AssemblyName)" AssemblyExtension="$(TargetExt)" AssemblyVersion="$(Version)" AssemblySatelliteAssemblies="@(IntermediateSatelliteAssembliesWithTargetPath)" ReferencePaths="@(ReferencePath)" ReferenceDependencyPaths="@(ReferenceDependencyPaths)" ReferenceSatellitePaths="@(ReferenceSatellitePaths)" ReferenceAssemblies="@(_ReferenceAssemblies)" RuntimePackAssets="@(RuntimePackAsset)" IncludeMainProject="$(IncludeMainProjectInDepsFile)" RuntimeIdentifier="$(RuntimeIdentifier)" PlatformLibraryName="$(MicrosoftNETPlatformLibrary)" RuntimeFrameworks="@(RuntimeFramework)" CompilerOptions="@(DependencyFileCompilerOptions)" RuntimeStorePackages="@(RuntimeStorePackages)" CompileReferences="@(ResolvedCompileFileDefinitions)" ResolvedNuGetFiles="@(_ResolvedNuGetFilesForPublish)" ResolvedRuntimeTargetsFiles="@(RuntimeTargetsCopyLocalItems)" UserRuntimeAssemblies="@(UserRuntimeAssembly)" IsSelfContained="$(SelfContained)" IsSingleFile="$(_IsSingleFilePublish)" IncludeRuntimeFileVersions="$(IncludeFileVersionsInDependencyFile)" RuntimeGraphPath="$(BundledRuntimeIdentifierGraphFile)" IncludeProjectsNotInAssetsFile="$(IncludeProjectsNotInAssetsFileInDepsFile)" />
     <ItemGroup>
       <ResolvedFileToPublish Include="$(IntermediateDepsFilePath)">
         <RelativePath>$(ProjectDepsFileName)</RelativePath>
@@ -12245,7 +12331,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackStubs.targets" Condition="('$(Language)' == 'C++' and '$(_EnablePackageReferencesInVCProjects)' != 'true')" />-->
@@ -12253,7 +12339,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackTool.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackTool.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12380,14 +12466,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PackProjectTool.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PackProjectTool.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12408,14 +12494,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.PreserveCompilationContext.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PreserveCompilationContext.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.PreserveCompilationContext.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12489,14 +12575,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ConflictResolution.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12514,7 +12600,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.DefaultPackageConflictOverrides.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultPackageConflictOverrides.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.DefaultPackageConflictOverrides.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12751,7 +12837,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ConflictResolution.targets
 ============================================================================================================================================
 -->
   <UsingTask TaskName="ResolvePackageFileConflicts" AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" />
@@ -12822,14 +12908,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.CSharp.targets" Condition="'$(Language)' == 'C#'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.CSharp.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.CSharp.targets
 ============================================================================================================================================
 -->
   <!--
@@ -12872,7 +12958,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.VisualBasic.targets" Condition="'$(Language)' == 'VB'" />-->
@@ -12881,7 +12967,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.ILLink.targets" Condition="'$(Language)' != 'C++'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ILLink.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13164,14 +13250,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Sdk.Analyzers.targets" Condition="'$(Language)' == 'C#' or '$(Language)' == 'VB'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Analyzers.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Analyzers.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13240,7 +13326,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\analyzers\build\Microsoft.CodeAnalysis.NetAnalyzers.props" Condition="'$(Language)' == 'C#' Or '$(Language)' == 'VB'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/Microsoft.CodeAnalysis.NetAnalyzers.props
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/analyzers/build/Microsoft.CodeAnalysis.NetAnalyzers.props
 ============================================================================================================================================
 -->
   <!-- 
@@ -13267,7 +13353,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Analyzers.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Analyzers.targets
 ============================================================================================================================================
 -->
   <!--<Import Project="$(MSBuildThisFileDirectory)..\analyzers\build\Microsoft.CodeAnalysis.NetAnalyzers.targets" Condition="$(EnableNETAnalyzers)" />-->
@@ -13308,7 +13394,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!-- Import WindowsDesktop targets if necessary -->
@@ -13327,7 +13413,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)Microsoft.NET.Windows.targets" Condition="'$(TargetPlatformIdentifier)' == 'Windows'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Windows.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13388,7 +13474,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.targets
 ============================================================================================================================================
 -->
   <!-- TargetPlatformMoniker and TargetPlatformDisplayName would normally be set in Microsoft.Common.CurrentVersion.targets.  However, the
@@ -13411,14 +13497,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   <Import Project="$(MSBuildThisFileDirectory)..\targets\Microsoft.NET.Compatibility.targets">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.targets
 ============================================================================================================================================
 -->
   <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. -->
@@ -13429,7 +13515,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="Microsoft.NET.Compatibility.Common.targets" Condition="'$(UseCompatibilityPackage)' != 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.Common.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.Common.targets
 ============================================================================================================================================
 -->
   <!-- Licensed to the .NET Foundation under one or more agreements. The .NET Foundation licenses this file to you under the MIT license. -->
@@ -13478,14 +13564,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Compatibility.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!-- Import targets from NuGet.Build.Tasks.Pack package/Sdk -->
@@ -13498,7 +13584,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   <Import Project="$(NuGetBuildTasksPackTargets)" Condition="Exists('$(NuGetBuildTasksPackTargets)') AND '$(ImportNuGetBuildTasksPackTargetsFromSdk)' == 'true'">
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/NuGet.Build.Tasks.Pack/build/NuGet.Build.Tasks.Pack.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/NuGet.Build.Tasks.Pack/build/NuGet.Build.Tasks.Pack.targets
 ============================================================================================================================================
 -->
   <!--
@@ -13832,14 +13918,14 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%UserProfile%//.dotnet/sdk/6.0.300/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
+%UserProfile%//.dotnet/sdk/6.0.408/Sdks/Microsoft.NET.Sdk/Sdk/Sdk.targets
 ============================================================================================================================================
 -->
   <!--
 ============================================================================================================================================
   </Import>
 
-%TempPath%/e24ed951-ab63-41ff-a83f-cf55e6988371/project.csproj
+%TempPath%/b3804022-dddb-4c90-8ef5-51ccada52d45/project.csproj
 ============================================================================================================================================
 -->
 </Project>
