@@ -190,15 +190,9 @@ public record SourceFile(string Path, string Text);
 [TestFixture]
 public class EndToEndTests
 {
-    public static (SDKVersion, ProjectType)[] SDKs()
+    public static (SDKVersion, SupportedLanguage)[] SDKs()
     {
-        var sdks = new[]
-        {
-            new SDKVersion("6.0.300"),
-            new SDKVersion("7.0.202")
-        };
-        var types = new[] { ProjectType.CSharp, ProjectType.FSharp };
-        return sdks.SelectMany(sdk => types.Select(t => (sdk, t))).ToArray();
+        return TargetsExtraction.SupportedSdks.SelectMany(sdk => TargetsExtraction.SupportedLanguages.Select(t => (sdk, t))).ToArray();
     }
 
     private const string Configuration =
@@ -213,15 +207,9 @@ public class EndToEndTests
         Path.Combine("..", "..", "..", "..", "MSBuild.CompilerCache", "bin", Configuration)
     );
 
-    public enum ProjectType
-    {
-        CSharp,
-        FSharp
-    }
-
     [TestCaseSource(nameof(SDKs))]
     [Test]
-    public void CompileTwoIdenticalProjectsAssertDllReused((SDKVersion sdk, ProjectType type) x)
+    public void CompileTwoIdenticalProjectsAssertDllReused((SDKVersion sdk, SupportedLanguage type) x)
     {
         var (sdk, type) = x;
         using var env = new BuildEnvironment(NugetSourcePath, sdk);
@@ -237,7 +225,7 @@ public class EndToEndTests
         };
         var configFile = env.Dir.CombineAsFile("config.json");
         File.WriteAllText(configFile.FullName, JsonConvert.SerializeObject(config));
-        var produceRefAssembly = int.Parse(sdk.Version.Split(".")[0]) > 6 || type == ProjectType.CSharp;
+        var produceRefAssembly = int.Parse(sdk.Version.Split(".")[0]) > 6 || type == SupportedLanguage.CSharp;
         var outputsCount = produceRefAssembly ? 3 : 2;
         var (proj, projModified) = CreateProjects(configFile, type, produceRefAssembly);
 
@@ -270,9 +258,9 @@ public class EndToEndTests
 
     }
 
-    private static (ProjectFileBuilder, ProjectFileBuilder) CreateProjects(FileInfo configFile, ProjectType projectType, bool produceRefAssembly = true)
+    private static (ProjectFileBuilder, ProjectFileBuilder) CreateProjects(FileInfo configFile, SupportedLanguage projectType, bool produceRefAssembly = true)
     {
-        if (projectType == ProjectType.CSharp)
+        if (projectType == SupportedLanguage.CSharp)
         {
             var source = new SourceFile("Library.cs", """
 namespace CSharp;

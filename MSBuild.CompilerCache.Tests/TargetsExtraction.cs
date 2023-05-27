@@ -58,15 +58,19 @@ public class TargetsExtraction
         "'$(EmitCompilerGeneratedFiles)' == 'true'",
     };
 
-    private static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
+    internal static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
+            "7.0.302",
+            "7.0.203",
+            "7.0.202",
+            "7.0.105",
+            "6.0.408",
             "6.0.300",
-            "7.0.202"
         }
         .Select(sdk => new SDKVersion(sdk))
         .ToImmutableArray();
 
-    private static readonly ImmutableArray<SupportedLanguage> SupportedLanguages = new[]
+    internal static readonly ImmutableArray<SupportedLanguage> SupportedLanguages = new[]
     {
         SupportedLanguage.CSharp, SupportedLanguage.FSharp
     }.ToImmutableArray();
