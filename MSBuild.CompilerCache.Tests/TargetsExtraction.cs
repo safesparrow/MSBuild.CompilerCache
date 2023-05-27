@@ -49,6 +49,7 @@ public class TargetsExtraction
 
         var text = File.ReadAllText(targetsPath);
         var text2 = text.Replace(Path.GetTempPath(), "%TempPath%" + Path.DirectorySeparatorChar);
+        text2 = text2.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "%UserProfile%" + Path.DirectorySeparatorChar);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         File.WriteAllText(outputPath, text2);
     }
@@ -76,11 +77,20 @@ public class TargetsExtraction
     }.ToImmutableArray();
 
     public static readonly ImmutableArray<(SDKVersion sdk, SupportedLanguage lang)> SdkLanguages =
-        SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray(); 
+        SupportedSdks.SelectMany(sdk => SupportedLanguages.Select(lang => (sdk, lang))).ToImmutableArray();
+
+    [Test]
+    public void F()
+    {
+        var x = SdkLanguages.ToImmutableArray();
+        var y = SdkLanguages.ToImmutableArray();
+        Environment.GetFolderPath("").Replace("a", "b");
+        Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+    }
 
     [Explicit, Test]
     [TestCaseSource(nameof(SdkLanguages))]
-    public void  Extract((SDKVersion sdk, SupportedLanguage language) test)
+    public void Extract((SDKVersion sdk, SupportedLanguage language) test)
     {
         var (sdk, lang) = test;
         var baseDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..",
