@@ -160,7 +160,7 @@
         PropertyName="RunCompilation" />
       <Output
         TaskParameter="CacheSupported"
-        PropertyName="CacheSupported" />
+        PropertyName="CanCache" />
       <Output
         TaskParameter="PreCompilationTimeTicks"
         PropertyName="PreCompilationTimeTicks" />
