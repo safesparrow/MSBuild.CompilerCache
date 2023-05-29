@@ -160,10 +160,10 @@
         PropertyName="LocalInputsHash" />
       <Output
         TaskParameter="RunCompilation"
-        PropertyName="RunCompilation" />
+        PropertyName="CacheRunCompilation" />
       <Output
         TaskParameter="CacheSupported"
-        PropertyName="CacheSupported" />
+        PropertyName="CanCache" />
       <Output
         TaskParameter="PreCompilationTimeTicks"
         PropertyName="PreCompilationTimeTicks" />
