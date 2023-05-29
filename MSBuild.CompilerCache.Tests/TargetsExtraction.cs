@@ -196,7 +196,7 @@ public class TargetsExtraction
             Elem("CacheHit"),
             Elem("CacheKey"),
             Elem("LocalInputsHash"),
-            Elem("RunCompilation"),
+            Elem("RunCompilation", "CacheRunCompilation"),
             Elem("CacheSupported", "CanCache"),
             Elem("PreCompilationTimeTicks")
         );
