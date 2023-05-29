@@ -18,13 +18,13 @@ To use the cache, add the following to your project file (or `Directory.Build.pr
 </PropertyGroup>
 
 <ItemGroup>
-<PackageReference Include="MSBuild.CompilerCache" Version="0.7.4" PrivateAssets="all" />
+    <PackageReference Include="MSBuild.CompilerCache" Version="0.10.6" PrivateAssets="all" />
 </ItemGroup>
 ```
 and create a config file like the one below:
 
 ```json
 {
-  "BaseCacheDir": "c:/compilation_cache"
+  "CacheDir": "c:/compilation_cache"
 }
 ```

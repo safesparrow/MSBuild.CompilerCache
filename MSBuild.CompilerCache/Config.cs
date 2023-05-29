@@ -14,11 +14,11 @@ public class RefTrimmingConfig
 public class Config
 {
     [Required]
-    public string BaseCacheDir { get; set; }
+    public string CacheDir { get; set; }
 
     public RefTrimmingConfig RefTrimming { get; set; } = new RefTrimmingConfig();
 
-    public string InferRefCacheDir() => RefTrimming.RefCacheDir ?? Path.Combine(BaseCacheDir, ".refcache");
+    public string InferRefCacheDir() => RefTrimming.RefCacheDir ?? Path.Combine(CacheDir, ".refcache");
     
     public bool CheckCompileOutputAgainstCache { get; set; }
 }

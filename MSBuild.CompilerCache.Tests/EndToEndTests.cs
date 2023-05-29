@@ -222,7 +222,7 @@ public class EndToEndTests
         projDir1.Create();
         var config = new Config
         {
-            BaseCacheDir = cache.FullName
+            CacheDir = cache.FullName
         };
         var configFile = env.Dir.CombineAsFile("config.json");
         File.WriteAllText(configFile.FullName, JsonConvert.SerializeObject(config));
