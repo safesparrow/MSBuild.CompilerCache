@@ -19,6 +19,7 @@ public record SDKVersion(string Version)
 }
 
 [TestFixture]
+[Parallelizable(ParallelScope.Children)]
 public class TargetsExtraction
 {
     private static readonly string ProjFile =
