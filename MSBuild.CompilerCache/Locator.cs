@@ -33,7 +33,7 @@ public class Locator
     {
         var configJson = File.ReadAllText(configPath);
         var config = JsonConvert.DeserializeObject<Config>(configJson);
-        var baseCacheDir = config.BaseCacheDir;
+        var baseCacheDir = config.CacheDir;
         var cache = new Cache(baseCacheDir);
         var refCache = new RefCache(config.InferRefCacheDir());
         return (config, cache, refCache);

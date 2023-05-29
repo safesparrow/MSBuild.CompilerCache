@@ -24,14 +24,14 @@ To use the cache, add the following to your project file (or `Directory.Build.pr
 </PropertyGroup>
 
 <ItemGroup>
-    <PackageReference Include="MSBuild.CompilerCache" Version="0.7.4" PrivateAssets="all" />
+    <PackageReference Include="MSBuild.CompilerCache" PrivateAssets="all" />
 </ItemGroup>
 ```
 and create a config file like the one below:
 
 ```json
 {
-  "BaseCacheDir": "c:/compilation_cache"
+  "CacheDir": "c:/compilation_cache"
 }
 ```
 
@@ -40,25 +40,82 @@ The above code does two things:
 2. Sets the `CompilationCacheConfigPath` variable, which is used to read the config file.
 
 ## Local cache vs remote cache
-The location set in `BaseCacheDir` can be either a local path or a network share - the caching logic behaves exactly the same.
+The location set in `CacheDir` can be either a local path or a network share - the caching logic behaves exactly the same.
 
 This means that you could share the cache between multiple people.
-If you do, note that in many scenarios this is not secure enough, as it means that users can inject malicious dll files into a shared place, to be used by other users.
+If you do, note that in many scenarios poses a security risk, as it means that bad actors can inject malicious dll files into a shared place, to be used by other users.
+
+## Using Reference assemblies for hash generation and ignoring `internal` members
+When generating a hash of all compilation inputs,
+we treat assembly references differently.
+
+For each referenced dll we produce two reference assemblies and calculate their hashes:
+- `PublicAndInternal` - contains public and internal symbols (but not their implementation)
+- `Public` - same but with internal symbols removed.
+
+Reference assemblies are generated using [JetBrains Refasmer](https://github.com/JetBrains/Refasmer/)
+
+When compiling assembly A that references B, we check if B's `InternalsVisibleTo` lists `A` and choose either `PublicAndInternal` or `Public` hash accordingly.
+
+Using reference assemblies' hash allows to reuse compilation results if the only changes happen in non-visible parts of the referenced assembly.
+
+Note that compilation still uses the original referenced dlls, and the generated ref assemblies are only used for hash calculation.
+
+### Disabling reference assembly generation
+This mechanism can be disabled using the following config entry:
+```json
+{
+  ...
+  "RefTrimming":
+  {
+    "Enabled": false
+  }
+}
+```
+### Location of the reference assembly cache
+When generating reference assemblies, we only store their calculated hash in a separate "refCache" location.
+
+This location defaults to "%BaseCacheDir/.refcache" subdirectory and can be overriden using the "RefTrimming.RefCacheDir" config entry
 
 ## Outstanding issues
-- Limited debugging ability - Dlls copied from the cache contain symbols with absolute paths to the source files from original compilation. This means that debugging the cached dlls will not work with source files in a different directory. This is a current limitation and should be fixed in upcoming versions.
-- Currently only selected .NET SDKs are supported. 
-- Some of the less common compilation inputs are currently ignored. This is easy to fix, but can currently lead to incorrectly reusing cached results when one of those inputs changes.
-- The cache mechanism is currently not safe for running multiple builds in parallel. If the same project is being built in two workspaces at the same time, there might be some undefined behaviour.
+### Limited debugging ability
+When debugging binaries produced when using the cache,
+we use PathMap compilation option to map all source paths to a nonexistent directory.
 
-## Supported SDKs
+We then depend on the IDE to figure out the correct source location.
+
+This is known to work in JetBrains Rider.
+Other IDEs might require manual action to point the debugger to the sources.
+
+### Only Selected SDKs supported
 Below is the list of all supported .NET SDKs:
-- 6.0.300
-- 7.0.202
+```
+7.0.302
+7.0.203
+7.0.202
+7.0.105
+6.0.408
+6.0.300
+```
 
 If your project is not using one of those versions, caching will be disabled.
+
 Note that the SDK you use must match one of the supported ones precisely.
 This is because the `CoreCompile` targets are created by first copy-pasting the original targets from the SDK and then adding caching logic - so a new SDK requires a new copy.
+
+### Some of the less common compilation inputs are currently ignored
+This can currently lead to incorrectly reusing cached results when one of those inputs changes.
+
+This currently includes the following properties:
+```
+AnalyzerConfigFiles
+Analyzers
+ToolExe
+ToolPath
+DotnetFscCompilerPath
+```
+
+See [TargetsExtractionUtils.cs](https://github.com/safesparrow/MSBuild.CompilerCache/blob/main/MSBuild.CompilerCache/TargetsExtractionUtils.cs#L9) for how every compilation input is handled.
 
 ## Reporting issues
 The project is in a very early stage. You are free to try the tool, but it is expected to cause _some_ issues in some cases.

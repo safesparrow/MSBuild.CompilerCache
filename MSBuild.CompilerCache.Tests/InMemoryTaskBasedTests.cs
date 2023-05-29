@@ -84,7 +84,7 @@ public class InMemoryTaskBasedTests
         };
         var config = new Config
         {
-            BaseCacheDir = baseCacheDir
+            CacheDir = baseCacheDir
         };
 
         var configPath = SaveConfig(config);
@@ -155,7 +155,7 @@ public class InMemoryTaskBasedTests
         };
         var config = new Config
         {
-            BaseCacheDir = baseCacheDir
+            CacheDir = baseCacheDir
         };
         var configPath = SaveConfig(config);
 
