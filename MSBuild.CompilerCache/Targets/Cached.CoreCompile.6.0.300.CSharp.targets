@@ -136,9 +136,11 @@
     <PropertyGroup>
       <CanCache
         Condition="'$(EmitCompilerGeneratedFiles)' == 'true'">false</CanCache>
+      <CompilationWouldRun
+        Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'">true</CompilationWouldRun>
     </PropertyGroup>
     <LocateCompilationCacheEntry
-      Condition="'$(CanCache)' == 'true'"
+      Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
@@ -254,7 +256,7 @@
     </Csc>
     <!--START OF CACHING EXTENSION CODE-->
     <UseOrPopulateCache
-      Condition="'$(CanCache)' == 'true'"
+      Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
       PreCompilationTimeTicks="$(PreCompilationTimeTicks)"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"

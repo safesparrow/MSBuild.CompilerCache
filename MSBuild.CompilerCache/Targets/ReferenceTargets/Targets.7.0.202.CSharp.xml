@@ -1,6 +1,6 @@
 <!--
 ============================================================================================================================================
-%TempPath%/c3c5a0bb-82b4-4a4d-ba9c-9bf8dfac95a7/project.csproj
+%TempPath%/21f00237-8cfd-4680-be22-4e93c7ef616f/project.csproj
 ============================================================================================================================================
 -->
 <Project DefaultTargets="Build">
@@ -20,7 +20,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
           created a backup copy.  Incorrect changes to this file will make it
           impossible to load or build your projects from the command-line or the IDE.
 
-Copyright (c) .NET Foundation.Foundation All rights reserved.
+Copyright (c) .NET Foundation. All rights reserved.
 ***********************************************************************************************
 -->
   <PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -1219,7 +1219,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%TempPath%/c3c5a0bb-82b4-4a4d-ba9c-9bf8dfac95a7/project.csproj
+%TempPath%/21f00237-8cfd-4680-be22-4e93c7ef616f/project.csproj
 ============================================================================================================================================
 -->
   <!--
@@ -14393,7 +14393,7 @@ Copyright (c) .NET Foundation. All rights reserved.
 ============================================================================================================================================
   </Import>
 
-%TempPath%/c3c5a0bb-82b4-4a4d-ba9c-9bf8dfac95a7/project.csproj
+%TempPath%/21f00237-8cfd-4680-be22-4e93c7ef616f/project.csproj
 ============================================================================================================================================
 -->
 </Project>
