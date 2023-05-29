@@ -183,9 +183,9 @@ public class TargetsExtraction
 
         var canCacheCondition = new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'");
 
-        XElement Elem(string taskParameter) =>
+        XElement Elem(string taskParameter, string? propertyName = null) =>
             new XElement(Name("Output"), new XAttribute("TaskParameter", taskParameter),
-                new XAttribute("PropertyName", taskParameter));
+                new XAttribute("PropertyName", propertyName ?? taskParameter));
         
         var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
             canCacheCondition,
@@ -197,7 +197,7 @@ public class TargetsExtraction
             Elem("CacheKey"),
             Elem("LocalInputsHash"),
             Elem("RunCompilation"),
-            Elem("CacheSupported"),
+            Elem("CacheSupported", "CanCache"),
             Elem("PreCompilationTimeTicks")
         );
 
