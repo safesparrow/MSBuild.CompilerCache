@@ -4,4 +4,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <DebugType>embedded</DebugType>
     </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Update="MSBuild.CompilerCache" Version="0.10.5" />
+    </ItemGroup>
 </Project>

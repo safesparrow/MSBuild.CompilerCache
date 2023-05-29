@@ -11,5 +11,9 @@
         <Link>Program.cs</Link>
       </Compile>
     </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Update="MSBuild.CompilerCache" Version="0.10.5" />
+    </ItemGroup>
 
 </Project>

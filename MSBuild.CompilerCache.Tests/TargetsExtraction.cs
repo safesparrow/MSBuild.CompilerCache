@@ -19,6 +19,7 @@ public record SDKVersion(string Version)
 }
 
 [TestFixture]
+[Parallelizable(ParallelScope.Children)]
 public class TargetsExtraction
 {
     private static readonly string ProjFile =
@@ -137,6 +138,8 @@ public class TargetsExtraction
             throw new NotSupportedException("Expected compilation task Condition attribute to be set.");
         }
 
+        var originalCompilationConditionValue = condition.Value;
+
         condition.Value = $"'$(CacheRunCompilation)' == 'true' AND {condition.Value}";
 
         var regularAttributes = compilationTask.Attributes()
@@ -174,28 +177,28 @@ public class TargetsExtraction
         var firstPropsGroupElement = new XElement(propertygroup);
         var canCacheElement =
             new XElement(Name("CanCache"), new XAttribute("Condition", doNotUseCacheCondition), "false");
-        firstPropsGroupElement.Add(canCacheElement);
+        var compilationWouldRunElement = new XElement(Name("CompilationWouldRun"),
+            new XAttribute("Condition", originalCompilationConditionValue), "true");
+        firstPropsGroupElement.Add(canCacheElement, compilationWouldRunElement);
 
-        var canCacheCondition = new XAttribute("Condition", "'$(CanCache)' == 'true'");
+        var canCacheCondition = new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'");
 
+        XElement Elem(string taskParameter, string? propertyName = null) =>
+            new XElement(Name("Output"), new XAttribute("TaskParameter", taskParameter),
+                new XAttribute("PropertyName", propertyName ?? taskParameter));
+        
         var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
             canCacheCondition,
             new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
             new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
             new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
             new XAttribute("AssemblyName", "$(AssemblyName)"),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheHit"),
-                new XAttribute("PropertyName", "CacheHit")),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheKey"),
-                new XAttribute("PropertyName", "CacheKey")),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "LocalInputsHash"),
-                new XAttribute("PropertyName", "LocalInputsHash")),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "RunCompilation"),
-                new XAttribute("PropertyName", "CacheRunCompilation")),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "CacheSupported"),
-                new XAttribute("PropertyName", "CanCache")),
-            new XElement(Name("Output"), new XAttribute("TaskParameter", "PreCompilationTimeTicks"),
-                new XAttribute("PropertyName", "PreCompilationTimeTicks"))
+            Elem("CacheHit"),
+            Elem("CacheKey"),
+            Elem("LocalInputsHash"),
+            Elem("RunCompilation", "CacheRunCompilation"),
+            Elem("CacheSupported", "CanCache"),
+            Elem("PreCompilationTimeTicks")
         );
 
         var gElement = new XElement(propertygroup,

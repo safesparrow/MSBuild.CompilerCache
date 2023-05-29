@@ -95,7 +95,6 @@ public class UserOrPopulator
         var postCompilationTimeUtc = DateTime.UtcNow;
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
         
-        // TODO Take into account the original condition from CoreCompile which can also cause compilation to be skipped.
         var compilationHappened = !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
 
         var outputs = decomposed.OutputsToCache;
