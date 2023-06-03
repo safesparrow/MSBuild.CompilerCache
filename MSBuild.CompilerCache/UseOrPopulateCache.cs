@@ -22,6 +22,9 @@ public class UseOrPopulateCache : BaseTask
 
     public override bool Execute()
     {
+        var bar = BuildEngine4.GetRegisteredTaskObject("foo", RegisteredTaskObjectLifetime.Build);
+        Log.LogWarning($"Use - Bar = {bar} ({bar?.GetType()}");
+        
         var inputs = new UseOrPopulateInputs(
             Inputs: GatherInputs(),
             CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache,

@@ -22,6 +22,11 @@ public class LocateCompilationCacheEntry : BaseTask
 
     public override bool Execute()
     {
+        var guid = Guid.NewGuid();
+        BuildEngine4.RegisterTaskObject("foo", $"bar_{guid}", RegisteredTaskObjectLifetime.Build, false);
+        var bar = BuildEngine4.GetRegisteredTaskObject("foo", RegisteredTaskObjectLifetime.Build);
+        Log.LogWarning($"Locate - Bar = {bar} ({bar?.GetType()}");
+        
         var _locator = new Locator();
         var inputs = GatherInputs();
         var results = _locator.Locate(inputs, Log);

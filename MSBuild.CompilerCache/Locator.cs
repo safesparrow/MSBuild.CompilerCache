@@ -41,6 +41,8 @@ public class Locator
 
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
+        var preCompilationTimeUtc = DateTime.UtcNow;
+        
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
         if (decomposed.UnsupportedPropsSet.Any())
         {
@@ -58,15 +60,34 @@ public class Locator
         var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
-        var cacheHit = cache.Exists(cacheKey);
-        if (!cacheHit)
+        bool cacheHit;
+
+        if (config.CheckCompileOutputAgainstCache)
         {
-            log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a miss.");
+            cacheHit = false;
         }
         else
         {
-            log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a hit.");
-            cacheHit = true;
+            var cachedOutputTmpZip = cache.Get(cacheKey);
+            cacheHit = cachedOutputTmpZip != null;
+
+            if (cacheHit)
+            {
+                var outputs = decomposed.OutputsToCache;
+                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a hit. Copying {outputs.Length} files from cache");
+                try
+                {
+                    UserOrPopulator.UseCachedOutputs(cachedOutputTmpZip, outputs, preCompilationTimeUtc);
+                }
+                finally
+                {
+                    File.Delete(cachedOutputTmpZip);
+                }
+            }
+            else
+            {
+                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a miss.");
+            }
         }
 
         var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
@@ -77,7 +98,7 @@ public class Locator
             RunCompilation: runCompilation,
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
-            PreCompilationTimeUtc: DateTime.UtcNow
+            PreCompilationTimeUtc: preCompilationTimeUtc
         );
     }
 
