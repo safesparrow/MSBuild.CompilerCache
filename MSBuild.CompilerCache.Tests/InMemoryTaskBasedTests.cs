@@ -11,8 +11,8 @@ namespace Tests;
 public class InMemoryTaskBasedTests
 {
     private Mock<IBuildEngine9> _buildEngine = null!;
-    private LocateCompilationCacheEntry locate;
-    private UseOrPopulateCache use;
+    private CompilerCacheLocate locate;
+    private CompilerCachePopulateCache use;
     private DisposableDir tmpDir;
     private Cache cache;
     private string baseCacheDir;
@@ -23,10 +23,10 @@ public class InMemoryTaskBasedTests
         _buildEngine = new Mock<IBuildEngine9>();
         _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
 
-        locate = new LocateCompilationCacheEntry();
+        locate = new CompilerCacheLocate();
         locate.BuildEngine = _buildEngine.Object;
 
-        use = new UseOrPopulateCache();
+        use = new CompilerCachePopulateCache();
         use.BuildEngine = _buildEngine.Object;
 
         tmpDir = new DisposableDir();
@@ -51,7 +51,7 @@ public class InMemoryTaskBasedTests
         );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+        var cacheKey = Populator.GenerateKey(inputs, hashString);
         var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
 
         return new All(
@@ -96,7 +96,7 @@ public class InMemoryTaskBasedTests
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(baseInputs, refCache);
-        var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
+        var zip = Populator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
 
         foreach (var outputItem in outputItems)

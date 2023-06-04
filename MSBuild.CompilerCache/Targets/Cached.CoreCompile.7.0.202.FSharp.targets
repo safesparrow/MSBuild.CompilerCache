@@ -143,7 +143,7 @@
       <CompilationWouldRun
         Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'">true</CompilationWouldRun>
     </PropertyGroup>
-    <LocateCompilationCacheEntry
+    <CompilerCacheLocate
       Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
@@ -167,7 +167,10 @@
       <Output
         TaskParameter="PreCompilationTimeTicks"
         PropertyName="PreCompilationTimeTicks" />
-    </LocateCompilationCacheEntry>
+      <Output
+        TaskParameter="Guid"
+        PropertyName="CompilerCacheGuid" />
+    </CompilerCacheLocate>
     <PropertyGroup>
       <CacheRunCompilation
         Condition="'$(CanCache)' != 'true'">true</CacheRunCompilation>
@@ -240,8 +243,8 @@
         ItemName="FscCommandLineArgs" />
     </Fsc>
     <!--START OF CACHING EXTENSION CODE-->
-    <UseOrPopulateCache
-      Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
+    <CompilerCachePopulateCache
+      Condition="'$(CanCache)' == 'true' AND '$(CacheRunCompilation)' == 'true'"
       PreCompilationTimeTicks="$(PreCompilationTimeTicks)"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
@@ -250,7 +253,8 @@
       CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
       CacheHit="$(CacheHit)"
       CacheKey="$(CacheKey)"
-      LocalInputsHash="$(LocalInputsHash)" />
+      LocalInputsHash="$(LocalInputsHash)"
+      Guid="$(CompilerCacheGuid)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs

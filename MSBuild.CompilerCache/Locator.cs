@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.IO.Compression;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
@@ -11,7 +12,8 @@ public record LocateResult(
     bool CacheHit,
     CacheKey CacheKey,
     string LocalInputsHash,
-    DateTime PreCompilationTimeUtc
+    DateTime PreCompilationTimeUtc,
+    Guid Guid
 )
 {
     public static LocateResult CreateNotSupported()
@@ -22,7 +24,8 @@ public record LocateResult(
             CacheHit: false,
             CacheKey: null,
             LocalInputsHash: null,
-            PreCompilationTimeUtc: DateTime.MinValue
+            PreCompilationTimeUtc: DateTime.MinValue,
+            Guid: Guid.Empty
         );
     }
 }
@@ -41,6 +44,7 @@ public class Locator
 
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
+        var guid = Guid.NewGuid();
         var preCompilationTimeUtc = DateTime.UtcNow;
         
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
@@ -57,7 +61,7 @@ public class Locator
         var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, config.RefTrimming);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+        var cacheKey = Populator.GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
         bool cacheHit;
@@ -77,11 +81,11 @@ public class Locator
                 log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a hit. Copying {outputs.Length} files from cache");
                 try
                 {
-                    UserOrPopulator.UseCachedOutputs(cachedOutputTmpZip, outputs, preCompilationTimeUtc);
+                    UseCachedOutputs(cachedOutputTmpZip!, outputs, preCompilationTimeUtc);
                 }
                 finally
                 {
-                    File.Delete(cachedOutputTmpZip);
+                    File.Delete(cachedOutputTmpZip!);
                 }
             }
             else
@@ -98,7 +102,8 @@ public class Locator
             RunCompilation: runCompilation,
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
-            PreCompilationTimeUtc: preCompilationTimeUtc
+            PreCompilationTimeUtc: preCompilationTimeUtc,
+            Guid: guid
         );
     }
 
@@ -207,4 +212,26 @@ public class Locator
     }
 
     public static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
+
+    public static void UseCachedOutputs(string outputsZipPath, OutputItem[] items, DateTime postCompilationTimeUtc)
+    {
+        var tempPath = Path.GetTempFileName();
+        File.Copy(outputsZipPath, tempPath, overwrite: true);
+        try
+        {
+            using var a = ZipFile.OpenRead(tempPath);
+            foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
+            {
+                var outputItem =
+                    items.SingleOrDefault(it => it.CacheFileName == entry.Name)
+                    ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
+                entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
+                File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
+            }
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
 }

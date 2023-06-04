@@ -10,13 +10,14 @@ using Microsoft.Build.Framework;
 /// Either use results from an existing cache entry, or populate it with newly compiled outputs.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-public class UseOrPopulateCache : BaseTask
+public class CompilerCachePopulateCache : BaseTask
 {
 #pragma warning disable CS8618
     [Required] public bool CacheHit { get; set; }
     [Required] public string CacheKey { get; set; }
     [Required] public string LocalInputsHash { get; set; }
     [Required] public string PreCompilationTimeTicks { get; set; }
+    [Required] public string Guid { get; set; }
     public bool CheckCompileOutputAgainstCache { get; set; }
 #pragma warning restore CS8618
 
@@ -34,11 +35,12 @@ public class UseOrPopulateCache : BaseTask
                 CacheHit: CacheHit,
                 CacheKey: new CacheKey(CacheKey),
                 LocalInputsHash: LocalInputsHash,
-                PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc)
+                PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc),
+                Guid: new Guid(Guid)
             )
         );
         var (config, cache, refCache) = Locator.CreateCaches(inputs.Inputs.ConfigPath);
-        var userOrPopulator = new UserOrPopulator(cache, refCache);
+        var userOrPopulator = new Populator(cache, refCache);
         var results = userOrPopulator.UseOrPopulate(inputs, Log, config.RefTrimming);
         return true;
     }
@@ -50,6 +52,7 @@ public class UseOrPopulateCache : BaseTask
         LocalInputsHash = inputs.LocatorLocalInputsHash;
         CheckCompileOutputAgainstCache = inputs.CheckCompileOutputAgainstCache;
         PreCompilationTimeTicks = inputs.LocateResult.PreCompilationTimeUtc.Ticks.ToString();
+        Guid = inputs.LocateResult.Guid.ToString();
         SetInputs(inputs.Inputs);
     }
 }

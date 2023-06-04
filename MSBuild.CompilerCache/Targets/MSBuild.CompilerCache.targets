@@ -26,8 +26,8 @@
         <CacheTasksPath>$(MSBuildThisFileDirectory)..\lib\net6.0\MSBuild.CompilerCache.dll</CacheTasksPath>
     </PropertyGroup>
     
-    <UsingTask TaskName="LocateCompilationCacheEntry" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
-    <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
+    <UsingTask TaskName="CompilerCacheLocate" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
+    <UsingTask TaskName="CompilerCachePopulateCache" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
     
     <Import Project="$(CoreCompileImport)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
 

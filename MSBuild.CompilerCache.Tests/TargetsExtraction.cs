@@ -181,14 +181,12 @@ public class TargetsExtraction
             new XAttribute("Condition", originalCompilationConditionValue), "true");
         firstPropsGroupElement.Add(canCacheElement, compilationWouldRunElement);
 
-        var canCacheCondition = new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'");
-
         XElement Elem(string taskParameter, string? propertyName = null) =>
             new XElement(Name("Output"), new XAttribute("TaskParameter", taskParameter),
                 new XAttribute("PropertyName", propertyName ?? taskParameter));
         
-        var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
-            canCacheCondition,
+        var locateElement = new XElement(Name("CompilerCacheLocate"),
+            new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"),
             new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
             new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
             new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
@@ -198,7 +196,8 @@ public class TargetsExtraction
             Elem("LocalInputsHash"),
             Elem("RunCompilation", "CacheRunCompilation"),
             Elem("CacheSupported", "CanCache"),
-            Elem("PreCompilationTimeTicks")
+            Elem("PreCompilationTimeTicks"),
+            Elem("Guid", "CompilerCacheGuid")
         );
 
         var gElement = new XElement(propertygroup,
@@ -208,9 +207,9 @@ public class TargetsExtraction
         compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement,
             gElement, endComment);
 
-        var useOrPopulateCacheElement =
-            new XElement(Name("UseOrPopulateCache"),
-                canCacheCondition,
+        var populateCacheElement =
+            new XElement(Name("CompilerCachePopulateCache"),
+                new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CacheRunCompilation)' == 'true'"),
                 new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
                 new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
                 new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
@@ -219,10 +218,11 @@ public class TargetsExtraction
                 new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
                 new XAttribute("CacheHit", "$(CacheHit)"),
                 new XAttribute("CacheKey", "$(CacheKey)"),
-                new XAttribute("LocalInputsHash", "$(LocalInputsHash)")
+                new XAttribute("LocalInputsHash", "$(LocalInputsHash)"),
+                new XAttribute("Guid", "$(CompilerCacheGuid)")
             );
 
-        compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
+        compilationTask.AddAfterSelf(startComment, populateCacheElement, endComment);
 
         var p = compilationTask.Attribute("PathMap");
         p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";

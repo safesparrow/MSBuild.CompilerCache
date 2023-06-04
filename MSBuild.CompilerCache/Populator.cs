@@ -3,6 +3,7 @@ using System.IO.Compression;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
+using Task = Microsoft.Build.Utilities.Task;
 
 namespace MSBuild.CompilerCache;
 
@@ -19,12 +20,12 @@ public record UseOrPopulateInputs(
     public string LocatorLocalInputsHash => LocateResult.LocalInputsHash;
 }
 
-public class UserOrPopulator
+public class Populator
 {
     private readonly ICache _cache;
     private readonly IRefCache _refCache;
 
-    public UserOrPopulator(ICache cache, IRefCache refCache)
+    public Populator(ICache cache, IRefCache refCache)
     {
         _cache = cache;
         _refCache = refCache;
@@ -61,28 +62,6 @@ public class UserOrPopulator
         return tempZipPath;
     }
 
-    public static void UseCachedOutputs(string outputsZipPath, OutputItem[] items, DateTime postCompilationTimeUtc)
-    {
-        var tempPath = Path.GetTempFileName();
-        File.Copy(outputsZipPath, tempPath, overwrite: true);
-        try
-        {
-            using var a = ZipFile.OpenRead(tempPath);
-            foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
-            {
-                var outputItem =
-                    items.SingleOrDefault(it => it.CacheFileName == entry.Name)
-                    ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
-                entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
-                File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
-            }
-        }
-        finally
-        {
-            File.Delete(tempPath);
-        }
-    }
-
     public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
     {
         var name = Path.GetFileName(inputs.ProjectFullPath);
@@ -105,7 +84,7 @@ public class UserOrPopulator
             var cachedOutputTmpZip = _cache.Get(inputs.CacheKey);
             try
             {
-                UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
+                Locator.UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
             }
             finally
             {

@@ -34,7 +34,7 @@ public class PerfTests
             var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig);
             var extract = localInputs.ToFullExtract();
             var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-            var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+            var cacheKey = Populator.GenerateKey(inputs, hashString);
             var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
             Console.WriteLine($"{i}: {sw.ElapsedMilliseconds}ms");
         }
