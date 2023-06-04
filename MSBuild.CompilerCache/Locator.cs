@@ -6,30 +6,45 @@ using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
+public record BaseTaskInputs(
+    string ConfigPath,
+    string ProjectFullPath,
+    string AssemblyName,
+    IDictionary<string, string> AllProps
+);
+
+public enum LocateOutcome
+{
+    CacheNotSupported,
+    OnlyPopulateCache,
+    CacheUsed,
+    CacheMiss
+}
+
 public record LocateResult(
-    bool RunCompilation,
-    bool CacheSupported,
-    bool CacheHit,
+    LocateOutcome Outcome,
     CacheKey CacheKey,
     string LocalInputsHash,
     DateTime PreCompilationTimeUtc,
-    Guid Guid,
     BaseTaskInputs Inputs
 )
 {
+    public bool RunCompilation => Outcome != LocateOutcome.CacheUsed;
+
+    public bool CacheSupported => Outcome != LocateOutcome.CacheNotSupported;
+
+    public bool CacheHit => Outcome == LocateOutcome.CacheUsed;
+
+    public bool PopulateCache => RunCompilation && CacheSupported;
+
     public static LocateResult CreateNotSupported(BaseTaskInputs inputs) =>
         new(
-            RunCompilation: true,
-            CacheSupported: false,
-            CacheHit: false,
+            Outcome: LocateOutcome.CacheNotSupported,
             CacheKey: null,
             LocalInputsHash: null,
             PreCompilationTimeUtc: DateTime.MinValue,
-            Guid: Guid.Empty,
             Inputs: inputs
         );
-
-    public bool PopulateCache => RunCompilation && CacheSupported;
 }
 
 public class Locator
@@ -46,15 +61,15 @@ public class Locator
 
     public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
     {
-        var guid = Guid.NewGuid();
         var preCompilationTimeUtc = DateTime.UtcNow;
-        
+
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
         if (decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine,
                 decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
-            log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
+            log?.LogMessage(MessageImportance.Normal,
+                $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
             return LocateResult.CreateNotSupported(inputs);
         }
 
@@ -63,14 +78,16 @@ public class Locator
         var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, config.RefTrimming);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = Populator.GenerateKey(inputs, hashString);
+        var cacheKey = GenerateKey(inputs, hashString);
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
 
         bool cacheHit;
+        LocateOutcome outcome;
 
         if (config.CheckCompileOutputAgainstCache)
         {
             cacheHit = false;
+            outcome = LocateOutcome.OnlyPopulateCache;
         }
         else
         {
@@ -79,8 +96,10 @@ public class Locator
 
             if (cacheHit)
             {
+                outcome = LocateOutcome.CacheUsed;
                 var outputs = decomposed.OutputsToCache;
-                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a hit. Copying {outputs.Length} files from cache");
+                log?.LogMessage(MessageImportance.Normal,
+                    $"CompilationCache: Locate for {cacheKey} was a hit. Copying {outputs.Length} files from cache");
                 try
                 {
                     UseCachedOutputs(cachedOutputTmpZip!, outputs, preCompilationTimeUtc);
@@ -92,21 +111,18 @@ public class Locator
             }
             else
             {
+                outcome = LocateOutcome.CacheMiss;
                 log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a miss.");
             }
         }
 
         var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
 
-        return new LocateResult(
-            CacheSupported: true,
-            CacheHit: cacheHit,
-            RunCompilation: runCompilation,
-            CacheKey: cacheKey,
+        return new LocateResult(CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: preCompilationTimeUtc,
-            Guid: guid,
-            Inputs: inputs
+            Inputs: inputs,
+            Outcome: outcome
         );
     }
 
@@ -236,5 +252,11 @@ public class Locator
         {
             File.Delete(tempPath);
         }
+    }
+
+    public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
+    {
+        var name = Path.GetFileName(inputs.ProjectFullPath);
+        return new CacheKey($"{name}_{hash}");
     }
 }

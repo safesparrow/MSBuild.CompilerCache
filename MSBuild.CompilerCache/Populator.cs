@@ -9,12 +9,7 @@ namespace MSBuild.CompilerCache;
 
 public record UseOrPopulateResult;
 
-public record UseOrPopulateInputs(BaseTaskInputs Inputs, LocateResult LocateResult)
-{
-    public bool CacheHit => LocateResult.CacheHit;
-    public CacheKey CacheKey => LocateResult.CacheKey;
-    public string LocatorLocalInputsHash => LocateResult.LocalInputsHash;
-}
+public record UseOrPopulateInputs(LocateResult LocateResult);
 
 public class Populator
 {
@@ -58,27 +53,21 @@ public class Populator
         return tempZipPath;
     }
 
-    public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
-    {
-        var name = Path.GetFileName(inputs.ProjectFullPath);
-        return new CacheKey($"{name}_{hash}");
-    }
-
     public UseOrPopulateResult UseOrPopulate(UseOrPopulateInputs inputs, TaskLoggingHelper log,
         RefTrimmingConfig trimmingConfig)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
-        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
+        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.LocateResult.Inputs.AllProps);
         
         var outputs = decomposed.OutputsToCache;
-        var assemblyName = inputs.Inputs.AssemblyName;
+        var assemblyName = inputs.LocateResult.Inputs.AssemblyName;
         var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
         var extract = localInputs.ToFullExtract();
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
-        var cacheKey = inputs.CacheKey;
-        var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
+        var cacheKey = inputs.LocateResult.CacheKey;
+        var hashesMatch = inputs.LocateResult.LocalInputsHash == localInputsHash;
         log.LogMessage(MessageImportance.Normal,
-            $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
+            $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocateResult.LocalInputsHash} RecalculatedKey={localInputsHash}");
 
         if (hashesMatch)
         {

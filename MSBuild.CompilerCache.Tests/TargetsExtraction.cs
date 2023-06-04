@@ -209,7 +209,7 @@ public class TargetsExtraction
 
         var populateCacheElement =
             new XElement(Name("CompilerCachePopulateCache"),
-                new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CacheRunCompilation)' == 'true'"),
+                new XAttribute("Condition", $"'$(CacheRunCompilation)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"),
                 new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
                 new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
                 new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),

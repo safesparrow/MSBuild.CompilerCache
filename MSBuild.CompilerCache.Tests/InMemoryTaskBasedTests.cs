@@ -52,7 +52,7 @@ public class InMemoryTaskBasedTests
         );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = Populator.GenerateKey(inputs, hashString);
+        var cacheKey = Locator.GenerateKey(inputs, hashString);
         var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
 
         return new All(
@@ -121,11 +121,7 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.RunCompilation, Is.False);
         });
 
-        var useInputs = new UseOrPopulateInputs(
-            Inputs: baseInputs,
-            LocateResult: locateResult
-        );
-        use.SetAllInputs(useInputs, locate.Guid);
+        use.Guid = locate.Guid;
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
@@ -182,11 +178,7 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.RunCompilation, Is.True);
         });
 
-        var useInputs = new UseOrPopulateInputs(
-            Inputs: baseInputs,
-            LocateResult: locateResult
-        );
-        use.SetAllInputs(useInputs, locate.Guid);
+        use.Guid = locate.Guid;
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();

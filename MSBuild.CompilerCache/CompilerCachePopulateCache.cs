@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -13,10 +12,6 @@ using Microsoft.Build.Framework;
 public class CompilerCachePopulateCache : BaseTask
 {
 #pragma warning disable CS8618
-    [Required] public bool CacheHit { get; set; }
-    [Required] public string CacheKey { get; set; }
-    [Required] public string LocalInputsHash { get; set; }
-    [Required] public string PreCompilationTimeTicks { get; set; }
     [Required] public string Guid { get; set; }
     public bool CheckCompileOutputAgainstCache { get; set; }
 #pragma warning restore CS8618
@@ -30,23 +25,10 @@ public class CompilerCachePopulateCache : BaseTask
                             throw new Exception("Cached result is of unexpected type");
         Log.LogWarning($"Use - cached LocateResult = {locateResults}");
         
-        var inputs = new UseOrPopulateInputs(
-            Inputs: GatherInputs(),
-            LocateResult: locateResults
-        );
-        var (config, cache, refCache) = Locator.CreateCaches(inputs.Inputs.ConfigPath);
+        var inputs = new UseOrPopulateInputs(LocateResult: locateResults);
+        var (config, cache, refCache) = Locator.CreateCaches(inputs.LocateResult.Inputs.ConfigPath);
         var populator = new Populator(cache, refCache);
         var results = populator.UseOrPopulate(inputs, Log, config.RefTrimming);
         return true;
-    }
-
-    public void SetAllInputs(UseOrPopulateInputs inputs, string guid)
-    {
-        CacheHit = inputs.CacheHit;
-        CacheKey = inputs.CacheKey;
-        LocalInputsHash = inputs.LocatorLocalInputsHash;
-        PreCompilationTimeTicks = inputs.LocateResult.PreCompilationTimeUtc.Ticks.ToString();
-        Guid = guid;
-        SetInputs(inputs.Inputs);
     }
 }
