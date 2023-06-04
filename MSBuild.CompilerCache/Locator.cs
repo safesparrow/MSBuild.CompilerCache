@@ -23,10 +23,11 @@ public enum LocateOutcome
 
 public record LocateResult(
     LocateOutcome Outcome,
-    CacheKey CacheKey,
-    string LocalInputsHash,
+    CacheKey? CacheKey,
+    string? LocalInputsHash,
     DateTime PreCompilationTimeUtc,
-    BaseTaskInputs Inputs
+    BaseTaskInputs Inputs,
+    DecomposedCompilerProps? DecomposedCompilerProps
 )
 {
     public bool RunCompilation => Outcome != LocateOutcome.CacheUsed;
@@ -40,7 +41,8 @@ public record LocateResult(
             CacheKey: null,
             LocalInputsHash: null,
             PreCompilationTimeUtc: DateTime.MinValue,
-            Inputs: inputs
+            Inputs: inputs,
+            DecomposedCompilerProps: null
         );
 }
 
@@ -115,11 +117,13 @@ public class Locator
 
         var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
 
-        return new LocateResult(CacheKey: cacheKey,
+        return new LocateResult(
+            CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: preCompilationTimeUtc,
             Inputs: inputs,
-            Outcome: outcome
+            Outcome: outcome,
+            DecomposedCompilerProps: decomposed
         );
     }
 

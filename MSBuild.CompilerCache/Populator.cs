@@ -57,8 +57,7 @@ public class Populator
         RefTrimmingConfig trimmingConfig)
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
-        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.LocateResult.Inputs.AllProps);
-        
+        var decomposed = inputs.LocateResult.DecomposedCompilerProps;
         var outputs = decomposed.OutputsToCache;
         var assemblyName = inputs.LocateResult.Inputs.AssemblyName;
         var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
