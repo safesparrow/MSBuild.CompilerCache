@@ -21,7 +21,8 @@ public class InMemoryTaskBasedTests
     public void SetUp()
     {
         _buildEngine = new Mock<IBuildEngine9>();
-        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
+        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>())).Callback((BuildMessageEventArgs a) => Console.WriteLine($"Log - {a.Message}"));
+        _buildEngine.Setup(x => x.LogWarningEvent(It.IsAny<BuildWarningEventArgs>())).Callback((BuildWarningEventArgs a) => Console.WriteLine($"Warn - {a.Message}"));
 
         locate = new CompilerCacheLocate();
         locate.BuildEngine = _buildEngine.Object;
@@ -122,10 +123,9 @@ public class InMemoryTaskBasedTests
 
         var useInputs = new UseOrPopulateInputs(
             Inputs: baseInputs,
-            CheckCompileOutputAgainstCache: false,
             LocateResult: locateResult
         );
-        use.SetAllInputs(useInputs);
+        use.SetAllInputs(useInputs, locate.Guid);
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
@@ -184,10 +184,9 @@ public class InMemoryTaskBasedTests
 
         var useInputs = new UseOrPopulateInputs(
             Inputs: baseInputs,
-            CheckCompileOutputAgainstCache: false,
             LocateResult: locateResult
         );
-        use.SetAllInputs(useInputs);
+        use.SetAllInputs(useInputs, locate.Guid);
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();

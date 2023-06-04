@@ -13,21 +13,23 @@ public record LocateResult(
     CacheKey CacheKey,
     string LocalInputsHash,
     DateTime PreCompilationTimeUtc,
-    Guid Guid
+    Guid Guid,
+    BaseTaskInputs Inputs
 )
 {
-    public static LocateResult CreateNotSupported()
-    {
-        return new LocateResult(
+    public static LocateResult CreateNotSupported(BaseTaskInputs inputs) =>
+        new(
             RunCompilation: true,
             CacheSupported: false,
             CacheHit: false,
             CacheKey: null,
             LocalInputsHash: null,
             PreCompilationTimeUtc: DateTime.MinValue,
-            Guid: Guid.Empty
+            Guid: Guid.Empty,
+            Inputs: inputs
         );
-    }
+
+    public bool PopulateCache => RunCompilation && CacheSupported;
 }
 
 public class Locator
@@ -53,7 +55,7 @@ public class Locator
             var s = string.Join(Environment.NewLine,
                 decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
             log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
-            return LocateResult.CreateNotSupported();
+            return LocateResult.CreateNotSupported(inputs);
         }
 
         var (config, cache, refCache) = CreateCaches(inputs.ConfigPath);
@@ -103,7 +105,8 @@ public class Locator
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
             PreCompilationTimeUtc: preCompilationTimeUtc,
-            Guid: guid
+            Guid: guid,
+            Inputs: inputs
         );
     }
 

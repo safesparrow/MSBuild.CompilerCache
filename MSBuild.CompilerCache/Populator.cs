@@ -9,11 +9,7 @@ namespace MSBuild.CompilerCache;
 
 public record UseOrPopulateResult;
 
-public record UseOrPopulateInputs(
-    BaseTaskInputs Inputs,
-    bool CheckCompileOutputAgainstCache,
-    LocateResult LocateResult
-)
+public record UseOrPopulateInputs(BaseTaskInputs Inputs, LocateResult LocateResult)
 {
     public bool CacheHit => LocateResult.CacheHit;
     public CacheKey CacheKey => LocateResult.CacheKey;
@@ -74,49 +70,30 @@ public class Populator
         var postCompilationTimeUtc = DateTime.UtcNow;
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.Inputs.AllProps);
         
-        var compilationHappened = !inputs.CacheHit || inputs.CheckCompileOutputAgainstCache;
-
         var outputs = decomposed.OutputsToCache;
-        if (!compilationHappened)
-        {
-            log.LogMessage(MessageImportance.Normal, $"CompilationCache hit - copying {outputs.Length} files from cache");
+        var assemblyName = inputs.Inputs.AssemblyName;
+        var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
+        var extract = localInputs.ToFullExtract();
+        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        var cacheKey = inputs.CacheKey;
+        var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
+        log.LogMessage(MessageImportance.Normal,
+            $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
 
-            var cachedOutputTmpZip = _cache.Get(inputs.CacheKey);
-            try
-            {
-                Locator.UseCachedOutputs(cachedOutputTmpZip, outputs, postCompilationTimeUtc);
-            }
-            finally
-            {
-                File.Delete(cachedOutputTmpZip);
-            }
-        }
-        else // Compilation happened
+        if (hashesMatch)
         {
-            var assemblyName = inputs.Inputs.AssemblyName;
-            var localInputs = Locator.CalculateLocalInputs(decomposed, _refCache, assemblyName, trimmingConfig);
-            var extract = localInputs.ToFullExtract();
-            var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
-            var cacheKey = inputs.CacheKey;
-            var hashesMatch = inputs.LocatorLocalInputsHash == localInputsHash;
             log.LogMessage(MessageImportance.Normal,
-                $"CompilationCache info: Match={hashesMatch} LocatorKey={inputs.LocatorLocalInputsHash} RecalculatedKey={localInputsHash}");
-
-            if (hashesMatch)
-            {
-                log.LogMessage(MessageImportance.Normal,
-                    $"CompilationCache miss - copying {outputs.Length} files from output to cache");
-                var meta = Locator.GetCompilationMetadata(postCompilationTimeUtc);
-                var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: localInputs);
-                using var tmpDir = new DisposableDir();
-                var outputZip = BuildOutputsZip(tmpDir, outputs, stuff, log);
-                _cache.Set(cacheKey, extract, outputZip);
-            }
-            else
-            {
-                log.LogMessage(MessageImportance.Normal,
-                    $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
-            }
+                $"CompilationCache miss - copying {outputs.Length} files from output to cache");
+            var meta = Locator.GetCompilationMetadata(postCompilationTimeUtc);
+            var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: localInputs);
+            using var tmpDir = new DisposableDir();
+            var outputZip = BuildOutputsZip(tmpDir, outputs, stuff, log);
+            _cache.Set(cacheKey, extract, outputZip);
+        }
+        else
+        {
+            log.LogMessage(MessageImportance.Normal,
+                $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
         }
 
         return new UseOrPopulateResult();

@@ -23,36 +23,30 @@ public class CompilerCachePopulateCache : BaseTask
 
     public override bool Execute()
     {
-        var bar = BuildEngine4.GetRegisteredTaskObject("foo", RegisteredTaskObjectLifetime.Build);
-        Log.LogWarning($"Use - Bar = {bar} ({bar?.GetType()}");
+        var _locateResults =
+            BuildEngine4.GetRegisteredTaskObject(Guid, RegisteredTaskObjectLifetime.Build)
+            ?? throw new Exception($"Could not find registered task object for cached results from the Locate task, using key {Guid}");
+        var locateResults = _locateResults as LocateResult ??
+                            throw new Exception("Cached result is of unexpected type");
+        Log.LogWarning($"Use - cached LocateResult = {locateResults}");
         
         var inputs = new UseOrPopulateInputs(
             Inputs: GatherInputs(),
-            CheckCompileOutputAgainstCache: CheckCompileOutputAgainstCache,
-            LocateResult: new LocateResult(
-                RunCompilation: true, // Not used
-                CacheSupported: true, // This task is not executed if caching is not supported at all
-                CacheHit: CacheHit,
-                CacheKey: new CacheKey(CacheKey),
-                LocalInputsHash: LocalInputsHash,
-                PreCompilationTimeUtc: new DateTime(long.Parse(PreCompilationTimeTicks), DateTimeKind.Utc),
-                Guid: new Guid(Guid)
-            )
+            LocateResult: locateResults
         );
         var (config, cache, refCache) = Locator.CreateCaches(inputs.Inputs.ConfigPath);
-        var userOrPopulator = new Populator(cache, refCache);
-        var results = userOrPopulator.UseOrPopulate(inputs, Log, config.RefTrimming);
+        var populator = new Populator(cache, refCache);
+        var results = populator.UseOrPopulate(inputs, Log, config.RefTrimming);
         return true;
     }
 
-    public void SetAllInputs(UseOrPopulateInputs inputs)
+    public void SetAllInputs(UseOrPopulateInputs inputs, string guid)
     {
         CacheHit = inputs.CacheHit;
         CacheKey = inputs.CacheKey;
         LocalInputsHash = inputs.LocatorLocalInputsHash;
-        CheckCompileOutputAgainstCache = inputs.CheckCompileOutputAgainstCache;
         PreCompilationTimeTicks = inputs.LocateResult.PreCompilationTimeUtc.Ticks.ToString();
-        Guid = inputs.LocateResult.Guid.ToString();
+        Guid = guid;
         SetInputs(inputs.Inputs);
     }
 }
