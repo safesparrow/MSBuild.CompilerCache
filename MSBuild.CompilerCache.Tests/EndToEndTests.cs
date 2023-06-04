@@ -238,9 +238,9 @@ public class EndToEndTests
         var output2 = BuildProject(projDir2, proj);
         var output3 = BuildProject(projDir3, projModified);
         
-        Assert.That(output1.Where(x => x.Contains($"miss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
-        Assert.That(output2.Where(x => x.Contains($"hit - copying {outputsCount} files from cache")), Is.Not.Empty);
-        Assert.That(output3.Where(x => x.Contains($"miss - copying {outputsCount} files from output to cache")), Is.Not.Empty);
+        Assert.That(output1.Where(x => x.Contains($"copying {outputsCount} files from output to cache")), Is.Not.Empty);
+        Assert.That(output2.Where(x => x.Contains($"Copying {outputsCount} files from cache")), Is.Not.Empty);
+        Assert.That(output3.Where(x => x.Contains($"copying {outputsCount} files from output to cache")), Is.Not.Empty);
         
         FileInfo DllFile(DirectoryInfo projDir, ProjectFileBuilder proj) =>
             new FileInfo(Path.Combine(projDir.FullName, "obj", "Debug", "net6.0",

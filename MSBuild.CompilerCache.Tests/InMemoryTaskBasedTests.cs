@@ -23,6 +23,21 @@ public class InMemoryTaskBasedTests
         _buildEngine = new Mock<IBuildEngine9>();
         _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>())).Callback((BuildMessageEventArgs a) => Console.WriteLine($"Log - {a.Message}"));
         _buildEngine.Setup(x => x.LogWarningEvent(It.IsAny<BuildWarningEventArgs>())).Callback((BuildWarningEventArgs a) => Console.WriteLine($"Warn - {a.Message}"));
+        var dict = new Dictionary<(object, RegisteredTaskObjectLifetime), object>();
+        _buildEngine
+            .Setup(x => x.RegisterTaskObject(It.IsAny<object>(), It.IsAny<object>(),
+                It.IsAny<RegisteredTaskObjectLifetime>(), It.IsAny<bool>()))
+            .Callback((object key, object value, RegisteredTaskObjectLifetime life, bool early) =>
+                dict[(key, life)] = value);
+    
+        _buildEngine
+            .Setup(x => x.GetRegisteredTaskObject(It.IsAny<object>(), It.IsAny<RegisteredTaskObjectLifetime>()))
+            .Returns((object key, RegisteredTaskObjectLifetime life) =>
+            {
+                var k = (key, life);
+                if (dict.TryGetValue(k, out var expression)) return expression;
+                return null!;
+            });
 
         locate = new CompilerCacheLocate();
         locate.BuildEngine = _buildEngine.Object;

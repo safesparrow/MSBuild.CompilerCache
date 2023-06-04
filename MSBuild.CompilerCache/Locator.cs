@@ -30,11 +30,8 @@ public record LocateResult(
 )
 {
     public bool RunCompilation => Outcome != LocateOutcome.CacheUsed;
-
     public bool CacheSupported => Outcome != LocateOutcome.CacheNotSupported;
-
     public bool CacheHit => Outcome == LocateOutcome.CacheUsed;
-
     public bool PopulateCache => RunCompilation && CacheSupported;
 
     public static LocateResult CreateNotSupported(BaseTaskInputs inputs) =>

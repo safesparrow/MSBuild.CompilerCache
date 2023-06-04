@@ -150,23 +150,11 @@
       ProjectFullPath="$(MSBuildProjectFullPath)"
       AssemblyName="$(AssemblyName)">
       <Output
-        TaskParameter="CacheHit"
-        PropertyName="CacheHit" />
-      <Output
-        TaskParameter="CacheKey"
-        PropertyName="CacheKey" />
-      <Output
-        TaskParameter="LocalInputsHash"
-        PropertyName="LocalInputsHash" />
-      <Output
         TaskParameter="RunCompilation"
         PropertyName="CacheRunCompilation" />
       <Output
-        TaskParameter="CacheSupported"
-        PropertyName="CanCache" />
-      <Output
-        TaskParameter="PreCompilationTimeTicks"
-        PropertyName="PreCompilationTimeTicks" />
+        TaskParameter="PopulateCache"
+        PropertyName="CachePopulateCache" />
       <Output
         TaskParameter="Guid"
         PropertyName="CompilerCacheGuid" />
@@ -244,16 +232,7 @@
     </Fsc>
     <!--START OF CACHING EXTENSION CODE-->
     <CompilerCachePopulateCache
-      Condition="'$(CanCache)' == 'true' AND '$(CacheRunCompilation)' == 'true'"
-      PreCompilationTimeTicks="$(PreCompilationTimeTicks)"
-      ConfigPath="$(CompilationCacheConfigPath)"
-      AllCompilerProperties="@(CacheAllCompilerProperties)"
-      ProjectFullPath="$(MSBuildProjectFullPath)"
-      AssemblyName="$(AssemblyName)"
-      CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
-      CacheHit="$(CacheHit)"
-      CacheKey="$(CacheKey)"
-      LocalInputsHash="$(LocalInputsHash)"
+      Condition="'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"
       Guid="$(CompilerCacheGuid)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
