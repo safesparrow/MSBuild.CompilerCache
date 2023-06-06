@@ -104,14 +104,14 @@ public class InMemoryTaskBasedTests
         };
 
         var configPath = SaveConfig(config);
-        var baseInputs = new LocateInputs(
+        var inputs = new LocateInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
             AssemblyName: "bar",
             AllProps: allProps
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
-        var all = AllFromInputs(baseInputs, refCache);
+        var all = AllFromInputs(inputs, refCache);
         var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
 
@@ -122,7 +122,7 @@ public class InMemoryTaskBasedTests
 
         cache.Set(all.CacheKey, all.FullExtract, zip);
 
-        locate.SetInputs(baseInputs);
+        locate.SetInputs(inputs);
         var locateSuccess = locate.Execute();
         Assert.That(locateSuccess, Is.True);
         var locateResult = locate.LocateResult;

@@ -60,6 +60,7 @@ public class LocatorAndPopulator
         return (config, cache, refCache);
     }
 
+    // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
     private IRefCache _refCache;
     private ICache _cache;
     private Config _config;
@@ -186,7 +187,7 @@ public class LocatorAndPopulator
         return new LocalInputs(allExtracts, props, outputs);
     }
 
-    public static LocalFileExtract GetLocalFileExtract(string filepath)
+    private static LocalFileExtract GetLocalFileExtract(string filepath)
     {
         var fileInfo = new FileInfo(filepath);
         if (!fileInfo.Exists)
@@ -198,7 +199,7 @@ public class LocatorAndPopulator
         return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
     }
 
-    public static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
+    private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
         new(
             Hostname: Environment.MachineName,
             Username: Environment.UserName,
@@ -206,7 +207,7 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-    public static AllRefData GetAllRefData(string filepath, IRefCache refCache)
+    private static AllRefData GetAllRefData(string filepath, IRefCache refCache)
     {
         var fileInfo = new FileInfo(filepath);
         if (!fileInfo.Exists)
@@ -238,7 +239,7 @@ public class LocatorAndPopulator
         );
     }
 
-    public static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName,
+    private static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName,
         bool ignoreInternalsIfPossible)
     {
         bool internalsVisibleToOurAssembly =
@@ -253,7 +254,7 @@ public class LocatorAndPopulator
         return data.Original with { Hash = trimmedHash };
     }
 
-    public static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
+    private static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
 
     public static void UseCachedOutputs(string localTmpOutputsZipPath, OutputItem[] items,
         DateTime postCompilationTimeUtc)
