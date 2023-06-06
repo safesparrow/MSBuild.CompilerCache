@@ -56,22 +56,22 @@ public class InMemoryTaskBasedTests
         tmpDir.Dispose();
     }
 
-    public record All(BaseTaskInputs BaseTaskInputs, LocalInputs LocalInputs, CacheKey CacheKey,
+    public record All(LocateInputs LocateInputs, LocalInputs LocalInputs, CacheKey CacheKey,
         string LocalInputsHash, FullExtract FullExtract);
 
-    public static All AllFromInputs(BaseTaskInputs inputs, RefCache refCache)
+    public static All AllFromInputs(LocateInputs inputs, RefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
+        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
             new RefTrimmingConfig()
         );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = Locator.GenerateKey(inputs, hashString);
+        var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
 
         return new All(
-            BaseTaskInputs: inputs,
+            LocateInputs: inputs,
             LocalInputs: localInputs,
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
@@ -104,7 +104,7 @@ public class InMemoryTaskBasedTests
         };
 
         var configPath = SaveConfig(config);
-        var baseInputs = new BaseTaskInputs(
+        var baseInputs = new LocateInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
             AssemblyName: "bar",
@@ -112,7 +112,7 @@ public class InMemoryTaskBasedTests
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(baseInputs, refCache);
-        var zip = Populator.BuildOutputsZip(tmpDir.Dir, outputItems,
+        var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
 
         foreach (var outputItem in outputItems)
@@ -135,9 +135,6 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.CacheSupported, Is.True);
             Assert.That(locateResult.RunCompilation, Is.False);
         });
-
-        use.Guid = locate.Guid;
-        Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
@@ -170,7 +167,7 @@ public class InMemoryTaskBasedTests
         };
         var configPath = SaveConfig(config);
 
-        var baseInputs = new BaseTaskInputs(
+        var baseInputs = new LocateInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
             AssemblyName: "Bar",

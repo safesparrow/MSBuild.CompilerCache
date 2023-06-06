@@ -6,7 +6,9 @@ using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
-public record BaseTaskInputs(
+public record UseOrPopulateResult;
+
+public record LocateInputs(
     string ConfigPath,
     string ProjectFullPath,
     string AssemblyName,
@@ -26,7 +28,7 @@ public record LocateResult(
     CacheKey? CacheKey,
     string? LocalInputsHash,
     DateTime PreCompilationTimeUtc,
-    BaseTaskInputs Inputs,
+    LocateInputs Inputs,
     DecomposedCompilerProps? DecomposedCompilerProps
 )
 {
@@ -35,7 +37,7 @@ public record LocateResult(
     public bool CacheHit => Outcome == LocateOutcome.CacheUsed;
     public bool PopulateCache => RunCompilation && CacheSupported;
 
-    public static LocateResult CreateNotSupported(BaseTaskInputs inputs) =>
+    public static LocateResult CreateNotSupported(LocateInputs inputs) =>
         new(
             Outcome: LocateOutcome.CacheNotSupported,
             CacheKey: null,
@@ -46,7 +48,7 @@ public record LocateResult(
         );
 }
 
-public class Locator
+public class LocatorAndPopulator
 {
     public static (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath)
     {
@@ -58,49 +60,61 @@ public class Locator
         return (config, cache, refCache);
     }
 
-    public LocateResult Locate(BaseTaskInputs inputs, TaskLoggingHelper? log = null)
+    private IRefCache _refCache;
+    private ICache _cache;
+    private Config _config;
+    private DecomposedCompilerProps _decomposed;
+    private string _assemblyName;
+    private LocateResult _locateResult;
+    private FullExtract _extract;
+    private CacheKey _cacheKey;
+    private LocalInputs _localInputs;
+    private string _localInputsHash;
+
+    public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null)
     {
         var preCompilationTimeUtc = DateTime.UtcNow;
 
-        var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
-        if (decomposed.UnsupportedPropsSet.Any())
+        _decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
+        if (_decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine,
-                decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
+                _decomposed.UnsupportedPropsSet.Select(nv => $"{nv.Name}={nv.Value}"));
             log?.LogMessage(MessageImportance.Normal,
                 $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
-            return LocateResult.CreateNotSupported(inputs);
+            var notSupported = LocateResult.CreateNotSupported(inputs);
+            _locateResult = notSupported;
+            return _locateResult;
         }
 
-        var (config, cache, refCache) = CreateCaches(inputs.ConfigPath);
-        var assemblyName = inputs.AssemblyName;
-        var localInputs = CalculateLocalInputs(decomposed, refCache, assemblyName, config.RefTrimming);
-        var extract = localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = GenerateKey(inputs, hashString);
-        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        (_config, _cache, _refCache) = CreateCaches(inputs.ConfigPath);
+        _assemblyName = inputs.AssemblyName;
 
-        bool cacheHit;
+        (_localInputs, _localInputsHash) = CalculateLocalInputsWithHash();
+        _extract = _localInputs.ToFullExtract();
+        var hashString = Utils.ObjectToSHA256Hex(_extract);
+        _cacheKey = GenerateKey(inputs, hashString);
+
         LocateOutcome outcome;
 
-        if (config.CheckCompileOutputAgainstCache)
+        if (_config.CheckCompileOutputAgainstCache)
         {
-            cacheHit = false;
             outcome = LocateOutcome.OnlyPopulateCache;
+            log?.LogMessage(MessageImportance.Normal,
+                $"CompilationCache: CheckCompileOutputAgainstCache is set - not using cached outputs.");
         }
         else
         {
-            var cachedOutputTmpZip = cache.Get(cacheKey);
-            cacheHit = cachedOutputTmpZip != null;
-
-            if (cacheHit)
+            var cachedOutputTmpZip = _cache.Get(_cacheKey);
+            if (cachedOutputTmpZip != null)
             {
-                outcome = LocateOutcome.CacheUsed;
-                var outputs = decomposed.OutputsToCache;
-                log?.LogMessage(MessageImportance.Normal,
-                    $"CompilationCache: Locate for {cacheKey} was a hit. Copying {outputs.Length} files from cache");
                 try
                 {
+                    outcome = LocateOutcome.CacheUsed;
+                    var outputs = _decomposed.OutputsToCache;
+                    log?.LogMessage(MessageImportance.Normal,
+                        $"CompilationCache: Locate for {_cacheKey} was a hit. Copying {outputs.Length} files from cache");
+
                     UseCachedOutputs(cachedOutputTmpZip!, outputs, preCompilationTimeUtc);
                 }
                 finally
@@ -111,21 +125,30 @@ public class Locator
             else
             {
                 outcome = LocateOutcome.CacheMiss;
-                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {cacheKey} was a miss.");
+                log?.LogMessage(MessageImportance.Normal, $"CompilationCache: Locate for {_cacheKey} was a miss.");
             }
         }
 
-        var runCompilation = !cacheHit || config.CheckCompileOutputAgainstCache;
-
-        return new LocateResult(
-            CacheKey: cacheKey,
-            LocalInputsHash: localInputsHash,
+        _locateResult = new LocateResult(
+            CacheKey: _cacheKey,
+            LocalInputsHash: _localInputsHash,
             PreCompilationTimeUtc: preCompilationTimeUtc,
             Inputs: inputs,
             Outcome: outcome,
-            DecomposedCompilerProps: decomposed
+            DecomposedCompilerProps: _decomposed
         );
+        return _locateResult;
     }
+
+    private (LocalInputs, string) CalculateLocalInputsWithHash()
+    {
+        var localInputs = CalculateLocalInputs();
+        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        return (localInputs, localInputsHash);
+    }
+
+    private LocalInputs CalculateLocalInputs() =>
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming);
 
     public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
         string assemblyName, RefTrimmingConfig trimmingConfig)
@@ -183,7 +206,6 @@ public class Locator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-
     public static AllRefData GetAllRefData(string filepath, IRefCache refCache)
     {
         var fileInfo = new FileInfo(filepath);
@@ -233,31 +255,82 @@ public class Locator
 
     public static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
 
-    public static void UseCachedOutputs(string outputsZipPath, OutputItem[] items, DateTime postCompilationTimeUtc)
+    public static void UseCachedOutputs(string localTmpOutputsZipPath, OutputItem[] items,
+        DateTime postCompilationTimeUtc)
     {
-        var tempPath = Path.GetTempFileName();
-        File.Copy(outputsZipPath, tempPath, overwrite: true);
-        try
+        using var a = ZipFile.OpenRead(localTmpOutputsZipPath);
+        foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
         {
-            using var a = ZipFile.OpenRead(tempPath);
-            foreach (var entry in a.Entries.Where(e => !e.Name.StartsWith("__")))
-            {
-                var outputItem =
-                    items.SingleOrDefault(it => it.CacheFileName == entry.Name)
-                    ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
-                entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
-                File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
-            }
-        }
-        finally
-        {
-            File.Delete(tempPath);
+            var outputItem =
+                items.SingleOrDefault(it => it.CacheFileName == entry.Name)
+                ?? throw new Exception($"Cached outputs contain an unknown file '{entry.Name}'.");
+            entry.ExtractToFile(outputItem.LocalPath, overwrite: true);
+            File.SetLastWriteTimeUtc(outputItem.LocalPath, postCompilationTimeUtc);
         }
     }
 
-    public static CacheKey GenerateKey(BaseTaskInputs inputs, string hash)
+    public static CacheKey GenerateKey(LocateInputs inputs, string hash)
     {
         var name = Path.GetFileName(inputs.ProjectFullPath);
         return new CacheKey($"{name}_{hash}");
+    }
+
+    public UseOrPopulateResult UseOrPopulate(TaskLoggingHelper log)
+    {
+        var postCompilationTimeUtc = DateTime.UtcNow;
+        var (_, localInputsHash) = CalculateLocalInputsWithHash();
+        var hashesMatch = _locateResult.LocalInputsHash == localInputsHash;
+        log.LogMessage(MessageImportance.Normal,
+            $"CompilationCache info: Match={hashesMatch} LocatorKey={_locateResult.LocalInputsHash} RecalculatedKey={localInputsHash}");
+
+        if (hashesMatch)
+        {
+            log.LogMessage(MessageImportance.Normal,
+                $"CompilationCache miss - copying {_decomposed.OutputsToCache.Length} files from output to cache");
+            var meta = GetCompilationMetadata(postCompilationTimeUtc);
+            var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
+            using var tmpDir = new DisposableDir();
+            var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, log);
+            _cache.Set(_locateResult.CacheKey, _extract, outputZip);
+        }
+        else
+        {
+            log.LogMessage(MessageImportance.Normal,
+                $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
+        }
+
+        return new UseOrPopulateResult();
+    }
+
+    public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
+        AllCompilationMetadata metadata,
+        TaskLoggingHelper? log = null)
+    {
+        var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
+
+        var outputExtracts =
+            items.Select(item =>
+            {
+                var tempPath = outputsDir.CombineAsFile(item.CacheFileName);
+                log?.LogMessage(MessageImportance.Normal,
+                    $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
+                File.Copy(item.LocalPath, tempPath.FullName);
+                return GetLocalFileExtract(tempPath.FullName).ToFileExtract();
+            }).ToArray();
+
+        var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
+
+        var outputsExtractJson = JsonConvert.SerializeObject(outputExtracts, Formatting.Indented);
+        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json");
+        File.WriteAllText(outputsExtractJsonPath.FullName, outputsExtractJson);
+
+        var metaJson = JsonConvert.SerializeObject(metadata, Formatting.Indented);
+        var metaPath = outputsDir.CombineAsFile("__inputs.json");
+        File.WriteAllText(metaPath.FullName, metaJson);
+
+        var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
+        ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
+            CompressionLevel.NoCompression, includeBaseDirectory: false);
+        return tempZipPath;
     }
 }
