@@ -67,6 +67,7 @@ public class TargetsExtraction
             "7.0.202",
             "7.0.105",
             "6.0.408",
+            "6.0.301",
             "6.0.300",
         }
         .Select(sdk => new SDKVersion(sdk))

@@ -140,31 +140,22 @@
       <CompilationWouldRun
         Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'">true</CompilationWouldRun>
     </PropertyGroup>
-    <LocateCompilationCacheEntry
+    <CompilerCacheLocate
       Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
       ConfigPath="$(CompilationCacheConfigPath)"
       AllCompilerProperties="@(CacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
       AssemblyName="$(AssemblyName)">
       <Output
-        TaskParameter="CacheHit"
-        PropertyName="CacheHit" />
-      <Output
-        TaskParameter="CacheKey"
-        PropertyName="CacheKey" />
-      <Output
-        TaskParameter="LocalInputsHash"
-        PropertyName="LocalInputsHash" />
-      <Output
         TaskParameter="RunCompilation"
         PropertyName="CacheRunCompilation" />
       <Output
-        TaskParameter="CacheSupported"
-        PropertyName="CanCache" />
+        TaskParameter="PopulateCache"
+        PropertyName="CachePopulateCache" />
       <Output
-        TaskParameter="PreCompilationTimeTicks"
-        PropertyName="PreCompilationTimeTicks" />
-    </LocateCompilationCacheEntry>
+        TaskParameter="Guid"
+        PropertyName="CompilerCacheGuid" />
+    </CompilerCacheLocate>
     <PropertyGroup>
       <CacheRunCompilation
         Condition="'$(CanCache)' != 'true'">true</CacheRunCompilation>
@@ -256,17 +247,9 @@
         ItemName="CscCommandLineArgs" />
     </Csc>
     <!--START OF CACHING EXTENSION CODE-->
-    <UseOrPopulateCache
-      Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
-      PreCompilationTimeTicks="$(PreCompilationTimeTicks)"
-      ConfigPath="$(CompilationCacheConfigPath)"
-      AllCompilerProperties="@(CacheAllCompilerProperties)"
-      ProjectFullPath="$(MSBuildProjectFullPath)"
-      AssemblyName="$(AssemblyName)"
-      CheckCompileOutputAgainstCache="$(CompileAndCheckAgainstCache)"
-      CacheHit="$(CacheHit)"
-      CacheKey="$(CacheKey)"
-      LocalInputsHash="$(LocalInputsHash)" />
+    <CompilerCachePopulateCache
+      Condition="'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"
+      Guid="$(CompilerCacheGuid)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs
