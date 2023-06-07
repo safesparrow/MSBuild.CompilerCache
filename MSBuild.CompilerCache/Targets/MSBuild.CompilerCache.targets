@@ -15,11 +15,7 @@
         <!-- Disable caching for an unsupported language. -->
         <CanCache Condition="'$(CompilationLanguage)' == ''">false</CanCache>
     </PropertyGroup>
-    
-    <PropertyGroup>
-        <CanCache Condition="'$(CompilationLanguage)' == ''">false</CanCache>
-    </PropertyGroup>
-    
+        
     <PropertyGroup Condition="'$(CanCache)' == 'true'">
         <CoreCompileImport>$(MSBuildThisFileDirectory)Cached.CoreCompile.$(NETCoreSdkVersion).$(CompilationLanguage).targets</CoreCompileImport>
         <ShouldImportCacheTargets Condition="Exists('$(CoreCompileImport)')">true</ShouldImportCacheTargets>
@@ -30,8 +26,8 @@
         <CacheTasksPath>$(MSBuildThisFileDirectory)..\lib\net6.0\MSBuild.CompilerCache.dll</CacheTasksPath>
     </PropertyGroup>
     
-    <UsingTask TaskName="LocateCompilationCacheEntry" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
-    <UsingTask TaskName="UseOrPopulateCache" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
+    <UsingTask TaskName="CompilerCacheLocate" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
+    <UsingTask TaskName="CompilerCachePopulateCache" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
     
     <Import Project="$(CoreCompileImport)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
 

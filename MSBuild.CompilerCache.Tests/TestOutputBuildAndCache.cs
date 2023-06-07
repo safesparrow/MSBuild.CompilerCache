@@ -32,7 +32,7 @@ public class TestOutputBuildAndCache
                 OutputFiles: items
             )
         );
-        var zipPath = UserOrPopulator.BuildOutputsZip(dir, items, metadata);
+        var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata);
 
         var cache = new Cache(dir.Dir.CombineAsDir(".cache").FullName);
 
@@ -49,7 +49,7 @@ public class TestOutputBuildAndCache
         var mainOutputsDir = new DirectoryInfo(outputsDir.FullName);
         outputsDir.MoveTo(dir.Dir.CombineAsDir("old_output").FullName);
         mainOutputsDir.Create();
-        UserOrPopulator.UseCachedOutputs(cachedZip!, items, DateTime.Now);
+        LocatorAndPopulator.UseCachedOutputs(cachedZip!, items, DateTime.Now);
         AssertDirsSame(outputsDir, mainOutputsDir);
     }
 

@@ -85,7 +85,7 @@ public interface ICache
 {
     bool Exists(CacheKey key);
     void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip);
-    string Get(CacheKey key);
+    string? Get(CacheKey key);
 }
 
 public class Cache : ICache

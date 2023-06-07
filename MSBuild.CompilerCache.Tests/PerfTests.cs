@@ -18,7 +18,7 @@ public class PerfTests
         var refCacheDir = new DisposableDir();
         for (int i = 0; i < 10; i++)
         {
-            var inputs = new BaseTaskInputs(
+            var inputs = new LocateInputs(
                 AssemblyName: "assembly",
                 ConfigPath: "",
                 ProjectFullPath: "sfsd.csproj",
@@ -31,10 +31,10 @@ public class PerfTests
             var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
             var refCache = new RefCache(refCacheDir.FullName);
             var refTrimmingConfig = new RefTrimmingConfig();
-            var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig);
+            var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig);
             var extract = localInputs.ToFullExtract();
             var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-            var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+            var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
             var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
             Console.WriteLine($"{i}: {sw.ElapsedMilliseconds}ms");
         }

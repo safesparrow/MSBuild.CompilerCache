@@ -11,8 +11,8 @@ namespace Tests;
 public class InMemoryTaskBasedTests
 {
     private Mock<IBuildEngine9> _buildEngine = null!;
-    private LocateCompilationCacheEntry locate;
-    private UseOrPopulateCache use;
+    private CompilerCacheLocate locate;
+    private CompilerCachePopulateCache use;
     private DisposableDir tmpDir;
     private Cache cache;
     private string baseCacheDir;
@@ -21,12 +21,28 @@ public class InMemoryTaskBasedTests
     public void SetUp()
     {
         _buildEngine = new Mock<IBuildEngine9>();
-        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()));
+        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>())).Callback((BuildMessageEventArgs a) => Console.WriteLine($"Log - {a.Message}"));
+        _buildEngine.Setup(x => x.LogWarningEvent(It.IsAny<BuildWarningEventArgs>())).Callback((BuildWarningEventArgs a) => Console.WriteLine($"Warn - {a.Message}"));
+        var dict = new Dictionary<(object, RegisteredTaskObjectLifetime), object>();
+        _buildEngine
+            .Setup(x => x.RegisterTaskObject(It.IsAny<object>(), It.IsAny<object>(),
+                It.IsAny<RegisteredTaskObjectLifetime>(), It.IsAny<bool>()))
+            .Callback((object key, object value, RegisteredTaskObjectLifetime life, bool early) =>
+                dict[(key, life)] = value);
+    
+        _buildEngine
+            .Setup(x => x.GetRegisteredTaskObject(It.IsAny<object>(), It.IsAny<RegisteredTaskObjectLifetime>()))
+            .Returns((object key, RegisteredTaskObjectLifetime life) =>
+            {
+                var k = (key, life);
+                if (dict.TryGetValue(k, out var expression)) return expression;
+                return null!;
+            });
 
-        locate = new LocateCompilationCacheEntry();
+        locate = new CompilerCacheLocate();
         locate.BuildEngine = _buildEngine.Object;
 
-        use = new UseOrPopulateCache();
+        use = new CompilerCachePopulateCache();
         use.BuildEngine = _buildEngine.Object;
 
         tmpDir = new DisposableDir();
@@ -40,22 +56,22 @@ public class InMemoryTaskBasedTests
         tmpDir.Dispose();
     }
 
-    public record All(BaseTaskInputs BaseTaskInputs, LocalInputs LocalInputs, CacheKey CacheKey,
+    public record All(LocateInputs LocateInputs, LocalInputs LocalInputs, CacheKey CacheKey,
         string LocalInputsHash, FullExtract FullExtract);
 
-    public static All AllFromInputs(BaseTaskInputs inputs, RefCache refCache)
+    public static All AllFromInputs(LocateInputs inputs, RefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var localInputs = Locator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
+        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig:
             new RefTrimmingConfig()
         );
         var extract = localInputs.ToFullExtract();
         var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
-        var cacheKey = UserOrPopulator.GenerateKey(inputs, hashString);
+        var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
         var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
 
         return new All(
-            BaseTaskInputs: inputs,
+            LocateInputs: inputs,
             LocalInputs: localInputs,
             CacheKey: cacheKey,
             LocalInputsHash: localInputsHash,
@@ -88,15 +104,15 @@ public class InMemoryTaskBasedTests
         };
 
         var configPath = SaveConfig(config);
-        var baseInputs = new BaseTaskInputs(
+        var inputs = new LocateInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
             AssemblyName: "bar",
             AllProps: allProps
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
-        var all = AllFromInputs(baseInputs, refCache);
-        var zip = UserOrPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
+        var all = AllFromInputs(inputs, refCache);
+        var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs));
 
         foreach (var outputItem in outputItems)
@@ -106,7 +122,7 @@ public class InMemoryTaskBasedTests
 
         cache.Set(all.CacheKey, all.FullExtract, zip);
 
-        locate.SetInputs(baseInputs);
+        locate.SetInputs(inputs);
         var locateSuccess = locate.Execute();
         Assert.That(locateSuccess, Is.True);
         var locateResult = locate.LocateResult;
@@ -119,14 +135,6 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.CacheSupported, Is.True);
             Assert.That(locateResult.RunCompilation, Is.False);
         });
-
-        var useInputs = new UseOrPopulateInputs(
-            Inputs: baseInputs,
-            CheckCompileOutputAgainstCache: false,
-            LocateResult: locateResult
-        );
-        use.SetAllInputs(useInputs);
-        Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
@@ -159,7 +167,7 @@ public class InMemoryTaskBasedTests
         };
         var configPath = SaveConfig(config);
 
-        var baseInputs = new BaseTaskInputs(
+        var baseInputs = new LocateInputs(
             ConfigPath: configPath,
             ProjectFullPath: "",
             AssemblyName: "Bar",
@@ -182,12 +190,7 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.RunCompilation, Is.True);
         });
 
-        var useInputs = new UseOrPopulateInputs(
-            Inputs: baseInputs,
-            CheckCompileOutputAgainstCache: false,
-            LocateResult: locateResult
-        );
-        use.SetAllInputs(useInputs);
+        use.Guid = locate.Guid;
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = cache.GetAllExistingKeys();

@@ -67,6 +67,7 @@ public class TargetsExtraction
             "7.0.202",
             "7.0.105",
             "6.0.408",
+            "6.0.301",
             "6.0.300",
         }
         .Select(sdk => new SDKVersion(sdk))
@@ -181,24 +182,19 @@ public class TargetsExtraction
             new XAttribute("Condition", originalCompilationConditionValue), "true");
         firstPropsGroupElement.Add(canCacheElement, compilationWouldRunElement);
 
-        var canCacheCondition = new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'");
-
         XElement Elem(string taskParameter, string? propertyName = null) =>
             new XElement(Name("Output"), new XAttribute("TaskParameter", taskParameter),
                 new XAttribute("PropertyName", propertyName ?? taskParameter));
         
-        var locateElement = new XElement(Name("LocateCompilationCacheEntry"),
-            canCacheCondition,
+        var locateElement = new XElement(Name("CompilerCacheLocate"),
+            new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"),
             new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
             new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
             new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
             new XAttribute("AssemblyName", "$(AssemblyName)"),
-            Elem("CacheHit"),
-            Elem("CacheKey"),
-            Elem("LocalInputsHash"),
             Elem("RunCompilation", "CacheRunCompilation"),
-            Elem("CacheSupported", "CanCache"),
-            Elem("PreCompilationTimeTicks")
+            Elem("PopulateCache", "CachePopulateCache"),
+            Elem("Guid", "CompilerCacheGuid")
         );
 
         var gElement = new XElement(propertygroup,
@@ -208,21 +204,13 @@ public class TargetsExtraction
         compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement,
             gElement, endComment);
 
-        var useOrPopulateCacheElement =
-            new XElement(Name("UseOrPopulateCache"),
-                canCacheCondition,
-                new XAttribute("PreCompilationTimeTicks", "$(PreCompilationTimeTicks)"),
-                new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
-                new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
-                new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
-                new XAttribute("AssemblyName", "$(AssemblyName)"),
-                new XAttribute("CheckCompileOutputAgainstCache", "$(CompileAndCheckAgainstCache)"),
-                new XAttribute("CacheHit", "$(CacheHit)"),
-                new XAttribute("CacheKey", "$(CacheKey)"),
-                new XAttribute("LocalInputsHash", "$(LocalInputsHash)")
+        var populateCacheElement =
+            new XElement(Name("CompilerCachePopulateCache"),
+                new XAttribute("Condition", "'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"),
+                new XAttribute("Guid", "$(CompilerCacheGuid)")
             );
 
-        compilationTask.AddAfterSelf(startComment, useOrPopulateCacheElement, endComment);
+        compilationTask.AddAfterSelf(startComment, populateCacheElement, endComment);
 
         var p = compilationTask.Attribute("PathMap");
         p.Value = "$(MSBuildProjectDirectory)=/__nonexistent__directory__";
