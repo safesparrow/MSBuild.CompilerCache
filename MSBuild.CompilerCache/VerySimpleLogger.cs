@@ -1,7 +1,6 @@
-using System;
-using System.IO;
+using JetBrains.Refasmer;
 
-namespace JetBrains.Refasmer
+namespace MSBuild.CompilerCache
 {
     public class VerySimpleLogger: ILogger
     {

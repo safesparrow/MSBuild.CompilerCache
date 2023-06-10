@@ -34,7 +34,7 @@ public class RefCacheTests
             ),
             Original: new LocalFileExtract(
                 Path: "a",
-                Hash: "original_hash",
+                Hash: null,
                 Length: 1212,
                 LastWriteTimeUtc: DateTime.MaxValue
             )

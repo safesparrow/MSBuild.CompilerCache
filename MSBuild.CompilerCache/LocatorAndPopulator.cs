@@ -157,19 +157,19 @@ public class LocatorAndPopulator
         var nonReferenceFileInputs = decomposed.FileInputs;
         var fileInputs = trimmingConfig.Enabled
             ? nonReferenceFileInputs
-            : nonReferenceFileInputs.Union(decomposed.References);
+            : nonReferenceFileInputs.Concat(decomposed.References);
         var fileExtracts =
             fileInputs
-                .OrderBy(file => file)
                 .AsParallel()
+                // Preserve original order of files
                 .AsOrdered()
                 .Select(GetLocalFileExtract)
                 .ToImmutableArray();
 
         var refExtracts = trimmingConfig.Enabled
             ? decomposed.References
-                .OrderBy(dll => dll)
                 .AsParallel()
+                // Preserve original order of files
                 .AsOrdered()
                 .Select(dll =>
                 {
@@ -215,24 +215,25 @@ public class LocatorAndPopulator
             throw new Exception($"Reference file does not exist: '{filepath}'");
         }
 
-        var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
-        var hashString = Utils.BytesToSHA256Hex(bytes);
-        var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        // Note we don't hash the file contents to create the cache key
+        var extract = new LocalFileExtract(fileInfo.FullName, null, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        var fileExtract = extract.ToFileExtract();
+        var hashString = Utils.ObjectToSHA256Hex(fileExtract);
         var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
 
         var cacheKey = BuildRefCacheKey(name, hashString);
         var cached = refCache.Get(cacheKey);
         if (cached == null)
         {
+            var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
             var trimmer = new RefTrimmer();
             var toBeCached = trimmer.GenerateRefData(bytes);
-            var x = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-            refCache.Set(cacheKey, x);
-            cached = x;
+            cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
+            refCache.Set(cacheKey, cached);
         }
 
         return new AllRefData(
-            Original: extract,
+            Original: cached.Original,
             InternalsVisibleToAssemblies: cached.Ref.InternalsVisibleTo,
             PublicRefHash: cached.Ref.PublicRefHash,
             PublicAndInternalsRefHash: cached.Ref.PublicAndInternalRefHash
@@ -246,9 +247,9 @@ public class LocatorAndPopulator
             data.InternalsVisibleToAssemblies.Any(x =>
                 string.Equals(x, assemblyName, StringComparison.OrdinalIgnoreCase));
 
-        var ignoreInternals = ignoreInternalsIfPossible || !internalsVisibleToOurAssembly;
+        var ignoreInternals = ignoreInternalsIfPossible && !internalsVisibleToOurAssembly;
         var trimmedHash =
-            ignoreInternals ? data.PublicAndInternalsRefHash : data.PublicRefHash;
+            ignoreInternals ? data.PublicRefHash : data.PublicAndInternalsRefHash;
 
         // TODO It's not very clean that we keep other properties of the original dll and only modify the hash, but it's enough for caching to work.
         return data.Original with { Hash = trimmedHash };
