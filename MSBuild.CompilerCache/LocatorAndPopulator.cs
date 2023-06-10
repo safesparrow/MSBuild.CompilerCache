@@ -151,7 +151,7 @@ public class LocatorAndPopulator
     private LocalInputs CalculateLocalInputs() =>
         CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming);
 
-    public static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
+    internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
         string assemblyName, RefTrimmingConfig trimmingConfig)
     {
         var nonReferenceFileInputs = decomposed.FileInputs;
@@ -257,7 +257,7 @@ public class LocatorAndPopulator
 
     private static CacheKey BuildRefCacheKey(string name, string hashString) => new($"{name}_{hashString}");
 
-    public static void UseCachedOutputs(string localTmpOutputsZipPath, OutputItem[] items,
+    internal static void UseCachedOutputs(string localTmpOutputsZipPath, OutputItem[] items,
         DateTime postCompilationTimeUtc)
     {
         using var a = ZipFile.OpenRead(localTmpOutputsZipPath);
@@ -271,7 +271,7 @@ public class LocatorAndPopulator
         }
     }
 
-    public static CacheKey GenerateKey(LocateInputs inputs, string hash)
+    internal static CacheKey GenerateKey(LocateInputs inputs, string hash)
     {
         var name = Path.GetFileName(inputs.ProjectFullPath);
         return new CacheKey($"{name}_{hash}");
