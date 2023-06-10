@@ -9,5 +9,5 @@ public record AllRefData(
     string PublicAndInternalsRefHash
 )
 {
-    public string Name() => System.IO.Path.GetFileNameWithoutExtension(Original.Path);
+    public string Name() => Path.GetFileNameWithoutExtension(Original.Path);
 }

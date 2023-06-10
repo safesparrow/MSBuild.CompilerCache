@@ -118,8 +118,14 @@ public class RefTrimmer
         var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
         var loggerBase = new LoggerBase(logger);
 
-        var (publicRefHash, internalsVisibleToAssemblies) = MakeRefasmAndGetHash(content, loggerBase, RefAsmType.Public);
-        var (publicAndInternalRefHash, _) = MakeRefasmAndGetHash(content, loggerBase, RefAsmType.PublicAndInternal);
+        var (publicRefHash, internalsVisibleToAssemblies) =
+            MakeRefasmAndGetHash(content, loggerBase, RefAsmType.Public);
+        // If no assemblies can see the internals, there is no need to generate public+internal ref assembly 
+        var internalsNeverAccessible = internalsVisibleToAssemblies.IsEmpty;
+        var publicAndInternalRefHash =
+            internalsNeverAccessible
+                ? publicRefHash
+                : MakeRefasmAndGetHash(content, loggerBase, RefAsmType.PublicAndInternal).hash;
 
         return new RefData(
             PublicRefHash: publicRefHash,
