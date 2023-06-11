@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Security.Cryptography;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -101,7 +102,7 @@ public static class TargetsExtractionUtils
         Unsup("ReferencePath"), // Not populated in default builds, but is used to populate the --lib compiler argument.  
         Prop("ReflectionFree"),
         Prop("OtherFlags"),
-        new Attr("ReferencePath", AttrType.References),
+        //new Attr("ReferencePath", AttrType.References),
         Prop("Tailcalls"),
         Prop("TargetProfile"),
         Prop("UseStandardResourceNames"),
@@ -113,6 +114,8 @@ public static class TargetsExtractionUtils
         InputFiles("Win32ResourceFile")
     };
 
+    public static Dictionary<string, Attr> AttrsDictionary = Attrs.ToDictionary(a => a.Name);
+
     public enum AttrType
     {
         SimpleProperty,
@@ -121,7 +124,8 @@ public static class TargetsExtractionUtils
         InputFiles,
         OutputFile,
         References,
-        Sources
+        Sources,
+        Unknown
     }
 
     public record Attr(string Name, AttrType Type);
@@ -140,43 +144,57 @@ public static class TargetsExtractionUtils
     {
         var relevant =
             props
-                .Select(kvp => (Name: kvp.Key, kvp.Value,
-                    KnownAttr: Attrs.FirstOrDefault(x => x.Name == kvp.Key)))
+                .Select(kvp =>
+                {
+                    AttrsDictionary.TryGetValue(kvp.Key, out var attr);
+                    return (Name: kvp.Key, kvp.Value, KnownAttr: attr);
+                })
                 .ToImmutableArray();
 
-        var unknownAttributes =
-            relevant
-                .Where(x => x.KnownAttr == null)
-                .ToImmutableArray();
+        var grouped = relevant.GroupBy(x => x.KnownAttr?.Type ?? AttrType.Unknown).ToDictionary(g => g.Key, g => g.ToImmutableArray());
+        
+        ImmutableArray<(string Name, string Value, Attr Attr)> GetGroup(AttrType attrType)
+        {
+            if (grouped.TryGetValue(attrType, out var items))
+            {
+                return items;
+            }
+            return ImmutableArray.Create<(string Name, string Value, Attr Attr)>();
+        }
+
+        var unknownAttributes = GetGroup(AttrType.Unknown);
         if (unknownAttributes.Length > 0)
         {
             throw new Exception($"{unknownAttributes.Length} unknown attributes found: " +
                                 $"{String.Join((string?)",", (IEnumerable<string?>)unknownAttributes.Select(a => a.Name))}");
         }
 
-        relevant = relevant
-            .Where(x => x.KnownAttr != null)
-            .ToImmutableArray();
-
-        var mustBeEmptyAttrs =
-            relevant
-                .Where(a => a.KnownAttr!.Type == AttrType.Unsupported)
+        var unsupportedPropsSet =
+            GetGroup(AttrType.Unsupported)
+                .Where(a => !string.IsNullOrEmpty(a.Value))
                 .Select(a => (a.Name, a.Value))
                 .ToImmutableArray();
-        var unsupportedPropsSet = mustBeEmptyAttrs.Where(x => !string.IsNullOrEmpty(x.Value)).ToArray();
 
         var dict = relevant.ToDictionary(x => x.Name, x => x.Value);
         
-        bool PropSatisfies(string name, Func<string, bool> predicate) => predicate(dict[name]);
+        bool PropSatisfies(string name, Func<string, bool> predicate)
+        {
+            if (dict.TryGetValue(name, out var value))
+            {
+                return predicate(value);
+            }
+            return false;
+        }
+
         bool CaseInsensitiveEquals(string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase);
 
         bool PropEmpty(string name) => !dict.ContainsKey(name) || PropSatisfies(name, string.IsNullOrEmpty);
         bool PropNotTrue(string name) => !dict.ContainsKey(name) || PropSatisfies(name, x => !CaseInsensitiveEquals(x, "true"));
         
-        bool ExtraSupportCheck()
+        bool ExtraConditionsMet()
         {
             return
-                dict.ContainsKey("TargetType") && PropSatisfies("TargetType", x => CaseInsensitiveEquals(x, "Library") || CaseInsensitiveEquals(x, "Exe")) &&
+                PropSatisfies("TargetType", x => CaseInsensitiveEquals(x, "Library") || CaseInsensitiveEquals(x, "Exe")) &&
                 PropEmpty("AdditionalLibPaths") &&
                 PropNotTrue("EmitCompilerGeneratedFiles") &&
                 PropNotTrue("ProvideCommandLineArgs") &&
@@ -186,41 +204,35 @@ public static class TargetsExtractionUtils
             ;
         }
 
-        var extraConditionsMet = ExtraSupportCheck();
-        if (!extraConditionsMet)
+        if (!ExtraConditionsMet())
         {
-            unsupportedPropsSet = unsupportedPropsSet.Append(("ExtraConditions", "Extra")).ToArray();
+            unsupportedPropsSet = unsupportedPropsSet.Append(("ExtraConditions", "Extra")).ToImmutableArray();
         }
 
         var regularProps =
-            relevant
-                .Where(x => new[] { AttrType.SimpleProperty, AttrType.OutputFile }.Contains(x.KnownAttr!.Type))
-                .ToDictionary(x => x.Name);
+            GetGroup(AttrType.SimpleProperty).Concat(GetGroup(AttrType.OutputFile))
+                .ToDictionary(x => x.Name, x => x.Value);
 
-        var refsItems = relevant.Where(x => x.KnownAttr!.Type == AttrType.References).ToArray();
+        var refsItems = GetGroup(AttrType.References);
         var refs =
             refsItems.Length == 1
                 ? SplitItemList(refsItems[0].Value)
                 : Array.Empty<string>();
 
-        var inputMed = relevant
-            .Where(x => new[] { AttrType.Sources, AttrType.InputFiles }.Contains(x.KnownAttr!.Type))
-            .ToArray();
         var inputFiles =
-            inputMed
+            GetGroup(AttrType.Sources).Concat(GetGroup(AttrType.InputFiles))
                 .SelectMany(x => SplitItemList(x.Value))
                 .ToArray();
         
         var outputItems =
-            relevant
-                .Where(x => x.KnownAttr!.Type == AttrType.OutputFile)
+            GetGroup(AttrType.OutputFile)
                 .Where(x => !string.IsNullOrEmpty(x.Value))
                 .Select(x => new OutputItem(x.Name, x.Value))
                 .ToArray();
 
         return new DecomposedCompilerProps(
             FileInputs: inputFiles,
-            PropertyInputs: regularProps.ToDictionary(x => x.Key, x => x.Value.Value),
+            PropertyInputs: regularProps,
             References: refs,
             OutputsToCache: outputItems,
             UnsupportedPropsSet: unsupportedPropsSet
@@ -233,5 +245,5 @@ public record DecomposedCompilerProps(
     IDictionary<string, string> PropertyInputs,
     string[] References,
     OutputItem[] OutputsToCache,
-    (string Name, string Value)[] UnsupportedPropsSet
+    ImmutableArray<(string Name, string Value)> UnsupportedPropsSet
 );

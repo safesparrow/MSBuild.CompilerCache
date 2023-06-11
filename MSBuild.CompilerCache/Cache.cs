@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
@@ -159,11 +160,18 @@ public class Cache : ICache
             AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
         }
 
+        var jsonOptions = new JsonSerializerOptions()
+        {
+            WriteIndented = true
+        };
+        
         if (!File.Exists(extractPath))
         {
-            var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
             using var tmpFile = new TempFile();
-            File.WriteAllText(tmpFile.FullName, json);
+            {
+                using var fs = tmpFile.File.OpenWrite();
+                System.Text.Json.JsonSerializer.Serialize(fs, fullExtract, jsonOptions);
+            }
             AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
         }
     }

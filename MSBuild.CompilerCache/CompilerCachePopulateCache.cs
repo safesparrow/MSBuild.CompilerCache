@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MSBuild.CompilerCache;
 
@@ -24,7 +25,9 @@ public class CompilerCachePopulateCache : Microsoft.Build.Utilities.Task
         BuildEngine4.UnregisterTaskObject(Guid, RegisteredTaskObjectLifetime.Build);
         var locator = _locator as LocatorAndPopulator ??
                             throw new Exception("Cached result is of unexpected type");
-        var results = locator.UseOrPopulate(Log);
+        var sw = Stopwatch.StartNew();
+        void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
+        var results = locator.UseOrPopulate(Log, LogTime);
         return true;
     }
 }
