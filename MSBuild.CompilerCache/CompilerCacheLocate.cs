@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using Microsoft.Build.Utilities;
 
 namespace MSBuild.CompilerCache;
@@ -28,10 +29,12 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     
     public override bool Execute()
     {
+        var sw = Stopwatch.StartNew();
         var guid = System.Guid.NewGuid();
         var locator = new LocatorAndPopulator();
         var inputs = GatherInputs();
-        var results = locator.Locate(inputs, Log);
+        void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
+        var results = locator.Locate(inputs, Log, LogTime);
         if (results.PopulateCache)
         {
             Guid = guid.ToString();

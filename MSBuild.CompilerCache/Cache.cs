@@ -1,17 +1,18 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
 
 [Serializable]
-public record FileExtract(string Name, string? Hash, long Length, DateTime LastWriteTimeUtc);
+public record FileExtract(string Name, string? Hash, long Length, DateTime? LastWriteTimeUtc);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
 [Serializable]
-public record LocalFileExtract(string Path, string? Hash, long Length, DateTime LastWriteTimeUtc)
+public record LocalFileExtract(string Path, string? Hash, long Length, DateTime? LastWriteTimeUtc)
 {
     public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length, LastWriteTimeUtc: LastWriteTimeUtc);
 }
@@ -159,11 +160,18 @@ public class Cache : ICache
             AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
         }
 
+        var jsonOptions = new JsonSerializerOptions()
+        {
+            WriteIndented = true
+        };
+        
         if (!File.Exists(extractPath))
         {
-            var json = JsonConvert.SerializeObject(fullExtract, Formatting.Indented);
             using var tmpFile = new TempFile();
-            File.WriteAllText(tmpFile.FullName, json);
+            {
+                using var fs = tmpFile.File.OpenWrite();
+                System.Text.Json.JsonSerializer.Serialize(fs, fullExtract, jsonOptions);
+            }
             AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
         }
     }

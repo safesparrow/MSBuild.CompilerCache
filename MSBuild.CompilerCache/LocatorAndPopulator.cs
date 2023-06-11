@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using System.IO.Compression;
+using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace MSBuild.CompilerCache;
 
@@ -50,13 +52,15 @@ public record LocateResult(
 
 public class LocatorAndPopulator
 {
-    public static (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath)
+    public static (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath,
+        Action<string>? logTime = null)
     {
-        var configJson = File.ReadAllText(configPath);
-        var config = JsonConvert.DeserializeObject<Config>(configJson);
-        var baseCacheDir = config.CacheDir;
-        var cache = new Cache(baseCacheDir);
+        using var fs = File.OpenRead(configPath);
+        var config = JsonSerializer.Deserialize<Config>(fs);
+        //logTime?.Invoke("Config deserialized");
+        var cache = new Cache(config.CacheDir);
         var refCache = new RefCache(config.InferRefCacheDir());
+        //logTime?.Invoke("Finish");
         return (config, cache, refCache);
     }
 
@@ -72,11 +76,13 @@ public class LocatorAndPopulator
     private LocalInputs _localInputs;
     private string _localInputsHash;
 
-    public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null)
+    public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
     {
+        //logTime?.Invoke("Start Locate");
         var preCompilationTimeUtc = DateTime.UtcNow;
 
         _decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
+        //logTime?.Invoke("Decomposed compiler props");
         if (_decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine,
@@ -88,13 +94,17 @@ public class LocatorAndPopulator
             return _locateResult;
         }
 
-        (_config, _cache, _refCache) = CreateCaches(inputs.ConfigPath);
+        (_config, _cache, _refCache) = CreateCaches(inputs.ConfigPath, logTime);
         _assemblyName = inputs.AssemblyName;
+        //logTime?.Invoke("Caches created");
 
-        (_localInputs, _localInputsHash) = CalculateLocalInputsWithHash();
+        (_localInputs, _localInputsHash) = CalculateLocalInputsWithHash(logTime);
+        //logTime?.Invoke("LocalInputs with hash created");
+        
         _extract = _localInputs.ToFullExtract();
         var hashString = Utils.ObjectToSHA256Hex(_extract);
         _cacheKey = GenerateKey(inputs, hashString);
+        //logTime?.Invoke("Key generated");
 
         LocateOutcome outcome;
 
@@ -107,6 +117,7 @@ public class LocatorAndPopulator
         else
         {
             var cachedOutputTmpZip = _cache.Get(_cacheKey);
+            //logTime?.Invoke("Got cache result");
             if (cachedOutputTmpZip != null)
             {
                 try
@@ -117,6 +128,7 @@ public class LocatorAndPopulator
                         $"CompilationCache: Locate for {_cacheKey} was a hit. Copying {outputs.Length} files from cache");
 
                     UseCachedOutputs(cachedOutputTmpZip!, outputs, preCompilationTimeUtc);
+                    //logTime?.Invoke("Used cached outputs");
                 }
                 finally
                 {
@@ -138,34 +150,41 @@ public class LocatorAndPopulator
             Outcome: outcome,
             DecomposedCompilerProps: _decomposed
         );
+        //logTime?.Invoke("end");
         return _locateResult;
     }
 
-    private (LocalInputs, string) CalculateLocalInputsWithHash()
+    private (LocalInputs, string) CalculateLocalInputsWithHash(Action<string>? logTime = null)
     {
-        var localInputs = CalculateLocalInputs();
+        var localInputs = CalculateLocalInputs(logTime);
+        //logTime?.Invoke("localinputs done");
         var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        //logTime?.Invoke("hash done");
         return (localInputs, localInputsHash);
     }
 
-    private LocalInputs CalculateLocalInputs() =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming);
+    private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, logTime);
 
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string assemblyName, RefTrimmingConfig trimmingConfig)
+        string assemblyName, RefTrimmingConfig trimmingConfig, Action<string>? logTime = null)
     {
         var nonReferenceFileInputs = decomposed.FileInputs;
         var fileInputs = trimmingConfig.Enabled
             ? nonReferenceFileInputs
-            : nonReferenceFileInputs.Concat(decomposed.References);
+            : nonReferenceFileInputs.Concat(decomposed.References).ToArray();
         var fileExtracts =
             fileInputs
+                .Chunk(4)
                 .AsParallel()
-                // Preserve original order of files
                 .AsOrdered()
-                .Select(GetLocalFileExtract)
+                .WithDegreeOfParallelism(Math.Max(2, Environment.ProcessorCount / 2))
+                // Preserve original order of files
+                .SelectMany(paths => paths.Select(GetLocalFileExtract))
                 .ToImmutableArray();
 
+        //logTime?.Invoke("file extracts done");
+        
         var refExtracts = trimmingConfig.Enabled
             ? decomposed.References
                 .AsParallel()
@@ -179,10 +198,14 @@ public class LocatorAndPopulator
                 .ToImmutableArray()
             : ImmutableArray.Create<LocalFileExtract>();
 
+        //logTime?.Invoke("ref extracts done");
+        
         var allExtracts = fileExtracts.Union(refExtracts).ToArray();
 
         var props = decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray();
         var outputs = decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray();
+        
+        //logTime?.Invoke("orders done");
 
         return new LocalInputs(allExtracts, props, outputs);
     }
@@ -196,7 +219,9 @@ public class LocatorAndPopulator
         }
 
         var hashString = Utils.FileToSHA256String(fileInfo);
-        return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        // As we populate the hash, there is no need to use the modify date - otherwise, build-generated source files will always
+        // cause a cache miss.
+        return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
     }
 
     private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
@@ -215,17 +240,15 @@ public class LocatorAndPopulator
             throw new Exception($"Reference file does not exist: '{filepath}'");
         }
 
-        // Note we don't hash the file contents to create the cache key
-        var extract = new LocalFileExtract(fileInfo.FullName, null, fileInfo.Length, fileInfo.LastWriteTimeUtc);
-        var fileExtract = extract.ToFileExtract();
-        var hashString = Utils.ObjectToSHA256Hex(fileExtract);
+        var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
+        var hashString = Utils.BytesToSHA256Hex(bytes);
+        var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
         var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
 
         var cacheKey = BuildRefCacheKey(name, hashString);
         var cached = refCache.Get(cacheKey);
         if (cached == null)
         {
-            var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
             var trimmer = new RefTrimmer();
             var toBeCached = trimmer.GenerateRefData(bytes);
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
@@ -277,23 +300,29 @@ public class LocatorAndPopulator
         return new CacheKey($"{name}_{hash}");
     }
 
-    public UseOrPopulateResult UseOrPopulate(TaskLoggingHelper log)
+    public UseOrPopulateResult UseOrPopulate(TaskLoggingHelper log, Action<string>? logTime = null)
     {
+        //logTime?.Invoke("Start");
         var postCompilationTimeUtc = DateTime.UtcNow;
-        var (_, localInputsHash) = CalculateLocalInputsWithHash();
+        var (_, localInputsHash) = CalculateLocalInputsWithHash(logTime);
+        //logTime?.Invoke("Calculated local inputs with hash");
         var hashesMatch = _locateResult.LocalInputsHash == localInputsHash;
         log.LogMessage(MessageImportance.Normal,
             $"CompilationCache info: Match={hashesMatch} LocatorKey={_locateResult.LocalInputsHash} RecalculatedKey={localInputsHash}");
 
         if (hashesMatch)
         {
+            //logTime?.Invoke("Hashes match");
             log.LogMessage(MessageImportance.Normal,
                 $"CompilationCache miss - copying {_decomposed.OutputsToCache.Length} files from output to cache");
             var meta = GetCompilationMetadata(postCompilationTimeUtc);
             var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
+            //logTime?.Invoke("Got stuff");
             using var tmpDir = new DisposableDir();
             var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, log);
+            //logTime?.Invoke("Outputs zip created");
             _cache.Set(_locateResult.CacheKey, _extract, outputZip);
+            //logTime?.Invoke("cache entry set");
         }
         else
         {
@@ -322,13 +351,22 @@ public class LocatorAndPopulator
 
         var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
 
-        var outputsExtractJson = JsonConvert.SerializeObject(outputExtracts, Formatting.Indented);
-        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json");
-        File.WriteAllText(outputsExtractJsonPath.FullName, outputsExtractJson);
+        var jsonOptions = new JsonSerializerOptions()
+        {
+            WriteIndented = true
+        };
+        
+        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
+        {
+            using var fs = File.OpenWrite(outputsExtractJsonPath);
+            JsonSerializer.Serialize(fs, outputExtracts, jsonOptions);
+        }
 
-        var metaJson = JsonConvert.SerializeObject(metadata, Formatting.Indented);
-        var metaPath = outputsDir.CombineAsFile("__inputs.json");
-        File.WriteAllText(metaPath.FullName, metaJson);
+        var metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
+        {
+            using var fs = File.OpenWrite(metaPath);
+            JsonSerializer.Serialize(fs, metadata, jsonOptions);
+        }
 
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
         ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
