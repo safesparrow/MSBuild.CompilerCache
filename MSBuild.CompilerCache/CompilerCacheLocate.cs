@@ -26,12 +26,28 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     /// <summary> Accessed in tests </summary>
     internal LocateResult LocateResult { get; private set; }
 #pragma warning restore CS8618
+
+    private InMemoryRefCache GetInMemoryRefCache()
+    {
+        var key = "CompilerCache_InMemoryRefCache";
+        if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryRefCache cached)
+        {
+            return cached;
+        }
+        else
+        {
+            var fresh = new InMemoryRefCache();
+            BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
+            return fresh;
+        }
+    }
     
     public override bool Execute()
     {
         var sw = Stopwatch.StartNew();
         var guid = System.Guid.NewGuid();
-        var locator = new LocatorAndPopulator();
+        var inMemoryRefCache = GetInMemoryRefCache();
+        var locator = new LocatorAndPopulator(inMemoryRefCache);
         var inputs = GatherInputs();
         void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
         var results = locator.Locate(inputs, Log, LogTime);

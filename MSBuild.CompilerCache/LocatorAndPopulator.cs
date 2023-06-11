@@ -52,14 +52,16 @@ public record LocateResult(
 
 public class LocatorAndPopulator
 {
-    public static (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath,
+    private readonly InMemoryRefCache _inMemoryRefCache;
+
+    private (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath,
         Action<string>? logTime = null)
     {
         using var fs = File.OpenRead(configPath);
         var config = JsonSerializer.Deserialize<Config>(fs);
         //logTime?.Invoke("Config deserialized");
         var cache = new Cache(config.CacheDir);
-        var refCache = new RefCache(config.InferRefCacheDir());
+        var refCache = new RefCache(config.InferRefCacheDir(), _inMemoryRefCache);
         //logTime?.Invoke("Finish");
         return (config, cache, refCache);
     }
@@ -75,6 +77,11 @@ public class LocatorAndPopulator
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private string _localInputsHash;
+
+    public LocatorAndPopulator(InMemoryRefCache? inMemoryRefCache = null)
+    {
+        _inMemoryRefCache = inMemoryRefCache ?? new InMemoryRefCache();
+    }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
     {
