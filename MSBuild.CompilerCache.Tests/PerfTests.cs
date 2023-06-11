@@ -15,7 +15,8 @@ public class PerfTests
     public void HashCalculationPerfTest()
     {
         var sw = Stopwatch.StartNew();
-        var refCacheDir = new DisposableDir();
+        var memcache = new InMemoryRefCache();
+        // var refCacheDir = new DisposableDir();
         for (int i = 0; i < 10; i++)
         {
             var inputs = new LocateInputs(
@@ -29,7 +30,7 @@ public class PerfTests
                 }
             );
             var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-            var refCache = new RefCache(refCacheDir.FullName);
+            var refCache = new RefCache("c:/projekty/.refcache", memcache);
             var refTrimmingConfig = new RefTrimmingConfig();
             var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig);
             var extract = localInputs.ToFullExtract();
