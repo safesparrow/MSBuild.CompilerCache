@@ -196,7 +196,9 @@ public class LocatorAndPopulator
         }
 
         var hashString = Utils.FileToSHA256String(fileInfo);
-        return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        // As we populate the hash, there is no need to use the modify date - otherwise, build-generated source files will always
+        // cause a cache miss.
+        return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
     }
 
     private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
