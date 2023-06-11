@@ -240,17 +240,15 @@ public class LocatorAndPopulator
             throw new Exception($"Reference file does not exist: '{filepath}'");
         }
 
-        // Note we don't hash the file contents to create the cache key
-        var extract = new LocalFileExtract(fileInfo.FullName, null, fileInfo.Length, fileInfo.LastWriteTimeUtc);
-        var fileExtract = extract.ToFileExtract();
-        var hashString = Utils.ObjectToSHA256Hex(fileExtract);
+        var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
+        var hashString = Utils.BytesToSHA256Hex(bytes);
+        var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
         var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
 
         var cacheKey = BuildRefCacheKey(name, hashString);
         var cached = refCache.Get(cacheKey);
         if (cached == null)
         {
-            var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
             var trimmer = new RefTrimmer();
             var toBeCached = trimmer.GenerateRefData(bytes);
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
