@@ -4,14 +4,14 @@ using Newtonsoft.Json;
 namespace MSBuild.CompilerCache;
 
 [Serializable]
-public record FileExtract(string Name, string? Hash, long Length, DateTime LastWriteTimeUtc);
+public record FileExtract(string Name, string? Hash, long Length, DateTime? LastWriteTimeUtc);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
 [Serializable]
-public record LocalFileExtract(string Path, string? Hash, long Length, DateTime LastWriteTimeUtc)
+public record LocalFileExtract(string Path, string? Hash, long Length, DateTime? LastWriteTimeUtc)
 {
     public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length, LastWriteTimeUtc: LastWriteTimeUtc);
 }
