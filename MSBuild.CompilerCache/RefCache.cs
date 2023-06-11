@@ -27,9 +27,12 @@ public class RefCache : IRefCache
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
-            var json = ReadFileWithRetries(entryPath);
-            var data = JsonConvert.DeserializeObject<RefDataWithOriginalExtract>(json);
-            return data;
+            RefDataWithOriginalExtract Read()
+            {
+                using var fs = File.OpenRead(entryPath);
+                return System.Text.Json.JsonSerializer.Deserialize<RefDataWithOriginalExtract>(fs)!;
+            }
+            return IOActionWithRetries(Read);
         }
         else
         {
@@ -37,7 +40,7 @@ public class RefCache : IRefCache
         }
     }
 
-    private static string ReadFileWithRetries(string entryPath)
+    private static T IOActionWithRetries<T>(Func<T> action)
     {
         var attempts = 5;
         var retryDelay = 50;
@@ -45,7 +48,7 @@ public class RefCache : IRefCache
         {
             try
             {
-                return File.ReadAllText(entryPath);
+                return action();
             }
             catch(IOException e) 
             {
