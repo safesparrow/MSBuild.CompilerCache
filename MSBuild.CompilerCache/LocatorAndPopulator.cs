@@ -1,8 +1,10 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO.Compression;
 using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -77,10 +79,12 @@ public class LocatorAndPopulator
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private string _localInputsHash;
+    private FileHashCache _fileHashCache;
 
-    public LocatorAndPopulator(InMemoryRefCache? inMemoryRefCache = null)
+    public LocatorAndPopulator(InMemoryRefCache? inMemoryRefCache = null, FileHashCache? fileHashCache = null)
     {
         _inMemoryRefCache = inMemoryRefCache ?? new InMemoryRefCache();
+        _fileHashCache = fileHashCache ?? new FileHashCache();
     }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
@@ -171,10 +175,10 @@ public class LocatorAndPopulator
     }
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, logTime);
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, logTime);
 
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string assemblyName, RefTrimmingConfig trimmingConfig, Action<string>? logTime = null)
+        string assemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, Action<string>? logTime = null)
     {
         var nonReferenceFileInputs = decomposed.FileInputs;
         var fileInputs = trimmingConfig.Enabled
@@ -183,9 +187,9 @@ public class LocatorAndPopulator
         var fileExtracts =
             fileInputs
                 .Chunk(4)
-                .AsParallel()
-                .AsOrdered()
-                .WithDegreeOfParallelism(Math.Max(2, Environment.ProcessorCount / 2))
+                // .AsParallel()
+                // .AsOrdered()
+                // .WithDegreeOfParallelism(Math.Max(2, Environment.ProcessorCount / 2))
                 // Preserve original order of files
                 .SelectMany(paths => paths.Select(GetLocalFileExtract))
                 .ToImmutableArray();
@@ -194,13 +198,18 @@ public class LocatorAndPopulator
         
         var refExtracts = trimmingConfig.Enabled
             ? decomposed.References
+                .Chunk(20)
                 .AsParallel()
                 // Preserve original order of files
                 .AsOrdered()
-                .Select(dll =>
+                .WithDegreeOfParallelism(8)
+                .SelectMany(dlls =>
                 {
-                    var allRefData = GetAllRefData(dll, refCache);
-                    return AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
+                    return dlls.Select(dll =>
+                    {
+                        var allRefData = GetAllRefData(dll, refCache, fileHashCache);
+                        return AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
+                    }).ToArray();
                 })
                 .ToImmutableArray()
             : ImmutableArray.Create<LocalFileExtract>();
@@ -239,7 +248,31 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-    private static AllRefData GetAllRefData(string filepath, IRefCache refCache)
+    public record struct FileCacheKey(string FullName, long Length, DateTime LastWriteTimeUtc);
+
+    public interface IFileHashCache
+    {
+        bool Exists(FileCacheKey key);
+        string Get(FileCacheKey key);
+        void Set(FileCacheKey key, string hash);
+    }
+
+    public class FileHashCache : IFileHashCache
+    {
+        private ConcurrentDictionary<FileCacheKey, string> _cache = new ConcurrentDictionary<FileCacheKey, string>();
+
+        public bool Exists(FileCacheKey key) => _cache.ContainsKey(key);
+
+        public string Get(FileCacheKey key)
+        {
+            _cache.TryGetValue(key, out var hash);
+            return hash;
+        }
+
+        public void Set(FileCacheKey key, string hash) => _cache.TryAdd(key, hash);
+    }
+    
+    internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache)
     {
         var fileInfo = new FileInfo(filepath);
         if (!fileInfo.Exists)
@@ -247,8 +280,15 @@ public class LocatorAndPopulator
             throw new Exception($"Reference file does not exist: '{filepath}'");
         }
 
-        var bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
-        var hashString = Utils.BytesToSHA256Hex(bytes);
+        var fileCacheKey = new FileCacheKey(fileInfo.FullName, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        var hashString = fileHashCache.Get(fileCacheKey);
+        ImmutableArray<byte> bytes = ImmutableArray<byte>.Empty;
+        if (hashString == null)
+        {
+            bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
+            hashString = Utils.BytesToSHA256Hex(bytes);
+        }
+
         var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
         var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
 
@@ -256,6 +296,10 @@ public class LocatorAndPopulator
         var cached = refCache.Get(cacheKey);
         if (cached == null)
         {
+            if (bytes.IsDefaultOrEmpty)
+            {
+                bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
+            }
             var trimmer = new RefTrimmer();
             var toBeCached = trimmer.GenerateRefData(bytes);
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);

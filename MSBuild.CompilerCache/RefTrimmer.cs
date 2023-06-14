@@ -30,6 +30,7 @@ public interface IRefCache
 
 public class RefTrimmer
 {
+    
     public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
     {
         logger.Debug?.Invoke($"Reading assembly {inputPath}");

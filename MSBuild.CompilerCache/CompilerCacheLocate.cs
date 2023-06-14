@@ -27,16 +27,18 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     internal LocateResult LocateResult { get; private set; }
 #pragma warning restore CS8618
 
-    private InMemoryRefCache GetInMemoryRefCache()
+    private record InMemoryCaches(InMemoryRefCache InMemoryRefCache, LocatorAndPopulator.FileHashCache FileHashCache);
+    
+    private InMemoryCaches GetInMemoryRefCache()
     {
         var key = "CompilerCache_InMemoryRefCache";
-        if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryRefCache cached)
+        if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryCaches cached)
         {
             return cached;
         }
         else
         {
-            var fresh = new InMemoryRefCache();
+            var fresh = new InMemoryCaches(new InMemoryRefCache(), new LocatorAndPopulator.FileHashCache());
             BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
             return fresh;
         }
@@ -46,8 +48,8 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     {
         var sw = Stopwatch.StartNew();
         var guid = System.Guid.NewGuid();
-        var inMemoryRefCache = GetInMemoryRefCache();
-        var locator = new LocatorAndPopulator(inMemoryRefCache);
+        var (inMemoryRefCache, fileHashCache) = GetInMemoryRefCache();
+        var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache);
         var inputs = GatherInputs();
         void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
         var results = locator.Locate(inputs, Log, LogTime);
