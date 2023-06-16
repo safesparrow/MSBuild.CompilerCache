@@ -12,7 +12,7 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
         Directory.CreateDirectory(_cacheDir);
     }
 
-    public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, $"{key.Key}.json");
+    public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, key.Key);
 
     public CacheKey ExtractKey(FileCacheKey key) => new CacheKey(Utils.ObjectToSHA256Hex(key));
     
@@ -83,7 +83,7 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
         {
             using var fs = tmpFile.File.OpenWrite();
             using var sw = new StreamWriter(fs, Encoding.UTF8);
-            sw.WriteLine(value);
+            sw.Write(value);
         }
         
         return Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);

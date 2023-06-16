@@ -265,6 +265,7 @@ public class LocatorAndPopulator
         {
             bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
             hashString = Utils.BytesToSHA256Hex(bytes);
+            fileHashCache.Set(fileCacheKey, hashString);
         }
 
         var extract = new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
