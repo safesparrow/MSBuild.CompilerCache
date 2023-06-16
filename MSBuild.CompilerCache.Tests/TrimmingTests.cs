@@ -16,7 +16,7 @@ public class TrimmingTests
         var t = new RefTrimmer();
         var res = t.GenerateRefData(bytes.ToImmutableArray());
 
-        Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[] { "MSBuild.CompilerCache.Tests" }));
+        Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[] { "MSBuild.CompilerCache.Tests", "MSBuild.CompilerCache.Benchmarks" }));
         Assert.That(res.PublicRefHash, Is.Not.EqualTo(res.PublicAndInternalRefHash));
     }
 }
