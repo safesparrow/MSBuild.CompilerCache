@@ -55,16 +55,18 @@ public class LocatorAndPopulator
 {
     private readonly IRefCache _inMemoryRefCache;
 
-    private (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath,
+    private (Config config, ICache Cache, IRefCache RefCache, IFileHashCache FileHashCache) CreateCaches(string configPath,
         Action<string>? logTime = null)
     {
         using var fs = File.OpenRead(configPath);
         var config = JsonSerializer.Deserialize<Config>(fs);
         //logTime?.Invoke("Config deserialized");
         var cache = new Cache(config.CacheDir);
-        var refCache = new RefCache(config.InferRefCacheDir(), _inMemoryRefCache);
+        var refCache = new RefCache(config.InferRefCacheDir());
         //logTime?.Invoke("Finish");
-        return (config, cache, refCache);
+        var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir());
+        var fileHashCache = new CacheCombiner<FileCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
+        return (config, cache, refCache, fileHashCache);
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
@@ -78,12 +80,13 @@ public class LocatorAndPopulator
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private string _localInputsHash;
-    private readonly IFileHashCache _fileHashCache;
+    private readonly IFileHashCache _inMemoryFileHashCache;
+    private ICacheBase<FileCacheKey,string> _fileHashCache;
 
-    public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? fileHashCache = null)
+    public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? inMemoryFileHashCache = null)
     {
         _inMemoryRefCache = inMemoryRefCache ?? new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
-        _fileHashCache = fileHashCache ?? new DictionaryBasedCache<FileCacheKey, string>();
+        _inMemoryFileHashCache = inMemoryFileHashCache ?? new DictionaryBasedCache<FileCacheKey, string>();
     }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
@@ -104,7 +107,7 @@ public class LocatorAndPopulator
             return _locateResult;
         }
 
-        (_config, _cache, _refCache) = CreateCaches(inputs.ConfigPath, logTime);
+        (_config, _cache, _refCache, _fileHashCache) = CreateCaches(inputs.ConfigPath, logTime);
         _assemblyName = inputs.AssemblyName;
         //logTime?.Invoke("Caches created");
 

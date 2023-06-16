@@ -33,7 +33,7 @@ public class PerfTests
                     }
                 );
                 var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-                var refCache = new RefCache("c:/projekty/.refcache", memcache);
+                var refCache = new RefCache("c:/projekty/.refcache");
                 var refTrimmingConfig = new RefTrimmingConfig();
                 var localInputs =
                     LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig,

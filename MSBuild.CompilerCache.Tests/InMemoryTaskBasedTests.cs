@@ -4,6 +4,7 @@ using Moq;
 using MSBuild.CompilerCache;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using IRefCache = MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
 
 namespace Tests;
 
@@ -59,7 +60,7 @@ public class InMemoryTaskBasedTests
     public record All(LocateInputs LocateInputs, LocalInputs LocalInputs, CacheKey CacheKey,
         string LocalInputsHash, FullExtract FullExtract);
 
-    public static All AllFromInputs(LocateInputs inputs, RefCache refCache)
+    public static All AllFromInputs(LocateInputs inputs, IRefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileCacheKey, string>());

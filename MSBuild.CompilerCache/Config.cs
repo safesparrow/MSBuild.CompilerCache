@@ -20,5 +20,7 @@ public class Config
 
     public string InferRefCacheDir() => RefTrimming.RefCacheDir ?? Path.Combine(CacheDir, ".refcache");
     
+    public string InferFileHashCacheDir() => Path.Combine(CacheDir, ".filehashcache");
+    
     public bool CheckCompileOutputAgainstCache { get; set; }
 }

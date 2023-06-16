@@ -8,12 +8,10 @@ using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 public class RefCache : IRefCache
 {
     private readonly string _cacheDir;
-    private readonly IRefCache _inMemoryRefCache;
 
-    public RefCache(string cacheDir, IRefCache? inMemoryRefCache = null)
+    public RefCache(string cacheDir)
     {
         _cacheDir = cacheDir;
-        _inMemoryRefCache = inMemoryRefCache ?? new InMemoryRefCache();
         Directory.CreateDirectory(_cacheDir);
     }
 
@@ -21,17 +19,12 @@ public class RefCache : IRefCache
     
     public bool Exists(CacheKey key)
     {
-        if (_inMemoryRefCache.Exists(key)) return true;
         var entryPath = EntryPath(key);
         return File.Exists(entryPath);
     }
 
     public RefDataWithOriginalExtract? Get(CacheKey key)
     {
-        if (_inMemoryRefCache.Exists(key))
-        {
-            return _inMemoryRefCache.Get(key);
-        }
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
@@ -92,8 +85,6 @@ public class RefCache : IRefCache
 
     public bool Set(CacheKey key, RefDataWithOriginalExtract data)
     {
-        _inMemoryRefCache.Set(key, data);
-        
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
