@@ -16,7 +16,7 @@ public class Benchmarks
     [ParamsSource(nameof(Parallelisms))]
     public int Parallelism { get; set; }
 
-    public static IEnumerable<int> Parallelisms => new[] { 64, 80, 96, 112, 128 };
+    public static IEnumerable<int> Parallelisms => new[] { 16 };
     
     [Benchmark]
     public void HashCalculationPerfTest()
@@ -43,7 +43,7 @@ public class Benchmarks
         }
 
         var sw = Stopwatch.StartNew();
-        Enumerable.Range(0, 16).AsParallel().WithDegreeOfParallelism(Parallelism).ForAll(i =>
+        Enumerable.Range(0, 4).AsParallel().WithDegreeOfParallelism(Parallelism).ForAll(i =>
         {
             Act();
             // Console.WriteLine($"{i}: {sw.ElapsedMilliseconds}ms");
