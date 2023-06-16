@@ -1,15 +1,13 @@
-using System.Collections.Concurrent;
+namespace MSBuild.CompilerCache;
+
 using System.Collections.Immutable;
 using System.IO.Compression;
-using System.Text;
 using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Microsoft.CodeAnalysis.FlowAnalysis;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-
-namespace MSBuild.CompilerCache;
+using IFileHashCache = ICacheBase<FileCacheKey, string>;
+using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
 public record UseOrPopulateResult;
 
@@ -55,7 +53,7 @@ public record LocateResult(
 
 public class LocatorAndPopulator
 {
-    private readonly InMemoryRefCache _inMemoryRefCache;
+    private readonly IRefCache _inMemoryRefCache;
 
     private (Config config, ICache Cache, IRefCache RefCache) CreateCaches(string configPath,
         Action<string>? logTime = null)
@@ -80,12 +78,12 @@ public class LocatorAndPopulator
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private string _localInputsHash;
-    private FileHashCache _fileHashCache;
+    private readonly IFileHashCache _fileHashCache;
 
-    public LocatorAndPopulator(InMemoryRefCache? inMemoryRefCache = null, FileHashCache? fileHashCache = null)
+    public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? fileHashCache = null)
     {
-        _inMemoryRefCache = inMemoryRefCache ?? new InMemoryRefCache();
-        _fileHashCache = fileHashCache ?? new FileHashCache();
+        _inMemoryRefCache = inMemoryRefCache ?? new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
+        _fileHashCache = fileHashCache ?? new DictionaryBasedCache<FileCacheKey, string>();
     }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
@@ -249,144 +247,6 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-    public record struct FileCacheKey(string FullName, long Length, DateTime LastWriteTimeUtc);
-
-    public interface ICacheBase<TKey, TValue>
-    {
-        bool Exists(TKey key);
-        TValue Get(TKey key);
-        bool Set(TKey key, TValue value);
-    }
-
-    public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue>
-    {
-        private readonly ICacheBase<TKey, TValue> _cache1;
-        private readonly ICacheBase<TKey, TValue> _cache2;
-
-        public CacheCombiner(ICacheBase<TKey, TValue> cache1, ICacheBase<TKey, TValue> cache2)
-        {
-            _cache1 = cache1;
-            _cache2 = cache2;
-        }
-
-
-        public bool Exists(TKey key) => _cache1.Exists(key) || _cache2.Exists(key);
-
-        public TValue Get(TKey key) => _cache1.Get(key) ?? _cache2.Get(key);
-
-        public bool Set(TKey key, TValue value)
-        {
-            if (_cache1.Set(key, value))
-            {
-                _cache2.Set(key, value);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-    
-    public interface IFileHashCache : ICacheBase<FileCacheKey, string> { }
-
-    public class FSFileHashCache : IFileHashCache
-    {
-        private readonly string _cacheDir;
-
-        public FSFileHashCache(string cacheDir)
-        {
-            _cacheDir = cacheDir;
-            Directory.CreateDirectory(_cacheDir);
-        }
-
-        public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, $"{key.Key}");
-
-        public CacheKey ExtractKey(FileCacheKey key) => new(Utils.ObjectToSHA256Hex(key));
-
-        public bool Exists(FileCacheKey rawKey)
-        {
-            var key = ExtractKey(rawKey);
-            var entryPath = EntryPath(key);
-            return File.Exists(entryPath);
-        }
-
-        public string Get(FileCacheKey rawKey)
-        {
-            var key = ExtractKey(rawKey);
-            var entryPath = EntryPath(key);
-            if (File.Exists(entryPath))
-            {
-                string Read() => File.ReadAllText(entryPath);
-                return IOActionWithRetries(Read);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private static T IOActionWithRetries<T>(Func<T> action)
-        {
-            var attempts = 5;
-            var retryDelay = 50;
-            for (int attempt = 1; attempt <= attempts; attempt++)
-            {
-                try
-                {
-                    return action();
-                }
-                catch(IOException e) 
-                {
-                    if (attempt < attempts)
-                    {
-                        var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
-                        Thread.Sleep(delay);
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-
-            throw new InvalidOperationException("Unexpected code location reached");
-        }
-
-        public bool Set(FileCacheKey originalKey, string value)
-        {
-            var key = ExtractKey(originalKey);
-            var entryPath = EntryPath(key);
-            if (File.Exists(entryPath))
-            {
-                return false;
-            }
-
-            using var tmpFile = new TempFile();
-            {
-                using var fs = tmpFile.File.OpenWrite();
-                using var sw = new StreamWriter(fs, Encoding.UTF8);
-                sw.WriteLine(value);
-            }
-            Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
-        }
-    }
-
-    public class FileHashCache : IFileHashCache
-    {
-        private ConcurrentDictionary<FileCacheKey, string> _cache = new ConcurrentDictionary<FileCacheKey, string>();
-
-        public bool Exists(FileCacheKey key) => _cache.ContainsKey(key);
-
-        public string Get(FileCacheKey key)
-        {
-            _cache.TryGetValue(key, out var hash);
-            return hash;
-        }
-
-        public void Set(FileCacheKey key, string value) => _cache.TryAdd(key, value);
-    }
-    
     internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache)
     {
         var fileInfo = new FileInfo(filepath);

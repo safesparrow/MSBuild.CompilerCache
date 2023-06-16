@@ -106,7 +106,7 @@ public class Cache : ICache
         return File.Exists(markerPath);
     }
 
-    public static void AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
+    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
     {
         var dir = Path.GetDirectoryName(destination)!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
@@ -114,12 +114,13 @@ public class Cache : ICache
         try
         {
             File.Move(tmpDestination, destination, overwrite: false);
+            return true;
         }
         catch (IOException e)
         {
             if (!throwIfDestinationExists && File.Exists(destination))
             {
-                return;
+                return false;
             }
             else
             {

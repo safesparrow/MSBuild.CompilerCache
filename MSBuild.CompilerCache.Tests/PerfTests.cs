@@ -16,7 +16,7 @@ public class PerfTests
     {
         var sw = Stopwatch.StartNew();
         var memcache = new InMemoryRefCache();
-        var fileHashCache = new LocatorAndPopulator.FileHashCache();
+        var fileHashCache = new DictionaryBasedCache<FileCacheKey, string>();
 
         // var refCacheDir = new DisposableDir();
         for (int i = 0; i < 20; i++)

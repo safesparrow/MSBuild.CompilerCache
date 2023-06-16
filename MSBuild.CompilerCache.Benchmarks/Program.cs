@@ -32,13 +32,13 @@ public class Benchmarks
             }
         );
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var memcache = new InMemoryRefCache();
+        var memcache = new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
         var refCache = new RefCache("c:/projekty/.refcache", memcache);
         var refTrimmingConfig = new RefTrimmingConfig();
 
         void Act()
         {
-            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new LocatorAndPopulator.FileHashCache());
+            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileCacheKey, string>());
             if (inputs.Files.Length == 0) throw new Exception();
         }
 

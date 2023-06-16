@@ -16,21 +16,8 @@ public record RefData(string PublicRefHash, string PublicAndInternalRefHash, Imm
 
 public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original);
 
-/// <summary>
-/// A cache for storing hashes of reference assemblies (generated using Refasmer).
-/// Does not store the actual assemblies, just their hashes - used for having a more robust inputs cache that does not change when private parts of references change.
-/// Thread-safe.
-/// </summary>
-public interface IRefCache
-{
-    bool Exists(CacheKey key);
-    RefDataWithOriginalExtract? Get(CacheKey key);
-    void Set(CacheKey key, RefDataWithOriginalExtract data);
-}
-
 public class RefTrimmer
 {
-    
     public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
     {
         logger.Debug?.Invoke($"Reading assembly {inputPath}");

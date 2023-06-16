@@ -1,15 +1,16 @@
+namespace MSBuild.CompilerCache;
+
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Text;
-
-namespace MSBuild.CompilerCache;
+using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
 public class RefCache : IRefCache
 {
     private readonly string _cacheDir;
-    private readonly InMemoryRefCache _inMemoryRefCache;
+    private readonly IRefCache _inMemoryRefCache;
 
-    public RefCache(string cacheDir, InMemoryRefCache? inMemoryRefCache = null)
+    public RefCache(string cacheDir, IRefCache? inMemoryRefCache = null)
     {
         _cacheDir = cacheDir;
         _inMemoryRefCache = inMemoryRefCache ?? new InMemoryRefCache();
@@ -89,14 +90,14 @@ public class RefCache : IRefCache
         throw new InvalidOperationException("Unexpected code location reached");
     }
 
-    public void Set(CacheKey key, RefDataWithOriginalExtract data)
+    public bool Set(CacheKey key, RefDataWithOriginalExtract data)
     {
         _inMemoryRefCache.Set(key, data);
         
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
-            return;
+            return false;
         }
 
         using var tmpFile = new TempFile();
@@ -111,7 +112,7 @@ public class RefCache : IRefCache
             sw.WriteLine(data.Original.LastWriteTimeUtc?.ToString("o", System.Globalization.CultureInfo.InvariantCulture) ?? "");
             sw.WriteLine(data.Original.Hash ?? "");
         }
-        Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+        return Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
 }
 
@@ -128,8 +129,5 @@ public class InMemoryRefCache : IRefCache
         return value;
     }
 
-    public void Set(CacheKey key, RefDataWithOriginalExtract data)
-    {
-        _cache.TryAdd(key, data);
-    }
+    public bool Set(CacheKey key, RefDataWithOriginalExtract data) => _cache.TryAdd(key, data);
 }

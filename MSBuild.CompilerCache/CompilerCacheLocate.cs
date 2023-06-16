@@ -6,6 +6,7 @@ namespace MSBuild.CompilerCache;
 
 using Microsoft.Build.Framework;
 using JetBrains.Annotations;
+using IFileHashCache = ICacheBase<FileCacheKey, string>;
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
@@ -27,7 +28,7 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     internal LocateResult LocateResult { get; private set; }
 #pragma warning restore CS8618
 
-    private record InMemoryCaches(InMemoryRefCache InMemoryRefCache, LocatorAndPopulator.FileHashCache FileHashCache);
+    private record InMemoryCaches(InMemoryRefCache InMemoryRefCache, IFileHashCache FileHashCache);
     
     private InMemoryCaches GetInMemoryRefCache()
     {
@@ -38,7 +39,7 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
         }
         else
         {
-            var fresh = new InMemoryCaches(new InMemoryRefCache(), new LocatorAndPopulator.FileHashCache());
+            var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileCacheKey, string>());
             BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
             return fresh;
         }
