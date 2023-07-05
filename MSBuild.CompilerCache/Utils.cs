@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
+using FastHashes;
 
 namespace MSBuild.CompilerCache;
 
@@ -39,9 +40,59 @@ public static class StringExtensions
     public static RelativePath AsRelativePath(this string x) => new RelativePath(x);
 }
 
+public interface IHash
+{
+    byte[] ComputeHash(ReadOnlySpan<byte> data);
+
+    byte[] ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
+}
+
+public enum HasherType
+{
+    SHA256,
+    XxHash64
+}
+
+public class SHA256Adapter : IHash
+{
+    private readonly SHA256 _hash = SHA256.Create();
+
+    public byte[] ComputeHash(ReadOnlySpan<byte> data) => _hash.ComputeHash(data.ToArray());
+
+    public byte[] ComputeHash(byte[] data) => _hash.ComputeHash(data);
+}
+
+public class FastHashAdapter : IHash
+{
+    private readonly Hash _hash;
+
+    public FastHashAdapter(Hash hash)
+    {
+        _hash = hash;
+    }
+    
+    public byte[] ComputeHash(ReadOnlySpan<byte> data)
+    {
+        return _hash.ComputeHash(data);
+    }
+}
+
+public static class HasherFactory
+{
+    public static IHash CreateHash(HasherType type) =>
+        type switch
+        {
+            HasherType.SHA256 => new SHA256Adapter(),
+            HasherType.XxHash64 => new FastHashAdapter(new XxHash64(0)),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
+}
+
 public static class Utils
 {
-    public static string ObjectToSHA256Hex(object item)
+    private static readonly IHash DefaultHasher = new FastHashAdapter(new XxHash64(0));
+    
+    public static string ObjectToSHA256Hex(object item, IHash hasher = null)
     {
         using var ms = new MemoryStream();
 #pragma warning disable SYSLIB0011
@@ -49,6 +100,9 @@ public static class Utils
         binaryFormatter.Serialize(ms, item);
         ms.Position = 0;
 #pragma warning restore SYSLIB0011
+
+        hasher = hasher ?? DefaultHasher;
+        var hash = hasher.ComputeHash(ms.ToArray());
         var hash = SHA256.Create().ComputeHash(ms);
         var hashString = Convert.ToHexString(hash);
         return hashString;

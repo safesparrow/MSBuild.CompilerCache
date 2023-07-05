@@ -23,6 +23,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="MSBuild.CompilerCache.Tests" />
         <InternalsVisibleTo Include="MSBuild.CompilerCache.Benchmarks" />
+        <PackageReference Include="FastHashes" Version="3.5.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" PrivateAssets="all" />
         <PackageReference Include="JetBrains.Refasmer" Version="1.0.33" PrivateAssets="all" GeneratePathProperty="true" />
         <PackageReference ExcludeAssets="Runtime" PrivateAssets="all" Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
