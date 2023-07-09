@@ -32,11 +32,12 @@ public class RefCacheTests
                 PublicAndInternalRefHash: "publicandinternal",
                 InternalsVisibleTo: ImmutableArray.Create("asm1")
             ),
-            Original: new LocalFileExtract(
-                Path: "a",
-                Hash: null,
-                Length: 1212,
-                LastWriteTimeUtc: DateTime.MaxValue
+            Original: new LocalFileExtract(Info: new FileCacheKey(
+                    FullName: "a",
+                    Length: 1212,
+                    LastWriteTimeUtc: DateTime.MaxValue
+                ),
+                Hash: null
             )
         );
         cache.Set(key, data);

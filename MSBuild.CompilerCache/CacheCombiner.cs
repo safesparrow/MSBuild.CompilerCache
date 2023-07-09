@@ -1,6 +1,6 @@
 namespace MSBuild.CompilerCache;
 
-public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue>
+public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue : class
 {
     private readonly ICacheBase<TKey, TValue> _cache1;
     private readonly ICacheBase<TKey, TValue> _cache2;

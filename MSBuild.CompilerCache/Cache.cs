@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 
 namespace MSBuild.CompilerCache;
@@ -12,8 +13,13 @@ public record FileExtract(string Name, string? Hash, long Length, DateTime? Last
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
 [Serializable]
-public record LocalFileExtract(string Path, string? Hash, long Length, DateTime? LastWriteTimeUtc)
+public record LocalFileExtract(FileCacheKey Info, string? Hash)
 {
+    public FileCacheKey Info { get; set; }
+    public string Path => Info.FullName;
+    public long Length => Info.Length;
+    public DateTime? LastWriteTimeUtc => Info.LastWriteTimeUtc;
+    public string? Hash { get; set; }
     public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length, LastWriteTimeUtc: LastWriteTimeUtc);
 }
 

@@ -38,15 +38,14 @@ public class RefCache : IRefCache
                         InternalsVisibleTo: lines[2].Split('\t').ToImmutableArray()
                     ),
                     Original: new LocalFileExtract(
-                        Path: lines[3],
-                        Length: long.Parse(lines[4]),
-                        LastWriteTimeUtc: string.IsNullOrEmpty(lines[5])
-                            ? null
-                            : DateTime.ParseExact(lines[5], "o", System.Globalization.CultureInfo.InvariantCulture),
+                        Info: new FileCacheKey(
+                            FullName: lines[3],
+                            Length: long.Parse(lines[4]),
+                            LastWriteTimeUtc: DateTime.ParseExact(lines[5], "o", System.Globalization.CultureInfo.InvariantCulture)
+                        ),
                         Hash: string.IsNullOrEmpty(lines[6]) ? null : lines[5]
                     )
                 );
-                //return System.Text.Json.JsonSerializer.Deserialize<RefDataWithOriginalExtract>(fs)!;
             }
             return IOActionWithRetries(Read);
         }

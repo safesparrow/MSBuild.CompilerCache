@@ -41,7 +41,7 @@ public static class Utils
     public static string ObjectToHash(object item, IHash? hasher = null)
     {
         var bytes = ObjectToBytes(item);
-        return BytesToHashHex(hasher, bytes);
+        return BytesToHashHex(bytes, hasher);
     }
 
     public static byte[] ObjectToBytes(object item)
@@ -56,7 +56,7 @@ public static class Utils
         return bytes;
     }
 
-    public static string BytesToHashHex(IHash? hasher, byte[] bytes)
+    public static string BytesToHashHex(byte[] bytes, IHash? hasher = null)
     {
         hasher ??= DefaultHasher;
         var hash = hasher.ComputeHash(bytes);
@@ -70,10 +70,26 @@ public static class Utils
         return Convert.ToHexString(hash);
     }
 
+    public static string FileBytesToHashHex(string path, IHash? hasher = null)
+    {
+        hasher ??= DefaultHasher;
+        var bytes = File.ReadAllBytes(path);
+        var hash = hasher.ComputeHash(bytes);
+        return Convert.ToHexString(hash);
+    }
+
     public static string FileBytesToSHA256Hex(FileInfo fileInfo)
     {
         using var hash = SHA256.Create();
         using var f = fileInfo.OpenRead();
+        var bytes = hash.ComputeHash(f);
+        return Convert.ToHexString(bytes);
+    }
+    
+    public static string FileBytesToSHA256Hex(string file)
+    {
+        using var hash = SHA256.Create();
+        using var f = File.OpenRead(file);
         var bytes = hash.ComputeHash(f);
         return Convert.ToHexString(bytes);
     }
