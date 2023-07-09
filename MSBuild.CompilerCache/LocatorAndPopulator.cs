@@ -189,6 +189,7 @@ public class LocatorAndPopulator
             files
                 .Chunk(Math.Max(1, files.Length / 4))
                 .AsParallel()
+                .AsOrdered()
                 .SelectMany(refs => refs.Select(r => FileCacheKey.FromFileInfo(new FileInfo(r)))).ToArray();
         
         return new FileInputs(
