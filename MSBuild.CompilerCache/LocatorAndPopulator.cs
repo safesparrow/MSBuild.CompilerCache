@@ -355,7 +355,7 @@ public class LocatorAndPopulator
     public record struct InputsConsistencyResult(bool Changed,
         (SomeFileMetadata Before, SomeFileMetadata After)? ChangedFile);
 
-    private string? CheckInputsConsistency()
+    private string? CheckInputsConsistency(TaskLoggingHelper taskLoggingHelper)
     {
         bool FileChanged(FileCacheKey file)
         {
@@ -363,6 +363,10 @@ public class LocatorAndPopulator
             var refreshedFile = new FileInfo(file.FullName);
             var after = new SomeFileMetadata(refreshedFile.Length, refreshedFile.LastWriteTimeUtc);
             var changed = after != before;
+            if (changed)
+            {
+                taskLoggingHelper.LogWarning($"{file.FullName} changed. Before: {before}, after: {after}");
+            }
             return changed;
         }
 
@@ -391,7 +395,7 @@ public class LocatorAndPopulator
         //logTime?.Invoke("Start");
         var postCompilationTimeUtc = DateTime.UtcNow;
 
-        var changedFile = CheckInputsConsistency();
+        var changedFile = CheckInputsConsistency(log);
         
         //logTime?.Invoke("Calculated local inputs with hash");
         var consistent = changedFile == null;

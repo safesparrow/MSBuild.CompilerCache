@@ -6,21 +6,34 @@ using Newtonsoft.Json;
 namespace MSBuild.CompilerCache;
 
 [Serializable]
-public record FileExtract(string Name, string? Hash, long Length, DateTime? LastWriteTimeUtc);
+public record FileExtract(string Name, string? Hash, long Length);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
 [Serializable]
-public record LocalFileExtract(FileCacheKey Info, string? Hash)
+public record LocalFileExtract
 {
+    public LocalFileExtract(FileCacheKey Info, string? Hash)
+    {
+        this.Info = Info;
+        this.Hash = Hash;
+        if(Info.FullName == null) throw new Exception("File info name empty");
+    }
+
     public FileCacheKey Info { get; set; }
     public string Path => Info.FullName;
     public long Length => Info.Length;
-    public DateTime? LastWriteTimeUtc => Info.LastWriteTimeUtc;
+    public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
     public string? Hash { get; set; }
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length, LastWriteTimeUtc: LastWriteTimeUtc);
+    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
+
+    public void Deconstruct(out FileCacheKey Info, out string? Hash)
+    {
+        Info = this.Info;
+        Hash = this.Hash;
+    }
 }
 
 /// <summary>

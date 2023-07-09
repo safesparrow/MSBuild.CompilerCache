@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace MSBuild.CompilerCache;
 
 using System.Collections.Concurrent;
@@ -41,7 +43,7 @@ public class RefCache : IRefCache
                         Info: new FileCacheKey(
                             FullName: lines[3],
                             Length: long.Parse(lines[4]),
-                            LastWriteTimeUtc: DateTime.ParseExact(lines[5], "o", System.Globalization.CultureInfo.InvariantCulture)
+                            LastWriteTimeUtc: new DateTime(long.Parse(lines[5]), DateTimeKind.Utc)
                         ),
                         Hash: string.IsNullOrEmpty(lines[6]) ? null : lines[5]
                     )
@@ -99,7 +101,7 @@ public class RefCache : IRefCache
             sw.WriteLine(string.Join('\t', data.Ref.InternalsVisibleTo));
             sw.WriteLine(data.Original.Path);
             sw.WriteLine(data.Original.Length);
-            sw.WriteLine(data.Original.LastWriteTimeUtc?.ToString("o", System.Globalization.CultureInfo.InvariantCulture) ?? "");
+            sw.WriteLine(data.Original.LastWriteTimeUtc.Ticks);
             sw.WriteLine(data.Original.Hash ?? "");
         }
         return Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
