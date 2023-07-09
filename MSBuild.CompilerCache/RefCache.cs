@@ -108,7 +108,7 @@ public class RefCache : IRefCache
 
 public class InMemoryRefCache : IRefCache
 {
-    private ConcurrentDictionary<CacheKey, RefDataWithOriginalExtract> _cache =
+    private readonly ConcurrentDictionary<CacheKey, RefDataWithOriginalExtract> _cache =
         new ConcurrentDictionary<CacheKey, RefDataWithOriginalExtract>();
 
     public bool Exists(CacheKey key) => _cache.ContainsKey(key);

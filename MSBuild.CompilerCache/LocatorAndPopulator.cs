@@ -186,7 +186,10 @@ public class LocatorAndPopulator
     private static FileInputs ExtractFileInputs(DecomposedCompilerProps decomposed)
     {
         static FileCacheKey[] Extract(string[] files) =>
-            files.Select(r => FileCacheKey.FromFileInfo(new FileInfo(r))).ToArray();
+            files
+                .Chunk(Math.Max(1, files.Length / 4))
+                .AsParallel()
+                .SelectMany(refs => refs.Select(r => FileCacheKey.FromFileInfo(new FileInfo(r)))).ToArray();
         
         return new FileInputs(
             References: Extract(decomposed.References),

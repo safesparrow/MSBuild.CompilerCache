@@ -15,8 +15,10 @@ public class PerfTests
     public void HashCalculationPerfTest()
     {
         var sw = Stopwatch.StartNew();
-        var memcache = new InMemoryRefCache();
+        var inMemoryRefCache = new InMemoryRefCache();
         var fileHashCache = new FileHashCache("c:/projekty/.filehashcache");
+        var inMemoryFileHashCache = new DictionaryBasedCache<FileCacheKey, string>();
+        var combinedFileHashCache = new CacheCombiner<FileCacheKey, string>(inMemoryFileHashCache, fileHashCache);
 
         // var refCacheDir = new DisposableDir();
         for (int i = 0; i < 20; i++)
@@ -34,10 +36,11 @@ public class PerfTests
                 );
                 var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
                 var refCache = new RefCache("c:/projekty/.refcache");
+                var combinedRefCache = new CacheCombiner<CacheKey, RefDataWithOriginalExtract>(inMemoryRefCache, refCache);
                 var refTrimmingConfig = new RefTrimmingConfig();
                 var localInputs =
-                    LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig,
-                        fileHashCache, Utils.DefaultHasher);
+                    LocatorAndPopulator.CalculateLocalInputs(decomposed, combinedRefCache, "assembly", refTrimmingConfig,
+                        combinedFileHashCache, Utils.DefaultHasher);
                 var extract = localInputs.ToFullExtract();
                 var hashString = Utils.ObjectToHash(extract);
                 var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);

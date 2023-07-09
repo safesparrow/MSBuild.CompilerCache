@@ -13,7 +13,27 @@ public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue
 
     public bool Exists(TKey key) => _cache1.Exists(key) || _cache2.Exists(key);
 
-    public TValue Get(TKey key) => _cache1.Get(key) ?? _cache2.Get(key);
+    public TValue? Get(TKey key)
+    {
+        var cache1Res = _cache1.Get(key);
+        if (cache1Res != null)
+        {
+            return cache1Res;
+        }
+        else
+        {
+            var cache2Res = _cache2.Get(key);
+            if (cache2Res != null)
+            {
+                _cache1.Set(key, cache2Res);
+                return cache2Res;
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
 
     public bool Set(TKey key, TValue value)
     {
