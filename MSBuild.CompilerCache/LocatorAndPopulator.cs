@@ -236,7 +236,7 @@ public class LocatorAndPopulator
             throw new Exception($"File does not exist: '{filepath}'");
         }
 
-        var hashString = Utils.FileToSHA256String(fileInfo);
+        var hashString = Utils.FileBytesToSHA256Hex(fileInfo);
         // As we populate the hash, there is no need to use the modify date - otherwise, build-generated source files will always
         // cause a cache miss.
         return new LocalFileExtract(fileInfo.FullName, hashString, fileInfo.Length, null);
