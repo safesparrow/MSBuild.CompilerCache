@@ -241,20 +241,19 @@ public class LocatorAndPopulator
         return new LocalInputs(allExtracts, props, outputs);
     }
 
-    private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo)
+    private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo, FileCacheKey file)
     {
-        var hashString = Utils.FileBytesToSHA256Hex(fileInfo);
-        return new LocalFileExtract(Info: FileCacheKey.FromFileInfo(fileInfo), Hash: hashString);
+        var hashString = Utils.FileBytesToHashHex(fileInfo.FullName);
+        return new LocalFileExtract(Info: file, Hash: hashString);
     }
 
     private static LocalFileExtract GetLocalFileExtract(FileCacheKey file, IFileHashCache fileHashCache)
     {
         var hashString = fileHashCache.Get(file);
-        var bytes = ImmutableArray<byte>.Empty;
         if (hashString == null)
         {
-            bytes = ImmutableArray.Create(File.ReadAllBytes(file.FullName));
-            hashString = Utils.BytesToSHA256Hex(bytes);
+            var bytes = File.ReadAllBytes(file.FullName);
+            hashString = Utils.BytesToHashHex(bytes);
             fileHashCache.Set(file, hashString);
         }
         return new LocalFileExtract(Info: file, Hash: hashString);
@@ -278,11 +277,11 @@ public class LocatorAndPopulator
 
         var fileCacheKey = FileCacheKey.FromFileInfo(fileInfo);
         var hashString = fileHashCache.Get(fileCacheKey);
-        ImmutableArray<byte> bytes = ImmutableArray<byte>.Empty;
+        byte[] bytes = null;
         if (hashString == null)
         {
-            bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
-            hashString = Utils.BytesToSHA256Hex(bytes);
+            bytes = File.ReadAllBytes(filepath);
+            hashString = Utils.BytesToHashHex(bytes);
             fileHashCache.Set(fileCacheKey, hashString);
         }
 
@@ -293,12 +292,9 @@ public class LocatorAndPopulator
         var cached = refCache.Get(cacheKey);
         if (cached == null)
         {
-            if (bytes.IsDefaultOrEmpty)
-            {
-                bytes = ImmutableArray.Create(File.ReadAllBytes(filepath));
-            }
+            bytes ??= File.ReadAllBytes(filepath);
             var trimmer = new RefTrimmer();
-            var toBeCached = trimmer.GenerateRefData(bytes);
+            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
             refCache.Set(cacheKey, cached);
         }
@@ -433,7 +429,7 @@ public class LocatorAndPopulator
                 log?.LogMessage(MessageImportance.Normal,
                     $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
-                return GetLocalFileExtract(tempPath).ToFileExtract();
+                return GetLocalFileExtract(tempPath, FileCacheKey.FromFileInfo(tempPath)).ToFileExtract();
             }).ToArray();
 
         var hashForFileName = Utils.ObjectToHash(outputExtracts);

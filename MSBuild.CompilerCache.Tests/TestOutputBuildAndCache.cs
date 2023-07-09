@@ -58,7 +58,7 @@ public class TestOutputBuildAndCache
         (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>
             dir
                 .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                .Select(x => (x.Name, Hash: MSBuild.CompilerCache.Utils.FileBytesToSHA256Hex(new FileInfo(x.FullName))))
+                .Select(x => (x.Name, Hash: MSBuild.CompilerCache.Utils.FileBytesToHashHex(x.FullName)))
                 .Order()
                 .ToArray();
 

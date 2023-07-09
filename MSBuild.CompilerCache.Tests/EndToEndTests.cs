@@ -250,9 +250,9 @@ public class EndToEndTests
         var dll2 = DllFile(projDir2, proj);
         var dll3 = DllFile(projDir3, proj);
 
-        var hash1 = MSBuild.CompilerCache.Utils.FileBytesToSHA256Hex(dll1);
-        var hash2 = MSBuild.CompilerCache.Utils.FileBytesToSHA256Hex(dll2);
-        var hash3 = MSBuild.CompilerCache.Utils.FileBytesToSHA256Hex(dll3);
+        var hash1 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll1.FullName);
+        var hash2 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll2.FullName);
+        var hash3 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll3.FullName);
         
         Assert.That(hash2, Is.EqualTo(hash1));
         Assert.That(hash3, Is.Not.EqualTo(hash2));

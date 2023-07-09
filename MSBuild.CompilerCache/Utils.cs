@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography;
 
 namespace MSBuild.CompilerCache;
 
@@ -76,21 +75,5 @@ public static class Utils
         var bytes = File.ReadAllBytes(path);
         var hash = hasher.ComputeHash(bytes);
         return Convert.ToHexString(hash);
-    }
-
-    public static string FileBytesToSHA256Hex(FileInfo fileInfo)
-    {
-        using var hash = SHA256.Create();
-        using var f = fileInfo.OpenRead();
-        var bytes = hash.ComputeHash(f);
-        return Convert.ToHexString(bytes);
-    }
-    
-    public static string FileBytesToSHA256Hex(string file)
-    {
-        using var hash = SHA256.Create();
-        using var f = File.OpenRead(file);
-        var bytes = hash.ComputeHash(f);
-        return Convert.ToHexString(bytes);
     }
 }
