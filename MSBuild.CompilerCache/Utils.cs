@@ -1,19 +1,13 @@
 using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
-using FastHashes;
 
 namespace MSBuild.CompilerCache;
 
 public class TempFile : IDisposable
 {
-    public FileInfo File { get; }
+    public FileInfo File { get; } = new(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
     public string FullName => File.FullName;
-
-    public TempFile()
-    {
-        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
-    }
 
     public void Dispose()
     {
@@ -40,59 +34,17 @@ public static class StringExtensions
     public static RelativePath AsRelativePath(this string x) => new RelativePath(x);
 }
 
-public interface IHash
-{
-    byte[] ComputeHash(ReadOnlySpan<byte> data);
-
-    byte[] ComputeHash(byte[] data) => ComputeHash(data.AsSpan());
-}
-
-public enum HasherType
-{
-    SHA256,
-    XxHash64
-}
-
-public class SHA256Adapter : IHash
-{
-    private readonly SHA256 _hash = SHA256.Create();
-
-    public byte[] ComputeHash(ReadOnlySpan<byte> data) => _hash.ComputeHash(data.ToArray());
-
-    public byte[] ComputeHash(byte[] data) => _hash.ComputeHash(data);
-}
-
-public class FastHashAdapter : IHash
-{
-    private readonly Hash _hash;
-
-    public FastHashAdapter(Hash hash)
-    {
-        _hash = hash;
-    }
-    
-    public byte[] ComputeHash(ReadOnlySpan<byte> data)
-    {
-        return _hash.ComputeHash(data);
-    }
-}
-
-public static class HasherFactory
-{
-    public static IHash CreateHash(HasherType type) =>
-        type switch
-        {
-            HasherType.SHA256 => new SHA256Adapter(),
-            HasherType.XxHash64 => new FastHashAdapter(new XxHash64(0)),
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-        };
-}
-
 public static class Utils
 {
-    private static readonly IHash DefaultHasher = new FastHashAdapter(new XxHash64(0));
+    private static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
     
-    public static string ObjectToSHA256Hex(object item, IHash hasher = null)
+    public static string ObjectToHash(object item, IHash? hasher = null)
+    {
+        var bytes = ObjectToBytes(item);
+        return BytesToHash(hasher, bytes);
+    }
+
+    public static byte[] ObjectToBytes(object item)
     {
         using var ms = new MemoryStream();
 #pragma warning disable SYSLIB0011
@@ -100,23 +52,21 @@ public static class Utils
         binaryFormatter.Serialize(ms, item);
         ms.Position = 0;
 #pragma warning restore SYSLIB0011
-
-        hasher = hasher ?? DefaultHasher;
-        var hash = hasher.ComputeHash(ms.ToArray());
-        var hash = SHA256.Create().ComputeHash(ms);
-        var hashString = Convert.ToHexString(hash);
-        return hashString;
+        var bytes = ms.ToArray();
+        return bytes;
     }
 
-    public static string BytesToSHA256Hex(byte[] bytes)
+    public static string BytesToHash(IHash? hasher, byte[] bytes)
     {
-        var hash = SHA256.HashData(bytes);
+        hasher ??= DefaultHasher;
+        var hash = hasher.ComputeHash(bytes);
         return Convert.ToHexString(hash);
     }
-    
-    public static string BytesToSHA256Hex(ImmutableArray<byte> bytes)
+
+    public static string BytesToSHA256Hex(ImmutableArray<byte> bytes, IHash? hasher = null)
     {
-        var hash = SHA256.HashData(bytes.AsSpan());
+        hasher ??= DefaultHasher;
+        var hash = hasher.ComputeHash(bytes.AsSpan());
         return Convert.ToHexString(hash);
     }
 

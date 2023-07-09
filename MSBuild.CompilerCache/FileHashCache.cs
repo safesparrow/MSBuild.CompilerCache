@@ -14,7 +14,7 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
 
     public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, key.Key);
 
-    public CacheKey ExtractKey(FileCacheKey key) => new CacheKey(Utils.ObjectToSHA256Hex(key));
+    public CacheKey ExtractKey(FileCacheKey key) => new CacheKey(Utils.ObjectToHash(key));
     
     public bool Exists(FileCacheKey originalKey)
     {

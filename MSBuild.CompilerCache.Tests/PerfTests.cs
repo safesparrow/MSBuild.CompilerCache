@@ -39,9 +39,9 @@ public class PerfTests
                     LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig,
                         fileHashCache);
                 var extract = localInputs.ToFullExtract();
-                var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
+                var hashString = MSBuild.CompilerCache.Utils.ObjectToHash(extract);
                 var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-                var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
+                var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToHash(localInputs);
             }
             Console.WriteLine($"[{i}] {sw.ElapsedMilliseconds}ms");
         }

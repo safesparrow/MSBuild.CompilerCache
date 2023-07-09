@@ -115,7 +115,7 @@ public class LocatorAndPopulator
         //logTime?.Invoke("LocalInputs with hash created");
         
         _extract = _localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToSHA256Hex(_extract);
+        var hashString = Utils.ObjectToHash(_extract);
         _cacheKey = GenerateKey(inputs, hashString);
         //logTime?.Invoke("Key generated");
 
@@ -171,7 +171,7 @@ public class LocatorAndPopulator
     {
         var localInputs = CalculateLocalInputs(logTime);
         //logTime?.Invoke("localinputs done");
-        var localInputsHash = Utils.ObjectToSHA256Hex(localInputs);
+        var localInputsHash = Utils.ObjectToHash(localInputs);
         //logTime?.Invoke("hash done");
         return (localInputs, localInputsHash);
     }
@@ -379,7 +379,7 @@ public class LocatorAndPopulator
                 return GetLocalFileExtract(tempPath.FullName).ToFileExtract();
             }).ToArray();
 
-        var hashForFileName = Utils.ObjectToSHA256Hex(outputExtracts);
+        var hashForFileName = Utils.ObjectToHash(outputExtracts);
 
         var jsonOptions = new JsonSerializerOptions()
         {
