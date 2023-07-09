@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 
+
 namespace MSBuild.CompilerCache;
 
 [Serializable]
