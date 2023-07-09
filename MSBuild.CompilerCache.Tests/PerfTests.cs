@@ -37,11 +37,11 @@ public class PerfTests
                 var refTrimmingConfig = new RefTrimmingConfig();
                 var localInputs =
                     LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig,
-                        fileHashCache);
+                        fileHashCache, Utils.DefaultHasher);
                 var extract = localInputs.ToFullExtract();
-                var hashString = MSBuild.CompilerCache.Utils.ObjectToHash(extract);
+                var hashString = Utils.ObjectToHash(extract);
                 var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-                var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToHash(localInputs);
+                var localInputsHash = Utils.ObjectToHash(localInputs);
             }
             Console.WriteLine($"[{i}] {sw.ElapsedMilliseconds}ms");
         }

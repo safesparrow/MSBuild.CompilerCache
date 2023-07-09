@@ -250,9 +250,9 @@ public class EndToEndTests
         var dll2 = DllFile(projDir2, proj);
         var dll3 = DllFile(projDir3, proj);
 
-        var hash1 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll1.FullName);
-        var hash2 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll2.FullName);
-        var hash3 = MSBuild.CompilerCache.Utils.FileBytesToHashHex(dll3.FullName);
+        var hash1 = Utils.FileBytesToHashHex(dll1.FullName, Utils.DefaultHasher);
+        var hash2 = Utils.FileBytesToHashHex(dll2.FullName, Utils.DefaultHasher);
+        var hash3 = Utils.FileBytesToHashHex(dll3.FullName, Utils.DefaultHasher);
         
         Assert.That(hash2, Is.EqualTo(hash1));
         Assert.That(hash3, Is.Not.EqualTo(hash2));
@@ -314,7 +314,7 @@ type Foo = int
     {
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
-        Utils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
-        return Utils.RunProcess("dotnet", $"build -verbosity:normal", dir);
+        TestUtils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
+        return TestUtils.RunProcess("dotnet", $"build -verbosity:normal", dir);
     }
 }

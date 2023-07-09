@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Tests;
 
-internal static class Utils
+internal static class TestUtils
 {
     public static string[] RunProcess(string name, string args, DirectoryInfo workingDir)
     {

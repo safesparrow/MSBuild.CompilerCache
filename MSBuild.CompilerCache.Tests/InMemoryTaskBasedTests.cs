@@ -63,11 +63,11 @@ public class InMemoryTaskBasedTests
     public static All AllFromInputs(LocateInputs inputs, IRefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileCacheKey, string>());
+        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileCacheKey, string>(), hasher: Utils.DefaultHasher);
         var extract = localInputs.ToFullExtract();
-        var hashString = MSBuild.CompilerCache.Utils.ObjectToHash(extract);
+        var hashString = Utils.ObjectToHash(extract, Utils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-        var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToHash(localInputs);
+        var localInputsHash = Utils.ObjectToHash(localInputs, Utils.DefaultHasher);
 
         return new All(
             LocateInputs: inputs,
@@ -112,7 +112,7 @@ public class InMemoryTaskBasedTests
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
         var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
-            new AllCompilationMetadata(null, all.LocalInputs));
+            new AllCompilationMetadata(null, all.LocalInputs), Utils.DefaultHasher);
 
         foreach (var outputItem in outputItems)
         {

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MSBuild.CompilerCache;
@@ -35,7 +34,7 @@ public static class StringExtensions
 
 public static class Utils
 {
-    private static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
+    internal static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
     
     public static string ObjectToHash(object item, IHash? hasher = null)
     {
@@ -55,24 +54,15 @@ public static class Utils
         return bytes;
     }
 
-    public static string BytesToHashHex(byte[] bytes, IHash? hasher = null)
-    {
-        hasher ??= DefaultHasher;
-        var hash = hasher.ComputeHash(bytes);
-        return Convert.ToHexString(hash);
-    }
-
-    public static string BytesToSHA256Hex(ImmutableArray<byte> bytes, IHash? hasher = null)
-    {
-        hasher ??= DefaultHasher;
-        var hash = hasher.ComputeHash(bytes.AsSpan());
-        return Convert.ToHexString(hash);
-    }
-
     public static string FileBytesToHashHex(string path, IHash? hasher = null)
     {
-        hasher ??= DefaultHasher;
         var bytes = File.ReadAllBytes(path);
+        return BytesToHashHex(bytes, hasher);
+    }
+
+    public static string BytesToHashHex(ReadOnlySpan<byte> bytes, IHash? hasher = null)
+    {
+        hasher ??= DefaultHasher;
         var hash = hasher.ComputeHash(bytes);
         return Convert.ToHexString(hash);
     }

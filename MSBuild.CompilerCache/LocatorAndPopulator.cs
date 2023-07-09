@@ -55,7 +55,7 @@ public class LocatorAndPopulator
 {
     private readonly IRefCache _inMemoryRefCache;
 
-    private (Config config, ICache Cache, IRefCache RefCache, IFileHashCache FileHashCache) CreateCaches(string configPath,
+    private (Config config, ICache Cache, IRefCache RefCache, IFileHashCache FileHashCache, IHash) CreateCaches(string configPath,
         Action<string>? logTime = null)
     {
         using var fs = File.OpenRead(configPath);
@@ -66,7 +66,8 @@ public class LocatorAndPopulator
         //logTime?.Invoke("Finish");
         var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir());
         var fileHashCache = new CacheCombiner<FileCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
-        return (config, cache, refCache, fileHashCache);
+        var hasher = HasherFactory.CreateHash(config.Hasher);
+        return (config, cache, refCache, fileHashCache, hasher);
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
@@ -82,6 +83,7 @@ public class LocatorAndPopulator
     private string _localInputsHash;
     private readonly IFileHashCache _inMemoryFileHashCache;
     private ICacheBase<FileCacheKey,string> _fileHashCache;
+    private IHash _hasher;
 
     public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? inMemoryFileHashCache = null)
     {
@@ -107,7 +109,7 @@ public class LocatorAndPopulator
             return _locateResult;
         }
 
-        (_config, _cache, _refCache, _fileHashCache) = CreateCaches(inputs.ConfigPath, logTime);
+        (_config, _cache, _refCache, _fileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
         _assemblyName = inputs.AssemblyName;
         //logTime?.Invoke("Caches created");
 
@@ -115,7 +117,7 @@ public class LocatorAndPopulator
         //logTime?.Invoke("LocalInputs with hash created");
         
         _extract = _localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToHash(_extract);
+        var hashString = Utils.ObjectToHash(_extract, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
         //logTime?.Invoke("Key generated");
 
@@ -171,13 +173,13 @@ public class LocatorAndPopulator
     {
         var localInputs = CalculateLocalInputs(logTime);
         //logTime?.Invoke("localinputs done");
-        var localInputsHash = Utils.ObjectToHash(localInputs);
+        var localInputsHash = Utils.ObjectToHash(localInputs, _hasher);
         //logTime?.Invoke("hash done");
         return (localInputs, localInputsHash);
     }
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, logTime);
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher, logTime);
 
     public record FileInputs(FileCacheKey[] References, FileCacheKey[] Other);
 
@@ -193,7 +195,7 @@ public class LocatorAndPopulator
     }
     
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string assemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, Action<string>? logTime = null)
+        string assemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, IHash hasher, Action<string>? logTime = null)
     {
         var _fileInputs = ExtractFileInputs(decomposed);
         var fileInputs = trimmingConfig.Enabled
@@ -222,7 +224,7 @@ public class LocatorAndPopulator
                 {
                     return dlls.Select(dll =>
                     {
-                        var allRefData = GetAllRefData(dll, refCache, fileHashCache);
+                        var allRefData = GetAllRefData(dll, refCache, fileHashCache, hasher);
                         return AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
                     }).ToArray();
                 })
@@ -243,7 +245,7 @@ public class LocatorAndPopulator
 
     private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo, FileCacheKey file)
     {
-        var hashString = Utils.FileBytesToHashHex(fileInfo.FullName);
+        var hashString = Utils.FileBytesToHashHex(fileInfo.FullName, Utils.DefaultHasher);
         return new LocalFileExtract(Info: file, Hash: hashString);
     }
 
@@ -267,7 +269,7 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-    internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache)
+    internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache, IHash hasher)
     {
         var fileInfo = new FileInfo(filepath);
         if (!fileInfo.Exists)
@@ -281,7 +283,7 @@ public class LocatorAndPopulator
         if (hashString == null)
         {
             bytes = File.ReadAllBytes(filepath);
-            hashString = Utils.BytesToHashHex(bytes);
+            hashString = Utils.BytesToHashHex(bytes, hasher);
             fileHashCache.Set(fileCacheKey, hashString);
         }
 
@@ -402,7 +404,7 @@ public class LocatorAndPopulator
             var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
             //logTime?.Invoke("Got stuff");
             using var tmpDir = new DisposableDir();
-            var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, log);
+            var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
             //logTime?.Invoke("Outputs zip created");
             _cache.Set(_locateResult.CacheKey, _extract, outputZip);
             //logTime?.Invoke("cache entry set");
@@ -417,7 +419,7 @@ public class LocatorAndPopulator
     }
 
     public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
-        AllCompilationMetadata metadata,
+        AllCompilationMetadata metadata, IHash hasher,
         TaskLoggingHelper? log = null)
     {
         var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
@@ -432,7 +434,7 @@ public class LocatorAndPopulator
                 return GetLocalFileExtract(tempPath, FileCacheKey.FromFileInfo(tempPath)).ToFileExtract();
             }).ToArray();
 
-        var hashForFileName = Utils.ObjectToHash(outputExtracts);
+        var hashForFileName = Utils.ObjectToHash(outputExtracts, hasher);
 
         var jsonOptions = new JsonSerializerOptions()
         {

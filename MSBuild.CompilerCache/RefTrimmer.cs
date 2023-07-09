@@ -97,7 +97,7 @@ public class RefTrimmer
         ImmutableArray<byte> content, LoggerBase logger, RefAsmType refAsmType)
     {
         var (bytes, internalsVisibleToAssemblies) = MakeRefasm(content, logger, refAsmType);
-        var hash = Utils.BytesToSHA256Hex(bytes);
+        var hash = Utils.BytesToHashHex(bytes.AsSpan());
         return (hash, internalsVisibleToAssemblies);
     }
 

@@ -23,4 +23,6 @@ public class Config
     public string InferFileHashCacheDir() => Path.Combine(CacheDir, ".filehashcache");
     
     public bool CheckCompileOutputAgainstCache { get; set; }
+
+    public HasherType Hasher { get; set; } = HasherType.XxHash64;
 }
