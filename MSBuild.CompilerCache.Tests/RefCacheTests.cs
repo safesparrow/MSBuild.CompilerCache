@@ -35,7 +35,7 @@ public class RefCacheTests
             Original: new LocalFileExtract(Info: new FileCacheKey(
                     FullName: "a",
                     Length: 1212,
-                    LastWriteTimeUtc: DateTime.MaxValue
+                    LastWriteTimeUtc: new DateTime(2023, 7, 1, 0, 0, 0, kind: DateTimeKind.Utc)
                 ),
                 Hash: null
             )
