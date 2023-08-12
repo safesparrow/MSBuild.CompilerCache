@@ -41,7 +41,7 @@ public class TargetsExtraction
         using var dir = new DisposableDir();
         File.WriteAllText(Path.Combine(dir.Dir.FullName, "global.json"), GlobalJson(sdk));
         File.WriteAllText(Path.Combine(dir.Dir.FullName, $"project.{LanguageProjExtension(language)}"), ProjFile);
-        Utils.RunProcess("dotnet", "msbuild /pp:targets.xml", dir.Dir);
+        TestUtils.RunProcess("dotnet", "msbuild /pp:targets.xml", dir.Dir);
         var targetsPath = Path.Combine(dir.Dir.FullName, "targets.xml");
         if (File.Exists(targetsPath) == false)
         {

@@ -1,18 +1,11 @@
-using System.Collections.Immutable;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography;
 
 namespace MSBuild.CompilerCache;
 
 public class TempFile : IDisposable
 {
-    public FileInfo File { get; }
+    public FileInfo File { get; } = new(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
     public string FullName => File.FullName;
-
-    public TempFile()
-    {
-        File = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
-    }
 
     public void Dispose()
     {
@@ -41,7 +34,15 @@ public static class StringExtensions
 
 public static class Utils
 {
-    public static string ObjectToSHA256Hex(object item)
+    internal static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
+    
+    public static string ObjectToHash(object item, IHash? hasher = null)
+    {
+        var bytes = ObjectToBytes(item);
+        return BytesToHashHex(bytes, hasher);
+    }
+
+    public static byte[] ObjectToBytes(object item)
     {
         using var ms = new MemoryStream();
 #pragma warning disable SYSLIB0011
@@ -49,28 +50,20 @@ public static class Utils
         binaryFormatter.Serialize(ms, item);
         ms.Position = 0;
 #pragma warning restore SYSLIB0011
-        var hash = SHA256.Create().ComputeHash(ms);
-        var hashString = Convert.ToHexString(hash);
-        return hashString;
+        var bytes = ms.ToArray();
+        return bytes;
     }
 
-    public static string BytesToSHA256Hex(byte[] bytes)
+    public static string FileBytesToHashHex(string path, IHash? hasher = null)
     {
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash);
-    }
-    
-    public static string BytesToSHA256Hex(ImmutableArray<byte> bytes)
-    {
-        var hash = SHA256.HashData(bytes.AsSpan());
-        return Convert.ToHexString(hash);
+        var bytes = File.ReadAllBytes(path);
+        return BytesToHashHex(bytes, hasher);
     }
 
-    public static string FileToSHA256String(FileInfo fileInfo)
+    public static string BytesToHashHex(ReadOnlySpan<byte> bytes, IHash? hasher = null)
     {
-        using var hash = SHA256.Create();
-        using var f = fileInfo.OpenRead();
-        var bytes = hash.ComputeHash(f);
-        return Convert.ToHexString(bytes);
+        hasher ??= DefaultHasher;
+        var hash = hasher.ComputeHash(bytes);
+        return Convert.ToHexString(hash);
     }
 }

@@ -32,7 +32,7 @@ public class TestOutputBuildAndCache
                 OutputFiles: items
             )
         );
-        var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata);
+        var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
 
         var cache = new Cache(dir.Dir.CombineAsDir(".cache").FullName);
 
@@ -58,7 +58,7 @@ public class TestOutputBuildAndCache
         (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>
             dir
                 .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                .Select(x => (x.Name, Hash: MSBuild.CompilerCache.Utils.FileToSHA256String(new FileInfo(x.FullName))))
+                .Select(x => (x.Name, Hash: Utils.FileBytesToHashHex(x.FullName, Utils.DefaultHasher)))
                 .Order()
                 .ToArray();
 

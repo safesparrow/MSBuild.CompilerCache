@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using FastHashes;
 
 namespace MSBuild.CompilerCache;
 
@@ -27,7 +28,7 @@ public class CompilerCachePopulateCache : Microsoft.Build.Utilities.Task
                             throw new Exception("Cached result is of unexpected type");
         var sw = Stopwatch.StartNew();
         void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
-        var results = locator.UseOrPopulate(Log, LogTime);
+        var results = locator.PopulateCache(Log, LogTime);
         return true;
     }
 }

@@ -1,20 +1,40 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+
 
 namespace MSBuild.CompilerCache;
 
 [Serializable]
-public record FileExtract(string Name, string? Hash, long Length, DateTime? LastWriteTimeUtc);
+public record FileExtract(string Name, string? Hash, long Length);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
 [Serializable]
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
 [Serializable]
-public record LocalFileExtract(string Path, string? Hash, long Length, DateTime? LastWriteTimeUtc)
+public record LocalFileExtract
 {
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length, LastWriteTimeUtc: LastWriteTimeUtc);
+    public LocalFileExtract(FileCacheKey Info, string? Hash)
+    {
+        this.Info = Info;
+        this.Hash = Hash;
+        if(Info.FullName == null) throw new Exception("File info name empty");
+    }
+
+    public FileCacheKey Info { get; set; }
+    public string Path => Info.FullName;
+    public long Length => Info.Length;
+    public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
+    public string? Hash { get; set; }
+    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
+
+    public void Deconstruct(out FileCacheKey Info, out string? Hash)
+    {
+        Info = this.Info;
+        Hash = this.Hash;
+    }
 }
 
 /// <summary>
@@ -106,7 +126,7 @@ public class Cache : ICache
         return File.Exists(markerPath);
     }
 
-    public static void AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
+    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
     {
         var dir = Path.GetDirectoryName(destination)!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
@@ -114,12 +134,13 @@ public class Cache : ICache
         try
         {
             File.Move(tmpDestination, destination, overwrite: false);
+            return true;
         }
         catch (IOException e)
         {
             if (!throwIfDestinationExists && File.Exists(destination))
             {
-                return;
+                return false;
             }
             else
             {

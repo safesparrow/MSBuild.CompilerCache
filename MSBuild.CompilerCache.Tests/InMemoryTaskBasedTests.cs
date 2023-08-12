@@ -4,6 +4,8 @@ using Moq;
 using MSBuild.CompilerCache;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using IRefCache =
+    MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
 
 namespace Tests;
 
@@ -21,15 +23,17 @@ public class InMemoryTaskBasedTests
     public void SetUp()
     {
         _buildEngine = new Mock<IBuildEngine9>();
-        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>())).Callback((BuildMessageEventArgs a) => Console.WriteLine($"Log - {a.Message}"));
-        _buildEngine.Setup(x => x.LogWarningEvent(It.IsAny<BuildWarningEventArgs>())).Callback((BuildWarningEventArgs a) => Console.WriteLine($"Warn - {a.Message}"));
+        _buildEngine.Setup(x => x.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()))
+            .Callback((BuildMessageEventArgs a) => Console.WriteLine($"Log - {a.Message}"));
+        _buildEngine.Setup(x => x.LogWarningEvent(It.IsAny<BuildWarningEventArgs>()))
+            .Callback((BuildWarningEventArgs a) => Console.WriteLine($"Warn - {a.Message}"));
         var dict = new Dictionary<(object, RegisteredTaskObjectLifetime), object>();
         _buildEngine
             .Setup(x => x.RegisterTaskObject(It.IsAny<object>(), It.IsAny<object>(),
                 It.IsAny<RegisteredTaskObjectLifetime>(), It.IsAny<bool>()))
             .Callback((object key, object value, RegisteredTaskObjectLifetime life, bool early) =>
                 dict[(key, life)] = value);
-    
+
         _buildEngine
             .Setup(x => x.GetRegisteredTaskObject(It.IsAny<object>(), It.IsAny<RegisteredTaskObjectLifetime>()))
             .Returns((object key, RegisteredTaskObjectLifetime life) =>
@@ -59,15 +63,16 @@ public class InMemoryTaskBasedTests
     public record All(LocateInputs LocateInputs, LocalInputs LocalInputs, CacheKey CacheKey,
         string LocalInputsHash, FullExtract FullExtract);
 
-    public static All AllFromInputs(LocateInputs inputs, RefCache refCache)
+    public static All AllFromInputs(LocateInputs inputs, IRefCache refCache)
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
-        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "", trimmingConfig: new RefTrimmingConfig()
-        );
+        var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "",
+            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileCacheKey, string>(),
+            hasher: Utils.DefaultHasher);
         var extract = localInputs.ToFullExtract();
-        var hashString = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(extract);
+        var hashString = Utils.ObjectToHash(extract, Utils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-        var localInputsHash = MSBuild.CompilerCache.Utils.ObjectToSHA256Hex(localInputs);
+        var localInputsHash = Utils.ObjectToHash(localInputs, Utils.DefaultHasher);
 
         return new All(
             LocateInputs: inputs,
@@ -112,7 +117,7 @@ public class InMemoryTaskBasedTests
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
         var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
-            new AllCompilationMetadata(null, all.LocalInputs));
+            new AllCompilationMetadata(null, all.LocalInputs), Utils.DefaultHasher);
 
         foreach (var outputItem in outputItems)
         {
