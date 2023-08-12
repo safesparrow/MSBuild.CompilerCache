@@ -16,8 +16,6 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-
-<!--        <PublishReadyToRun>true</PublishReadyToRun>-->
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,25 +28,6 @@
         <PackageReference PrivateAssets="all" Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="MSBuild.Sdk.Extras" Version="3.0.44" />
     </ItemGroup>
-<!--    <PropertyGroup>-->
-<!--        &lt;!&ndash; This target will run when MSBuild is collecting the files to be packaged, and we'll implement it below. This property controls the dependency list for this packaging process, so by adding our custom property we hook ourselves into the process in a supported way. &ndash;&gt;-->
-<!--        <TargetsForTfmSpecificBuildOutput>-->
-<!--            $(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage-->
-<!--        </TargetsForTfmSpecificBuildOutput>-->
-<!--        &lt;!&ndash; This property tells MSBuild where the root folder of the package's build assets should be. Because we are not a library package, we should not pack to 'lib'. Instead, we choose 'tasks' by convention. &ndash;&gt;-->
-<!--        <BuildOutputTargetFolder>lib</BuildOutputTargetFolder>-->
-<!--        &lt;!&ndash; NuGet does validation that libraries in a package are exposed as dependencies, but we _explicitly_ do not want that behavior for MSBuild tasks. They are isolated by design. Therefore we ignore this specific warning. &ndash;&gt;-->
-<!--        <NoWarn>NU5100</NoWarn>-->
-<!--    </PropertyGroup>-->
-
-<!--    &lt;!&ndash; This is the target we defined above. It's purpose is to add all of our PackageReference and ProjectReference's runtime assets to our package output.  &ndash;&gt;-->
-<!--    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">-->
-<!--        <ItemGroup>-->
-<!--            &lt;!&ndash; The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. &ndash;&gt;-->
-<!--            <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />-->
-<!--        </ItemGroup>-->
-<!--    </Target>-->
-
 
     <ItemGroup>
         <None Include="..\version.json">
@@ -61,10 +40,7 @@
         <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
         <None Include="$(PkgJetBrains_Refasmer)/lib/net6.0/Refasmer.dll" Pack="True" PackagePath="lib\net6.0" />
         <None Include="$(PkgFastHashes)/lib/netstandard2.1/FastHashes.dll" Pack="True" PackagePath="lib\net6.0" />
-        <None Include="NuGet.README.md">
-            <Pack>True</Pack>
-            <PackagePath>README.md</PackagePath>
-        </None>
+        <None Include="NuGet.README.md" Pack="True" PackagePath="README.md" />
     </ItemGroup>
 
 </Project>

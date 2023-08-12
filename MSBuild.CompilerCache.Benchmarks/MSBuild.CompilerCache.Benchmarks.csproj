@@ -9,13 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\MSBuild.CompilerCache\MSBuild.CompilerCache.csproj" />
+        <ProjectReference Include="..\MSBuild.CompilerCache\MSBuild.CompilerCache.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
-        <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
-        <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.3.2" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.5"/>
+        <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.3.2"/>
     </ItemGroup>
 
 </Project>
