@@ -16,7 +16,7 @@ public class InMemoryTaskBasedTests
     private CompilerCacheLocate locate;
     private CompilerCachePopulateCache use;
     private DisposableDir tmpDir;
-    private Cache cache;
+    private CompilationResultsCache _compilationResultsCache;
     private string baseCacheDir;
 
     [SetUp]
@@ -51,7 +51,7 @@ public class InMemoryTaskBasedTests
 
         tmpDir = new DisposableDir();
         baseCacheDir = Path.Combine(tmpDir.FullName, ".cache");
-        cache = new Cache(baseCacheDir);
+        _compilationResultsCache = new CompilationResultsCache(baseCacheDir);
     }
 
     [TearDown]
@@ -67,7 +67,7 @@ public class InMemoryTaskBasedTests
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, assemblyName: "",
-            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileCacheKey, string>(),
+            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(),
             hasher: Utils.DefaultHasher);
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToHash(extract, Utils.DefaultHasher);
@@ -124,7 +124,7 @@ public class InMemoryTaskBasedTests
             File.Move(outputItem.LocalPath, outputItem.LocalPath + ".copy");
         }
 
-        cache.Set(all.CacheKey, all.FullExtract, zip);
+        _compilationResultsCache.Set(all.CacheKey, all.FullExtract, zip);
 
         locate.SetInputs(inputs);
         var locateSuccess = locate.Execute();
@@ -140,7 +140,7 @@ public class InMemoryTaskBasedTests
             Assert.That(locateResult.RunCompilation, Is.False);
         });
 
-        var allKeys = cache.GetAllExistingKeys();
+        var allKeys = _compilationResultsCache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
 
         foreach (var outputItem in outputItems)
@@ -197,10 +197,10 @@ public class InMemoryTaskBasedTests
         use.Guid = locate.Guid;
         Assert.That(use.Execute(), Is.True);
 
-        var allKeys = cache.GetAllExistingKeys();
+        var allKeys = _compilationResultsCache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
 
-        var zip = cache.Get(all.CacheKey);
+        var zip = _compilationResultsCache.Get(all.CacheKey);
         Assert.That(zip, Is.Not.Null);
         var fromCacheDir = tmpDir.Dir.CreateSubdirectory("from_cache");
         ZipFile.ExtractToDirectory(zip, fromCacheDir.FullName);

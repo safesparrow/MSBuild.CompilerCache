@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
-using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace MSBuild.CompilerCache;

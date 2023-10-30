@@ -1,36 +1,49 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using Microsoft.VisualBasic;
-using Newtonsoft.Json;
-
 
 namespace MSBuild.CompilerCache;
 
+/// <summary>
+/// Properties of a compilation input file, used in <see cref="FullExtract"/>
+/// </summary>
+/// <param name="Name">Name of the file, without directory tree</param>
+/// <param name="ContentHash">Strong hash of the contents of the file</param>
+/// <param name="Length"></param>
 [Serializable]
-public record FileExtract(string Name, string? Hash, long Length);
+public record struct FileExtract(string Name, string? ContentHash, long Length);
 
 // TODO Use a dictionary to disambiguate files in different Item lists 
+/// <summary>
+/// All compilation inputs, used to generate a hash for caching.
+/// </summary>
+/// <param name="Files"></param>
+/// <param name="Props"></param>
+/// <param name="OutputFiles"></param>
 [Serializable]
 public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
 
+/// <summary>
+/// An extended version of <see cref="FullExtract" /> 
+/// </summary>
 [Serializable]
 public record LocalFileExtract
 {
-    public LocalFileExtract(FileCacheKey Info, string? Hash)
+    public LocalFileExtract(FileHashCacheKey Info, string? Hash)
     {
         this.Info = Info;
         this.Hash = Hash;
         if(Info.FullName == null) throw new Exception("File info name empty");
     }
 
-    public FileCacheKey Info { get; set; }
+    public FileHashCacheKey Info { get; set; }
     public string Path => Info.FullName;
     public long Length => Info.Length;
     public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
     public string? Hash { get; set; }
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), Hash: Hash, Length: Length);
+    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
 
-    public void Deconstruct(out FileCacheKey Info, out string? Hash)
+    public void Deconstruct(out FileHashCacheKey Info, out string? Hash)
     {
         Info = this.Info;
         Hash = this.Hash;
@@ -96,23 +109,38 @@ public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, Ou
 [Serializable]
 public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
 
-public record CacheKey(string Key)
+public record struct CacheKey(string Key)
 {
     public static implicit operator string(CacheKey key) => key.Key;
 }
 
-public interface ICache
+/// <summary>
+/// Cache for the main compilation results
+/// </summary>
+public interface ICompilationResultsCache
 {
     bool Exists(CacheKey key);
+    /// <summary>
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="fullExtract"></param>
+    /// <param name="resultZip"></param>
     void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip);
     string? Get(CacheKey key);
 }
 
-public class Cache : ICache
+public class CompilationResultsCache : ICompilationResultsCache
 {
     private readonly string _baseCacheDir;
 
-    public Cache(string baseCacheDir)
+    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions()
+    {
+        WriteIndented = true
+    };
+
+    private JsonWriterOptions _writeOptions;
+
+    public CompilationResultsCache(string baseCacheDir)
     {
         _baseCacheDir = baseCacheDir;
     }
@@ -126,6 +154,14 @@ public class Cache : ICache
         return File.Exists(markerPath);
     }
 
+    /// <summary>
+    /// Copy source to destination atomically, by first creating a temporary copy in the target directory,
+    /// then renaming the copy to the target name.
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="destination"></param>
+    /// <param name="throwIfDestinationExists">If true, will throw if the destination already exists</param>
+    /// <returns></returns>
     public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
     {
         var dir = Path.GetDirectoryName(destination)!;
@@ -168,10 +204,7 @@ public class Cache : ICache
     public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
     {
         var dir = new DirectoryInfo(CacheDir(key));
-        if (!dir.Exists)
-        {
-            dir.Create();
-        }
+        dir.Create();
 
         var extractPath = ExtractPath(key);
 
@@ -180,18 +213,13 @@ public class Cache : ICache
         {
             AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
         }
-
-        var jsonOptions = new JsonSerializerOptions()
-        {
-            WriteIndented = true
-        };
         
         if (!File.Exists(extractPath))
         {
             using var tmpFile = new TempFile();
             {
                 using var fs = tmpFile.File.OpenWrite();
-                System.Text.Json.JsonSerializer.Serialize(fs, fullExtract, jsonOptions);
+                JsonSerializer.Serialize(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
             AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
         }
@@ -206,62 +234,39 @@ public class Cache : ICache
             if (File.Exists(extractPath))
             {
                 var outputVersionsZips = GetOutputVersions(key);
-                if (outputVersionsZips.Length == 0)
+                switch (outputVersionsZips.Length)
                 {
-                    throw new Exception($"[Cache key={key}] Extract file exists, but no output files found.");
-                }
-                else if (outputVersionsZips.Length > 1)
-                {
-                    throw new Exception(
-                        $"[Cache key={key}] Found {outputVersionsZips.Length} different outputs. Unable to pick one.");
-                }
-                else
-                {
-                    var tmpPath = Path.GetTempFileName();
-                    ActionWithRetries(() => File.Copy(outputVersionsZips[0], tmpPath, overwrite: true));
-                    return tmpPath;
+                    case 0:
+                        throw new Exception($"[Cache key={key}] Extract file exists, but no output files found.");
+                    case > 1:
+                        throw new Exception(
+                            $"[Cache key={key}] Found {outputVersionsZips.Length} different outputs. Unable to pick one.");
+                    default:
+                    {
+                        var tmpPath = Path.GetTempFileName();
+                        FileHashCache.IOActionWithRetries(() =>
+                        {
+                            File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
+                            return 0;
+                        });
+                        return tmpPath;
+                    }
                 }
             }
         }
 
         return null;
     }
-    
-    private static void ActionWithRetries(Action action)
-    {
-        var attempts = 5;
-        var retryDelay = 50;
-        for (int attempt = 1; attempt <= attempts; attempt++)
-        {
-            try
-            {
-                action();
-                return;
-            }
-            catch(IOException e) 
-            {
-                if (attempt < attempts)
-                {
-                    var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
-                    Thread.Sleep(delay);
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
 
-        throw new InvalidOperationException("Unexpected code location reached");
-    }
-
-    public int OutputVersionsCount(CacheKey key)
-    {
-        return GetOutputVersions(key).Count();
-    }
+    public int OutputVersionsCount(CacheKey key) => GetOutputVersions(key).Length;
 
     private string[] GetOutputVersions(CacheKey key)
     {
         return Directory.EnumerateFiles(CacheDir(key), "*.zip", SearchOption.TopDirectoryOnly).ToArray();
     }
 }
+
+[JsonSerializable(typeof(FullExtract))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class FullExtractJsonContext : JsonSerializerContext
+{ }

@@ -6,7 +6,7 @@ using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using IFileHashCache = ICacheBase<FileCacheKey, string>;
+using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
 public record UseOrPopulateResult;
@@ -55,24 +55,24 @@ public class LocatorAndPopulator
 {
     private readonly IRefCache _inMemoryRefCache;
 
-    private (Config config, ICache Cache, IRefCache RefCache, IFileHashCache FileHashCache, IHash) CreateCaches(string configPath,
+    private (Config config, ICompilationResultsCache Cache, IRefCache RefCache, IFileHashCache FileHashCache, IHash) CreateCaches(string configPath,
         Action<string>? logTime = null)
     {
         using var fs = File.OpenRead(configPath);
         var config = JsonSerializer.Deserialize<Config>(fs);
         //logTime?.Invoke("Config deserialized");
-        var cache = new Cache(config.CacheDir);
+        var cache = new CompilationResultsCache(config.CacheDir);
         var refCache = new RefCache(config.InferRefCacheDir());
         //logTime?.Invoke("Finish");
         var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir());
-        var fileHashCache = new CacheCombiner<FileCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
+        var fileHashCache = new CacheCombiner<FileHashCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
         var hasher = HasherFactory.CreateHash(config.Hasher);
         return (config, cache, refCache, fileHashCache, hasher);
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
     private IRefCache _refCache;
-    private ICache _cache;
+    private ICompilationResultsCache _cache;
     private Config _config;
     private DecomposedCompilerProps _decomposed;
     private string _assemblyName;
@@ -82,13 +82,13 @@ public class LocatorAndPopulator
     private LocalInputs _localInputs;
     private string _localInputsHash;
     private readonly IFileHashCache _inMemoryFileHashCache;
-    private ICacheBase<FileCacheKey,string> _fileHashCache;
+    private ICacheBase<FileHashCacheKey,string> _fileHashCache;
     private IHash _hasher;
 
     public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? inMemoryFileHashCache = null)
     {
         _inMemoryRefCache = inMemoryRefCache ?? new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
-        _inMemoryFileHashCache = inMemoryFileHashCache ?? new DictionaryBasedCache<FileCacheKey, string>();
+        _inMemoryFileHashCache = inMemoryFileHashCache ?? new DictionaryBasedCache<FileHashCacheKey, string>();
     }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
@@ -181,16 +181,16 @@ public class LocatorAndPopulator
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
         CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher, logTime);
 
-    public record FileInputs(FileCacheKey[] References, FileCacheKey[] Other);
+    public record FileInputs(FileHashCacheKey[] References, FileHashCacheKey[] Other);
 
     private static FileInputs ExtractFileInputs(DecomposedCompilerProps decomposed)
     {
-        static FileCacheKey[] Extract(string[] files) =>
+        static FileHashCacheKey[] Extract(string[] files) =>
             files
                 .Chunk(Math.Max(1, files.Length / 4))
                 .AsParallel()
                 .AsOrdered()
-                .SelectMany(refs => refs.Select(r => FileCacheKey.FromFileInfo(new FileInfo(r)))).ToArray();
+                .SelectMany(refs => refs.Select(r => FileHashCacheKey.FromFileInfo(new FileInfo(r)))).ToArray();
         
         return new FileInputs(
             References: Extract(decomposed.References),
@@ -247,22 +247,22 @@ public class LocatorAndPopulator
         return new LocalInputs(allExtracts, props, outputs);
     }
 
-    private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo, FileCacheKey file)
+    private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo, FileHashCacheKey fileHash)
     {
         var hashString = Utils.FileBytesToHashHex(fileInfo.FullName, Utils.DefaultHasher);
-        return new LocalFileExtract(Info: file, Hash: hashString);
+        return new LocalFileExtract(Info: fileHash, Hash: hashString);
     }
 
-    private static LocalFileExtract GetLocalFileExtract(FileCacheKey file, IFileHashCache fileHashCache)
+    private static LocalFileExtract GetLocalFileExtract(FileHashCacheKey fileHash, IFileHashCache fileHashCache)
     {
-        var hashString = fileHashCache.Get(file);
+        var hashString = fileHashCache.Get(fileHash);
         if (hashString == null)
         {
-            var bytes = File.ReadAllBytes(file.FullName);
+            var bytes = File.ReadAllBytes(fileHash.FullName);
             hashString = Utils.BytesToHashHex(bytes);
-            fileHashCache.Set(file, hashString);
+            fileHashCache.Set(fileHash, hashString);
         }
-        return new LocalFileExtract(Info: file, Hash: hashString);
+        return new LocalFileExtract(Info: fileHash, Hash: hashString);
     }
     
     private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
@@ -281,7 +281,7 @@ public class LocatorAndPopulator
             throw new Exception($"Reference file does not exist: '{filepath}'");
         }
 
-        var fileCacheKey = FileCacheKey.FromFileInfo(fileInfo);
+        var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
         var hashString = fileHashCache.Get(fileCacheKey);
         byte[] bytes = null;
         if (hashString == null)
@@ -358,7 +358,7 @@ public class LocatorAndPopulator
 
     private string? CheckInputsConsistency(TaskLoggingHelper taskLoggingHelper)
     {
-        bool FileChanged(FileCacheKey file)
+        bool FileChanged(FileHashCacheKey file)
         {
             var before = new SomeFileMetadata(file.Length, file.LastWriteTimeUtc);
             var refreshedFile = new FileInfo(file.FullName);
@@ -414,7 +414,7 @@ public class LocatorAndPopulator
             using var tmpDir = new DisposableDir();
             var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
             //logTime?.Invoke("Outputs zip created");
-            _cache.Set(_locateResult.CacheKey, _extract, outputZip);
+            _cache.Set(_locateResult.CacheKey!.Value, _extract, outputZip);
             //logTime?.Invoke("cache entry set");
         }
         else
@@ -439,7 +439,7 @@ public class LocatorAndPopulator
                 log?.LogMessage(MessageImportance.Normal,
                     $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
                 File.Copy(item.LocalPath, tempPath.FullName);
-                return GetLocalFileExtract(tempPath, FileCacheKey.FromFileInfo(tempPath)).ToFileExtract();
+                return GetLocalFileExtract(tempPath, FileHashCacheKey.FromFileInfo(tempPath)).ToFileExtract();
             }).ToArray();
 
         var hashForFileName = Utils.ObjectToHash(outputExtracts, hasher);

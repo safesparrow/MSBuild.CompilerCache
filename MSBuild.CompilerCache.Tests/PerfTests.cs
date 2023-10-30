@@ -16,8 +16,8 @@ public class PerfTests
     {
         var sw = Stopwatch.StartNew();
         var fileHashCache = new FileHashCache(".filehashcache");
-        var inMemoryFileHashCache = new DictionaryBasedCache<FileCacheKey, string>();
-        var combinedFileHashCache = new CacheCombiner<FileCacheKey, string>(inMemoryFileHashCache, fileHashCache);
+        var inMemoryFileHashCache = new DictionaryBasedCache<FileHashCacheKey, string>();
+        var combinedFileHashCache = new CacheCombiner<FileHashCacheKey, string>(inMemoryFileHashCache, fileHashCache);
         var inMemoryRefCache = new InMemoryRefCache();
         var refCache = new RefCache(".refcache");
         var combinedRefCache = new CacheCombiner<CacheKey, RefDataWithOriginalExtract>(inMemoryRefCache, refCache);

@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using MSBuild.CompilerCache;
 
@@ -39,7 +38,7 @@ public class Benchmarks
 
         void Act()
         {
-            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileCacheKey, string>(), Utils.DefaultHasher);
+            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), Utils.DefaultHasher);
             if (inputs.Files.Length == 0) throw new Exception();
         }
 

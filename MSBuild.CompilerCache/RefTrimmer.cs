@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Text.Json.Serialization;
 using JetBrains.Refasmer;
 using JetBrains.Refasmer.Filters;
 
@@ -15,6 +16,12 @@ namespace MSBuild.CompilerCache;
 public record RefData(string PublicRefHash, string PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
 
 public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original);
+
+[JsonSerializable(typeof(RefDataWithOriginalExtract))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerContext
+{ }
+
 
 public class RefTrimmer
 {

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using MSBuild.CompilerCache;
 using Newtonsoft.Json;
 using NUnit.Framework;

@@ -1,4 +1,4 @@
-using System.Globalization;
+using System.Text.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -32,22 +32,9 @@ public class RefCache : IRefCache
         {
             RefDataWithOriginalExtract Read()
             {
-                var lines = File.ReadAllLines(entryPath);
-                return new RefDataWithOriginalExtract(
-                    Ref: new RefData(
-                        PublicRefHash: lines[0],
-                        PublicAndInternalRefHash: lines[1],
-                        InternalsVisibleTo: lines[2].Split('\t').ToImmutableArray()
-                    ),
-                    Original: new LocalFileExtract(
-                        Info: new FileCacheKey(
-                            FullName: lines[3],
-                            Length: long.Parse(lines[4]),
-                            LastWriteTimeUtc: new DateTime(long.Parse(lines[5]), DateTimeKind.Utc)
-                        ),
-                        Hash: string.IsNullOrEmpty(lines[6]) ? null : lines[5]
-                    )
-                );
+                using var fs = File.OpenRead(entryPath);
+                return JsonSerializer.Deserialize(fs,
+                    RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract)!;
             }
             return IOActionWithRetries(Read);
         }
@@ -95,16 +82,9 @@ public class RefCache : IRefCache
         using var tmpFile = new TempFile();
         {
             using var fs = tmpFile.File.OpenWrite();
-            using var sw = new StreamWriter(fs, Encoding.UTF8);
-            sw.WriteLine(data.Ref.PublicRefHash);
-            sw.WriteLine(data.Ref.PublicAndInternalRefHash);
-            sw.WriteLine(string.Join('\t', data.Ref.InternalsVisibleTo));
-            sw.WriteLine(data.Original.Path);
-            sw.WriteLine(data.Original.Length);
-            sw.WriteLine(data.Original.LastWriteTimeUtc.Ticks);
-            sw.WriteLine(data.Original.Hash ?? "");
+            JsonSerializer.Serialize(data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
         }
-        return Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
 }
 

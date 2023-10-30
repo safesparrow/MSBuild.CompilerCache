@@ -6,7 +6,7 @@ namespace MSBuild.CompilerCache;
 
 using Microsoft.Build.Framework;
 using JetBrains.Annotations;
-using IFileHashCache = ICacheBase<FileCacheKey, string>;
+using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
@@ -16,11 +16,13 @@ using IFileHashCache = ICacheBase<FileCacheKey, string>;
 public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
 {
 #pragma warning disable CS8618
+    // Inputs
     [UsedImplicitly(ImplicitUseKindFlags.Assign)] [Required] public string ConfigPath { get; set; } = null!;
     [UsedImplicitly(ImplicitUseKindFlags.Assign)] [Required] public string ProjectFullPath { get; set; } = null!;
     [UsedImplicitly(ImplicitUseKindFlags.Assign)] [Required] public string AssemblyName { get; set; } = null!;
     [UsedImplicitly(ImplicitUseKindFlags.Assign)] [Required] public ITaskItem AllCompilerProperties { get; set; }
     
+    // Outputs
     [UsedImplicitly(ImplicitUseKindFlags.Access)] [Output] public bool RunCompilation { get; private set; }
     [UsedImplicitly(ImplicitUseKindFlags.Access)] [Output] public bool PopulateCache { get; private set; }
     [UsedImplicitly(ImplicitUseKindFlags.Access)] [Output] public string Guid { get; private set; }
@@ -29,19 +31,24 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
 #pragma warning restore CS8618
 
     private record InMemoryCaches(InMemoryRefCache InMemoryRefCache, IFileHashCache FileHashCache);
+
+    private readonly object _refCacheLock = new object();
     
     private InMemoryCaches GetInMemoryRefCache()
     {
         var key = "CompilerCache_InMemoryRefCache";
-        if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryCaches cached)
+        lock (_refCacheLock)
         {
-            return cached;
-        }
-        else
-        {
-            var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileCacheKey, string>());
-            BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
-            return fresh;
+            if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryCaches cached)
+            {
+                return cached;
+            }
+            else
+            {
+                var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileHashCacheKey, string>());
+                BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
+                return fresh;
+            }
         }
     }
     
@@ -85,8 +92,9 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
         return _copy as IDictionary<string, string> ?? throw new Exception(
             $"Expected the 'All' item's metadata to be IDictionary<string, string>, but was {_copy.GetType().FullName}");
     }
-
-    public void SetInputs(LocateInputs inputs)
+    
+    /// <summary> Used in tests </summary>
+    internal void SetInputs(LocateInputs inputs)
     {
         ConfigPath = inputs.ConfigPath;
         ProjectFullPath = inputs.ProjectFullPath;

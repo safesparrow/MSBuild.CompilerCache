@@ -2,7 +2,11 @@ using System.Text;
 
 namespace MSBuild.CompilerCache;
 
-public class FileHashCache : ICacheBase<FileCacheKey, string>
+/// <summary>
+/// Cache for file contents hashes. Helps avoiding reading contents of input files (source files and .dlls),
+/// if their FileHashCacheKey hasn't changed.
+/// </summary>
+public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 {
     private readonly string _cacheDir;
 
@@ -14,16 +18,16 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
 
     public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, key.Key);
 
-    public CacheKey ExtractKey(FileCacheKey key) => new CacheKey(Utils.ObjectToHash(key, Utils.DefaultHasher));
+    public static CacheKey ExtractKey(FileHashCacheKey key) => new CacheKey(Utils.ObjectToHash(key, Utils.DefaultHasher));
     
-    public bool Exists(FileCacheKey originalKey)
+    public bool Exists(FileHashCacheKey originalKey)
     {
         var key = ExtractKey(originalKey);
         var entryPath = EntryPath(key);
         return File.Exists(entryPath);
     }
 
-    public string Get(FileCacheKey originalKey)
+    public string Get(FileHashCacheKey originalKey)
     {
         var key = ExtractKey(originalKey);
         var entryPath = EntryPath(key);
@@ -43,7 +47,7 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
         }
     }
 
-    private static T IOActionWithRetries<T>(Func<T> action)
+    internal static T IOActionWithRetries<T>(Func<T> action)
     {
         var attempts = 5;
         var retryDelay = 50;
@@ -70,7 +74,7 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
         throw new InvalidOperationException("Unexpected code location reached");
     }
 
-    public bool Set(FileCacheKey originalKey, string value)
+    public bool Set(FileHashCacheKey originalKey, string value)
     {
         var key = ExtractKey(originalKey);
         var entryPath = EntryPath(key);
@@ -86,6 +90,6 @@ public class FileHashCache : ICacheBase<FileCacheKey, string>
             sw.Write(value);
         }
         
-        return Cache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
 }

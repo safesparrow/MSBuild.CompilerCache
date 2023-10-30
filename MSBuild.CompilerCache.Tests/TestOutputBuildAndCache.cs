@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using System.Reflection;
 using MSBuild.CompilerCache;
 using NUnit.Framework;
 
@@ -34,7 +32,7 @@ public class TestOutputBuildAndCache
         );
         var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
 
-        var cache = new Cache(dir.Dir.CombineAsDir(".cache").FullName);
+        var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);
 
         var key = new CacheKey("a");
         cache.Set(key, metadata.LocalInputs.ToFullExtract(), zipPath);
