@@ -82,7 +82,7 @@ public class RefCache : IRefCache
         using var tmpFile = new TempFile();
         {
             using var fs = tmpFile.File.OpenWrite();
-            JsonSerializer.Serialize(data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
+            JsonSerializer.Serialize(fs, data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
         }
         return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
