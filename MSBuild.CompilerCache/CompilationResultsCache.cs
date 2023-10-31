@@ -124,21 +124,14 @@ public interface ICompilationResultsCache
     /// </summary>
     /// <param name="key"></param>
     /// <param name="fullExtract"></param>
-    /// <param name="resultZip"></param>
-    void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip);
+    /// <param name="resultZipToBeMoved"></param>
+    void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
     string? Get(CacheKey key);
 }
 
 public class CompilationResultsCache : ICompilationResultsCache
 {
     private readonly string _baseCacheDir;
-
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions()
-    {
-        WriteIndented = true
-    };
-
-    private JsonWriterOptions _writeOptions;
 
     public CompilationResultsCache(string baseCacheDir)
     {
@@ -162,11 +155,18 @@ public class CompilationResultsCache : ICompilationResultsCache
     /// <param name="destination"></param>
     /// <param name="throwIfDestinationExists">If true, will throw if the destination already exists</param>
     /// <returns></returns>
-    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true)
+    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true, bool moveInsteadOfCopy = false)
     {
         var dir = Path.GetDirectoryName(destination)!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
-        File.Copy(source, tmpDestination);
+        if (moveInsteadOfCopy)
+        {
+            File.Move(source, tmpDestination);
+        }
+        else
+        {
+            File.Copy(source, tmpDestination);
+        }
         try
         {
             File.Move(tmpDestination, destination, overwrite: false);
@@ -201,27 +201,27 @@ public class CompilationResultsCache : ICompilationResultsCache
             .ToArray();
     }
 
-    public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZip)
+    public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
     {
         var dir = new DirectoryInfo(CacheDir(key));
         dir.Create();
-
         var extractPath = ExtractPath(key);
-
-        var outputPath = Path.Combine(dir.FullName, resultZip.Name);
+        var outputPath = Path.Combine(dir.FullName, resultZipToBeMoved.Name);
+        
         if (!File.Exists(outputPath))
         {
-            AtomicCopy(resultZip.FullName, outputPath, throwIfDestinationExists: false);
+            AtomicCopy(resultZipToBeMoved.FullName, outputPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
         
         if (!File.Exists(extractPath))
         {
+            // TODO Serialise directly to the cache dir (as a tmp file)
             using var tmpFile = new TempFile();
             {
                 using var fs = tmpFile.File.OpenWrite();
                 JsonSerializer.Serialize(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
-            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false);
+            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
     }
 

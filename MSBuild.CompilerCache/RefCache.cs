@@ -3,10 +3,12 @@ using System.Text.Json;
 namespace MSBuild.CompilerCache;
 
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using System.Text;
 using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
+/// <summary>
+/// File-based implementation of <see cref="IRefCache"/> for storing information about trimmed dlls and their hashes.
+/// Stores all entries in a single directory, one .json file per entry.
+/// </summary>
 public class RefCache : IRefCache
 {
     private readonly string _cacheDir;
@@ -88,18 +90,5 @@ public class RefCache : IRefCache
     }
 }
 
-public class InMemoryRefCache : IRefCache
-{
-    private readonly ConcurrentDictionary<CacheKey, RefDataWithOriginalExtract> _cache =
-        new ConcurrentDictionary<CacheKey, RefDataWithOriginalExtract>();
-
-    public bool Exists(CacheKey key) => _cache.ContainsKey(key);
-
-    public RefDataWithOriginalExtract? Get(CacheKey key)
-    {
-        _cache.TryGetValue(key, out var value);
-        return value;
-    }
-
-    public bool Set(CacheKey key, RefDataWithOriginalExtract data) => _cache.TryAdd(key, data);
-}
+public class InMemoryRefCache : DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>
+{ }

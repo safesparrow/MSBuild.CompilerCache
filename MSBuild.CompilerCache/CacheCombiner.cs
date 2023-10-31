@@ -1,3 +1,5 @@
+using IRefCache = MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
+
 namespace MSBuild.CompilerCache;
 
 public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue : class
@@ -47,4 +49,12 @@ public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue
             return false;
         }
     }
+}
+
+public static class CacheCombiner
+{
+    public static ICacheBase<TKey,TValue> Combine<TKey,TValue>(ICacheBase<TKey, TValue> first, ICacheBase<TKey,TValue> second) where TValue : class
+    {
+        return new CacheCombiner<TKey, TValue>(first, second);
+    }    
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MSBuild.CompilerCache;
 
 using System.Collections.Immutable;
@@ -59,15 +61,16 @@ public class LocatorAndPopulator
         Action<string>? logTime = null)
     {
         using var fs = File.OpenRead(configPath);
-        var config = JsonSerializer.Deserialize<Config>(fs);
+        var config = JsonSerializer.Deserialize<Config>(fs)!;
         //logTime?.Invoke("Config deserialized");
         var cache = new CompilationResultsCache(config.CacheDir);
         var refCache = new RefCache(config.InferRefCacheDir());
+        var combinedRefCache = CacheCombiner.Combine(_inMemoryRefCache, refCache);
         //logTime?.Invoke("Finish");
         var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir());
         var fileHashCache = new CacheCombiner<FileHashCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
         var hasher = HasherFactory.CreateHash(config.Hasher);
-        return (config, cache, refCache, fileHashCache, hasher);
+        return (config, cache, combinedRefCache, fileHashCache, hasher);
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
@@ -373,8 +376,9 @@ public class LocatorAndPopulator
 
         var changedFile =
             _localInputs.Files
-                .Chunk(Math.Max(1, _localInputs.Files.Length / 4))
+                .Chunk(Math.Max(1, _localInputs.Files.Length / 8))
                 .AsParallel()
+                .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
                 .Select(files =>
                 {
                     foreach (var file in files)
@@ -393,9 +397,18 @@ public class LocatorAndPopulator
     
     public UseOrPopulateResult PopulateCache(TaskLoggingHelper log, Action<string>? logTime = null)
     {
+        // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
+        // and avoid any duplicate calculations due to multiple dependants redoing the same thing if timings are bad.
+        
         //logTime?.Invoke("Start");
         var postCompilationTimeUtc = DateTime.UtcNow;
 
+        var meta = GetCompilationMetadata(postCompilationTimeUtc);
+        var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
+        //logTime?.Invoke("Got stuff");
+        using var tmpDir = new DisposableDir();
+        var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
+        
         var changedFile = CheckInputsConsistency(log);
         
         //logTime?.Invoke("Calculated local inputs with hash");
@@ -408,11 +421,6 @@ public class LocatorAndPopulator
             //logTime?.Invoke("Hashes match");
             log.LogMessage(MessageImportance.Normal,
                 $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
-            var meta = GetCompilationMetadata(postCompilationTimeUtc);
-            var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
-            //logTime?.Invoke("Got stuff");
-            using var tmpDir = new DisposableDir();
-            var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
             //logTime?.Invoke("Outputs zip created");
             _cache.Set(_locateResult.CacheKey!.Value, _extract, outputZip);
             //logTime?.Invoke("cache entry set");
@@ -432,6 +440,15 @@ public class LocatorAndPopulator
     {
         var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
 
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            var metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
+            {
+                using var fs = File.OpenWrite(metaPath);
+                JsonSerializer.Serialize(fs, metadata, AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
+            }
+        });
+
         var outputExtracts =
             items.Select(item =>
             {
@@ -444,21 +461,10 @@ public class LocatorAndPopulator
 
         var hashForFileName = Utils.ObjectToHash(outputExtracts, hasher);
 
-        var jsonOptions = new JsonSerializerOptions()
-        {
-            WriteIndented = true
-        };
-        
         var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
         {
             using var fs = File.OpenWrite(outputsExtractJsonPath);
-            JsonSerializer.Serialize(fs, outputExtracts, jsonOptions);
-        }
-
-        var metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
-        {
-            using var fs = File.OpenWrite(metaPath);
-            JsonSerializer.Serialize(fs, metadata, jsonOptions);
+            JsonSerializer.Serialize(fs, outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
         }
 
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
@@ -467,3 +473,15 @@ public class LocatorAndPopulator
         return tempZipPath;
     }
 }
+
+
+[JsonSerializable(typeof(FileExtract[]))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class OutputExtractsJsonContext : JsonSerializerContext
+{ }
+
+
+[JsonSerializable(typeof(AllCompilationMetadata))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class AllCompilationMetadataJsonContext : JsonSerializerContext
+{ }
