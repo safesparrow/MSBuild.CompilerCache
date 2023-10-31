@@ -80,13 +80,9 @@ public class RefTrimmer
                 .ToImmutableArray();
     }
 
-    public static (ImmutableArray<byte> bytes, ImmutableArray<string> internalsVisibleToAssemblies) MakeRefasm(
-        ImmutableArray<byte> content, LoggerBase logger, RefAsmType refAsmType)
+    public static ImmutableArray<byte> MakeRefasm(LoggerBase logger, RefAsmType refAsmType, PEReader peReader)
     {
-        var peReader = new PEReader(content);
         var metaReader = peReader.GetMetadataReader();
-
-        var internalsVisibleToAssemblies = GetInternalsVisibleToAssemblies(metaReader);
 
         if (!metaReader.IsAssembly)
             throw new Exception("File format is not supported");
@@ -97,15 +93,14 @@ public class RefTrimmer
 
         var refBytes = MetadataImporter.MakeRefasm(metaReader, peReader, logger, filter, makeMock: false)!;
 
-        return (ImmutableArray.Create(refBytes), internalsVisibleToAssemblies);
+        return ImmutableArray.Create(refBytes);
     }
 
-    public static (string hash, ImmutableArray<string> internalsVisibleToAssemblies) MakeRefasmAndGetHash(
-        ImmutableArray<byte> content, LoggerBase logger, RefAsmType refAsmType)
+    public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader)
     {
-        var (bytes, internalsVisibleToAssemblies) = MakeRefasm(content, logger, refAsmType);
+        var bytes = MakeRefasm(logger, refAsmType, peReader);
         var hash = Utils.BytesToHashHex(bytes.AsSpan());
-        return (hash, internalsVisibleToAssemblies);
+        return hash;
     }
 
     public RefData GenerateRefData(ImmutableArray<byte> content)
@@ -113,18 +108,42 @@ public class RefTrimmer
         var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
         var loggerBase = new LoggerBase(logger);
 
-        var (publicRefHash, internalsVisibleToAssemblies) =
-            MakeRefasmAndGetHash(content, loggerBase, RefAsmType.Public);
+        var peReader = new PEReader(content);
+        var metaReader = peReader.GetMetadataReader();
+        var internalsVisibleToAssemblies = GetInternalsVisibleToAssemblies(metaReader);
         // If no assemblies can see the internals, there is no need to generate public+internal ref assembly 
         var internalsNeverAccessible = internalsVisibleToAssemblies.IsEmpty;
-        var publicAndInternalRefHash =
-            internalsNeverAccessible
-                ? publicRefHash
-                : MakeRefasmAndGetHash(content, loggerBase, RefAsmType.PublicAndInternal).hash;
+        
+        string GetPublicHash()
+        {
+            var peReader2 = new PEReader(content);
+            return MakeRefasmAndGetHash(loggerBase, RefAsmType.Public, peReader2);
+        }
+        
+        string GetPublicAndInternalHash()
+        {
+            var peReader3 = new PEReader(content);
+            return MakeRefasmAndGetHash(loggerBase, RefAsmType.PublicAndInternal, peReader3);
+        }
 
+        string? publicRefHash = null; string? publicAndInternalRefHash = null;
+        if (internalsNeverAccessible)
+        {
+            publicRefHash = publicAndInternalRefHash = GetPublicHash();
+        }
+        else
+        {
+            var tasks = new[]
+            {
+                Task.Factory.StartNew(() => { publicRefHash = GetPublicHash();}),
+                Task.Factory.StartNew(() => { publicAndInternalRefHash = GetPublicAndInternalHash();})
+            };
+            Task.WaitAll(tasks);
+        }
+        
         return new RefData(
-            PublicRefHash: publicRefHash,
-            PublicAndInternalRefHash: publicAndInternalRefHash,
+            PublicRefHash: publicRefHash!,
+            PublicAndInternalRefHash: publicAndInternalRefHash!,
             InternalsVisibleTo: internalsVisibleToAssemblies
         );
     }
