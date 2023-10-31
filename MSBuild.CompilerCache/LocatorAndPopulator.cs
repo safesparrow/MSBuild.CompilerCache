@@ -403,9 +403,33 @@ public class LocatorAndPopulator
         //logTime?.Invoke("Start");
         var postCompilationTimeUtc = DateTime.UtcNow;
 
+        // TODO Refactor, deduplicate
+        void RefasmCompiledDlls()
+        {
+            bool RefasmableOutputItem(OutputItem o) => Path.GetExtension(o.LocalPath) is ".dll";
+            var dllsToRefasm = _decomposed.OutputsToCache.Where(RefasmableOutputItem).ToArray();
+            foreach (var dll in dllsToRefasm)
+            {
+                var bytes = File.ReadAllBytes(dll.LocalPath);
+                var trimmer = new RefTrimmer();
+                var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
+                var fileInfo = new FileInfo(dll.LocalPath);
+                var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
+                var hashString = _fileHashCache.Get(fileCacheKey);
+                var extract = new LocalFileExtract(fileCacheKey, hashString);
+                var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
+                var cacheKey = BuildRefCacheKey(name, hashString);
+                var cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
+                _refCache.Set(cacheKey, cached);
+            }
+        }
+
+        var refasmCompiledDllsTask = System.Threading.Tasks.Task.Factory.StartNew(RefasmCompiledDlls);
+
         var meta = GetCompilationMetadata(postCompilationTimeUtc);
         var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
         //logTime?.Invoke("Got stuff");
+        
         using var tmpDir = new DisposableDir();
         var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
         
@@ -431,6 +455,8 @@ public class LocatorAndPopulator
                 $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
         }
 
+        refasmCompiledDllsTask.GetAwaiter().GetResult();
+        
         return new UseOrPopulateResult();
     }
 
@@ -440,14 +466,17 @@ public class LocatorAndPopulator
     {
         var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
 
-        System.Threading.Tasks.Task.Run(() =>
+        async System.Threading.Tasks.Task SaveInputs()
         {
-            var metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
-            {
-                using var fs = File.OpenWrite(metaPath);
-                JsonSerializer.Serialize(fs, metadata, AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
-            }
-        });
+            var metaPath = outputsDir!.CombineAsFile("__inputs.json").FullName;
+            // ReSharper disable once UseAwaitUsing
+            using var fs = File.OpenWrite(metaPath);
+            await JsonSerializer.SerializeAsync(fs, metadata,
+                AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
+        }
+
+        // Write inputs json in parallel to the rest
+        var saveInputsTask = SaveInputs();
 
         var outputExtracts =
             items.Select(item =>
@@ -467,6 +496,9 @@ public class LocatorAndPopulator
             JsonSerializer.Serialize(fs, outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
         }
 
+        // Make sure inputs json written before zipping the whole directory
+        saveInputsTask.GetAwaiter().GetResult();
+
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
         ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
             CompressionLevel.NoCompression, includeBaseDirectory: false);
@@ -474,12 +506,10 @@ public class LocatorAndPopulator
     }
 }
 
-
 [JsonSerializable(typeof(FileExtract[]))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class OutputExtractsJsonContext : JsonSerializerContext
 { }
-
 
 [JsonSerializable(typeof(AllCompilationMetadata))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
