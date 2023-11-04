@@ -231,8 +231,12 @@ public class LocatorAndPopulator
                 {
                     return dlls.Select(dll =>
                     {
+                        var fileInfo = new FileInfo(dll);
+                        var lastWrite = fileInfo.LastWriteTimeUtc;
+                        var length = fileInfo.Length;
                         var allRefData = GetAllRefData(dll, refCache, fileHashCache, hasher);
-                        return AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
+                        var data = AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
+                        return data with { Info = data.Info with {LastWriteTimeUtc = lastWrite, Length = length} };
                     }).ToArray();
                 })
                 .ToImmutableArray()
@@ -256,16 +260,17 @@ public class LocatorAndPopulator
         return new LocalFileExtract(Info: fileHash, Hash: hashString);
     }
 
-    private static LocalFileExtract GetLocalFileExtract(FileHashCacheKey fileHash, IFileHashCache fileHashCache)
+    public static string CreateHashString(FileHashCacheKey fileHashCacheKey)
     {
-        var hashString = fileHashCache.Get(fileHash);
-        if (hashString == null)
-        {
-            var bytes = File.ReadAllBytes(fileHash.FullName);
-            hashString = Utils.BytesToHashHex(bytes);
-            fileHashCache.Set(fileHash, hashString);
-        }
-        return new LocalFileExtract(Info: fileHash, Hash: hashString);
+        var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
+        return Utils.BytesToHashHex(bytes);
+    }
+
+    private static LocalFileExtract GetLocalFileExtract(FileHashCacheKey fileKey, IFileHashCache fileHashCache)
+    {
+        var hashString = fileHashCache.GetOrSet(fileKey, CreateHashString);
+        
+        return new LocalFileExtract(Info: fileKey, Hash: hashString);
     }
     
     private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
@@ -415,7 +420,7 @@ public class LocatorAndPopulator
                 var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
                 var fileInfo = new FileInfo(dll.LocalPath);
                 var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
-                var hashString = _fileHashCache.Get(fileCacheKey);
+                var hashString = _fileHashCache.GetOrSet(fileCacheKey, CreateHashString);
                 var extract = new LocalFileExtract(fileCacheKey, hashString);
                 var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
                 var cacheKey = BuildRefCacheKey(name, hashString);
@@ -500,6 +505,8 @@ public class LocatorAndPopulator
         saveInputsTask.GetAwaiter().GetResult();
 
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
+        // TODO Create zip archive from in-memory data rather than files on disk
+        
         ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
             CompressionLevel.NoCompression, includeBaseDirectory: false);
         return tempZipPath;

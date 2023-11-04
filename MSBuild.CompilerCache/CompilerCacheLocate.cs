@@ -59,13 +59,13 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
         var (inMemoryRefCache, fileHashCache) = GetInMemoryRefCache();
         var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache);
         var inputs = GatherInputs();
-        void LogTime(string name) => Log.LogWarning($"[{sw.ElapsedMilliseconds}ms] {name}");
+        void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");
         var results = locator.Locate(inputs, Log, LogTime);
         if (results.PopulateCache)
         {
             Guid = guid.ToString();
             BuildEngine4.RegisterTaskObject(guid.ToString(), locator, RegisteredTaskObjectLifetime.Build, false);
-            Log.LogWarning($"Locate - registered {nameof(LocatorAndPopulator)} object at Guid key {guid}");
+            Log.LogMessage($"Locate - registered {nameof(LocatorAndPopulator)} object at Guid key {guid}");
         }
         RunCompilation = results.RunCompilation;
         PopulateCache = results.PopulateCache;
