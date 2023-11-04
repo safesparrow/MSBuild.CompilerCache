@@ -116,6 +116,7 @@ public class LocatorAndPopulator
         _assemblyName = inputs.AssemblyName;
         //logTime?.Invoke("Caches created");
 
+        
         (_localInputs, _localInputsHash) = CalculateLocalInputsWithHash(logTime);
         //logTime?.Invoke("LocalInputs with hash created");
         
@@ -200,6 +201,46 @@ public class LocatorAndPopulator
             Other: Extract(decomposed.FileInputs)
         );
     }
+
+    public SourceFileResult ProcessSourceFile(string relativePath)
+    {
+        // Open the file for reading, and don't allow anyone to modify it.
+        var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var info = new FileInfo(relativePath);
+        var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
+        var hash = _fileHashCache.Get(fileHashCacheKey);
+        if (hash == null)
+        {
+            var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
+            hash = Utils.BytesToHashHex(bytes);
+            _fileHashCache.Set(fileHashCacheKey, hash);
+        }
+
+        var localFileExtract = new LocalFileExtract(fileHashCacheKey, hash);
+
+        return new SourceFileResult(f, localFileExtract);
+    }
+    
+    
+    public SourceFileResult ProcessReference(string relativePath, string assemblyName)
+    {
+        // Open the file for reading, and don't allow anyone to modify it.
+        var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var info = new FileInfo(relativePath);
+        var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
+        var hash = _fileHashCache.Get(fileHashCacheKey);
+        if (hash == null)
+        {
+            var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
+            hash = Utils.BytesToHashHex(bytes);
+            _fileHashCache.Set(fileHashCacheKey, hash);
+        }
+        
+        var allRefData = GetAllRefData(relativePath, _refCache, _fileHashCache, _hasher);
+        var data = AllRefDataToExtract(allRefData, assemblyName, _config.RefTrimming.IgnoreInternalsIfPossible);
+        var extract = new LocalFileExtract(fileHashCacheKey, data.Hash);
+        return new SourceFileResult(f, extract);
+    }
     
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
         string assemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, IHash hasher, Action<string>? logTime = null)
@@ -281,6 +322,27 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
+    internal static AllRefData GetAllRefData2(IRefCache refCache, byte[] content, string hashString, string dllName, LocalFileExtract extract)
+    {
+        var cacheKey = BuildRefCacheKey(dllName, hashString);
+        var cached = refCache.Get(cacheKey);
+        if (cached == null)
+        {
+            var trimmer = new RefTrimmer();
+            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(content));
+            cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
+            refCache.Set(cacheKey, cached);
+        }
+
+        return new AllRefData(
+            Original: cached.Original,
+            InternalsVisibleToAssemblies: cached.Ref.InternalsVisibleTo,
+            PublicRefHash: cached.Ref.PublicRefHash,
+            PublicAndInternalsRefHash: cached.Ref.PublicAndInternalRefHash
+        );
+    }
+
+    
     internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache, IHash hasher)
     {
         var fileInfo = new FileInfo(filepath);
@@ -522,3 +584,7 @@ public partial class OutputExtractsJsonContext : JsonSerializerContext
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class AllCompilationMetadataJsonContext : JsonSerializerContext
 { }
+
+public record struct FileHash(string Hash);
+
+public record SourceFileResult(FileStream f, LocalFileExtract fileHashCacheKey);
