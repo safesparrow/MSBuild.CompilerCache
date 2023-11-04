@@ -13,7 +13,7 @@ namespace MSBuild.CompilerCache;
 /// <param name="PublicRefHash">Hash of a reference assembly for this assembly, that excluded internal symbols. </param>
 /// <param name="PublicAndInternalRefHash">Hash of a reference assembly for this assembly, that included internal symbols. </param>
 /// <param name="InternalsVisibleTo">A list of assembly names that can access internal symbols from this assembly, via the InternalsVisibleTo attribute.</param>
-public record RefData(string PublicRefHash, string PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
+public record RefData(string PublicRefHash, string? PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
 
 public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original);
 

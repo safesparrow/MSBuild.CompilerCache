@@ -229,14 +229,30 @@ public class LocatorAndPopulator
         var info = new FileInfo(relativePath);
         var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
         var hash = _fileHashCache.Get(fileHashCacheKey);
+        byte[]? bytes = null;
         if (hash == null)
         {
-            var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
+            bytes ??= File.ReadAllBytes(fileHashCacheKey.FullName);
             hash = Utils.BytesToHashHex(bytes);
             _fileHashCache.Set(fileHashCacheKey, hash);
         }
         
-        var allRefData = GetAllRefData(relativePath, _refCache, _fileHashCache, _hasher);
+        var dllName = Path.GetFileNameWithoutExtension(fileHashCacheKey.FullName);
+        var refCacheKey = BuildRefCacheKey(dllName, hash);
+        var cached = _refCache.Get(refCacheKey);
+        var originalExtract = new LocalFileExtract(fileHashCacheKey, hash);
+        if (cached == null)
+        {
+            bytes ??= File.ReadAllBytes(fileHashCacheKey.FullName);
+            
+            var trimmer = new RefTrimmer();
+            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
+            cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: originalExtract);
+            _refCache.Set(refCacheKey, cached);
+        }
+
+        var allRefData = new AllRefData(Original: cached.Original, RefData: cached.Ref);
+        
         var data = AllRefDataToExtract(allRefData, assemblyName, _config.RefTrimming.IgnoreInternalsIfPossible);
         var extract = new LocalFileExtract(fileHashCacheKey, data.Hash);
         return new SourceFileResult(f, extract);
@@ -334,14 +350,8 @@ public class LocatorAndPopulator
             refCache.Set(cacheKey, cached);
         }
 
-        return new AllRefData(
-            Original: cached.Original,
-            InternalsVisibleToAssemblies: cached.Ref.InternalsVisibleTo,
-            PublicRefHash: cached.Ref.PublicRefHash,
-            PublicAndInternalsRefHash: cached.Ref.PublicAndInternalRefHash
-        );
+        return new AllRefData(Original: cached.Original, RefData: cached.Ref);
     }
-
     
     internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache, IHash hasher)
     {
@@ -375,27 +385,29 @@ public class LocatorAndPopulator
             refCache.Set(cacheKey, cached);
         }
 
-        return new AllRefData(
-            Original: cached.Original,
-            InternalsVisibleToAssemblies: cached.Ref.InternalsVisibleTo,
-            PublicRefHash: cached.Ref.PublicRefHash,
-            PublicAndInternalsRefHash: cached.Ref.PublicAndInternalRefHash
-        );
+        return new AllRefData(Original: cached.Original, RefData: cached.Ref);
     }
 
-    private static LocalFileExtract AllRefDataToExtract(AllRefData data, string assemblyName,
+    /// <summary>
+    /// Decide which trimmed version of an assembly to use as an "input" for hashing,
+    /// and return a <see cref="LocalFileExtract"/> that represents that version.
+    /// </summary>
+    /// <param name="data">Data about the original DLL and its trimmed versions</param>
+    /// <param name="compilingAssemblyName">Name of the assembly being compiled - used to decide whether internal symbols are relevant to that assembly.</param>
+    /// <param name="ignoreInternalsIfPossible">If false, will always use the assembly version with both Public and Internal symbols</param>
+    /// <returns></returns>
+    private static LocalFileExtract AllRefDataToExtract(AllRefData data, string compilingAssemblyName,
         bool ignoreInternalsIfPossible)
     {
         bool internalsVisibleToOurAssembly =
             data.InternalsVisibleToAssemblies.Any(x =>
-                string.Equals(x, assemblyName, StringComparison.OrdinalIgnoreCase));
+                string.Equals(x, compilingAssemblyName, StringComparison.OrdinalIgnoreCase));
 
-        var ignoreInternals = ignoreInternalsIfPossible && !internalsVisibleToOurAssembly;
-        var trimmedHash =
-            ignoreInternals ? data.PublicRefHash : data.PublicAndInternalsRefHash;
+        bool ignoreInternals = ignoreInternalsIfPossible && !internalsVisibleToOurAssembly;
+        string? trimmedHash = ignoreInternals ? data.PublicRefHash : data.PublicAndInternalsRefHash;
 
-        // TODO It's not very clean that we keep other properties of the original dll and only modify the hash, but it's enough for caching to work.
-        // We also depend on it working this way, when comparing file metadata in the 'PopulateCache' stage.
+        // This extract is used to find cached compilation results.
+        // We want it to return the same value if the appropriately trimmed version of the dll is the same.
         return data.Original with { Hash = trimmedHash };
     }
 
