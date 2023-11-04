@@ -34,7 +34,7 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
 
     private readonly object _refCacheLock = new object();
     
-    private InMemoryCaches GetInMemoryRefCache()
+    private InMemoryCaches GetInMemoryCaches()
     {
         var key = "CompilerCache_InMemoryRefCache";
         lock (_refCacheLock)
@@ -56,7 +56,7 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
     {
         var sw = Stopwatch.StartNew();
         var guid = System.Guid.NewGuid();
-        var (inMemoryRefCache, fileHashCache) = GetInMemoryRefCache();
+        var (inMemoryRefCache, fileHashCache) = GetInMemoryCaches();
         var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache);
         var inputs = GatherInputs();
         void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");

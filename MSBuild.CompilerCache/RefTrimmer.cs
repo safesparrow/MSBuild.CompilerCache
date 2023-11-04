@@ -21,7 +21,6 @@ public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original)
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerContext;
 
-
 public class RefTrimmer
 {
     public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
