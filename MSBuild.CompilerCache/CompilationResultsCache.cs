@@ -97,11 +97,11 @@ public record OutputItem
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
 [Serializable]
-public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
 {
     public FullExtract ToFullExtract()
     {
-        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
+        return new FullExtract(Files: Files.Select(f => f.fileHashCacheKey.ToFileExtract()).ToArray(), Props: Props,
             OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
     }
 }
@@ -268,5 +268,4 @@ public class CompilationResultsCache : ICompilationResultsCache
 
 [JsonSerializable(typeof(FullExtract))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class FullExtractJsonContext : JsonSerializerContext
-{ }
+public partial class FullExtractJsonContext : JsonSerializerContext;

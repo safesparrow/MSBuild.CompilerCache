@@ -27,26 +27,49 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
         return File.Exists(entryPath);
     }
 
-    public string Get(FileHashCacheKey originalKey)
+    public async Task<string?> GetAsync(FileHashCacheKey originalKey)
     {
         var key = ExtractKey(originalKey);
         var entryPath = EntryPath(key);
         var fi = new FileInfo(entryPath);
         if (fi.Exists)
         {
-            string Read()
-            {
-                using var fs = fi.OpenText();
-                return fs.ReadToEnd();
-            }
-            return IOActionWithRetries(Read);
+            Task<string> Read() => File.ReadAllTextAsync(entryPath);
+            return await IOActionWithRetriesAsync(Read);
         }
         else
         {
             return null;
         }
     }
+    
+    internal static async Task<T> IOActionWithRetriesAsync<T>(Func<Task<T>> action)
+    {
+        var attempts = 5;
+        var retryDelayBaseMs = 50;
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            try
+            {
+                return await action();
+            }
+            catch(IOException)
+            {
+                if (attempt < attempts)
+                {
+                    var delay = TimeSpan.FromMilliseconds(Math.Pow(2, attempt-1) * retryDelayBaseMs);
+                    await Task.Delay(delay);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
 
+        throw new InvalidOperationException("Unexpected code location reached");
+    }
+    
     internal static T IOActionWithRetries<T>(Func<T> action)
     {
         var attempts = 5;
@@ -74,20 +97,20 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
         throw new InvalidOperationException("Unexpected code location reached");
     }
 
-    public bool Set(FileHashCacheKey originalKey, string value)
+    public async Task<bool> SetAsync(FileHashCacheKey originalKey, string value)
     {
         var key = ExtractKey(originalKey);
-        var entryPath = EntryPath(key);
+        string entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
-            return false;
+            return await Task.FromResult(false);
         }
 
         using var tmpFile = new TempFile();
         {
-            using var fs = tmpFile.File.OpenWrite();
-            using var sw = new StreamWriter(fs, Encoding.UTF8);
-            sw.Write(value);
+            await using var fs = tmpFile.File.OpenWrite();
+            await using var sw = new StreamWriter(fs, Encoding.UTF8);
+            await sw.WriteAsync(value);
         }
         
         return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);

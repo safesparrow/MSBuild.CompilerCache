@@ -183,9 +183,10 @@ public class LocatorAndPopulator
     }
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher, logTime);
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, logTime);
 
     public record FileInputs(FileHashCacheKey[] References, FileHashCacheKey[] Other);
+    public record FileInputs2(string[] References, string[] Other);
 
     private static FileInputs ExtractFileInputs(DecomposedCompilerProps decomposed)
     {
@@ -202,113 +203,97 @@ public class LocatorAndPopulator
         );
     }
 
-    public SourceFileResult ProcessSourceFile(string relativePath)
+    public static async Task<InputResult> ProcessSourceFile(string relativePath, IFileHashCache fileHashCache)
     {
         // Open the file for reading, and don't allow anyone to modify it.
         var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         var info = new FileInfo(relativePath);
         var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
-        var hash = _fileHashCache.Get(fileHashCacheKey);
+        var hash = await fileHashCache.GetAsync(fileHashCacheKey);
         if (hash == null)
         {
-            var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
+            var bytes = await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
             hash = Utils.BytesToHashHex(bytes);
-            _fileHashCache.Set(fileHashCacheKey, hash);
+            fileHashCache.Set(fileHashCacheKey, hash);
         }
 
         var localFileExtract = new LocalFileExtract(fileHashCacheKey, hash);
 
-        return new SourceFileResult(f, localFileExtract);
+        return new InputResult(f, localFileExtract);
     }
     
     
-    public SourceFileResult ProcessReference(string relativePath, string assemblyName)
+    public static async Task<InputResult> ProcessReference(string relativePath, string compilingAssemblyName, IFileHashCache fileHashCache, IRefCache refCache, RefTrimmingConfig refTrimmingConfig)
     {
         // Open the file for reading, and don't allow anyone to modify it.
         var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         var info = new FileInfo(relativePath);
         var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
-        var hash = _fileHashCache.Get(fileHashCacheKey);
+        var hash = await fileHashCache.GetAsync(fileHashCacheKey);
         byte[]? bytes = null;
+        
         if (hash == null)
         {
-            bytes ??= File.ReadAllBytes(fileHashCacheKey.FullName);
+            bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
             hash = Utils.BytesToHashHex(bytes);
-            _fileHashCache.Set(fileHashCacheKey, hash);
+            fileHashCache.Set(fileHashCacheKey, hash);
         }
         
-        var dllName = Path.GetFileNameWithoutExtension(fileHashCacheKey.FullName);
-        var refCacheKey = BuildRefCacheKey(dllName, hash);
-        var cached = _refCache.Get(refCacheKey);
+        var referenceDllName = Path.GetFileNameWithoutExtension(fileHashCacheKey.FullName);
         var originalExtract = new LocalFileExtract(fileHashCacheKey, hash);
+
+        var refCacheKey = BuildRefCacheKey(referenceDllName, hash);
+        var cached = await refCache.GetAsync(refCacheKey);
         if (cached == null)
         {
-            bytes ??= File.ReadAllBytes(fileHashCacheKey.FullName);
-            
-            var trimmer = new RefTrimmer();
-            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
+            bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
+
+            var toBeCached = await new RefTrimmer().GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: originalExtract);
-            _refCache.Set(refCacheKey, cached);
+            refCache.Set(refCacheKey, cached);
         }
 
         var allRefData = new AllRefData(Original: cached.Original, RefData: cached.Ref);
         
-        var data = AllRefDataToExtract(allRefData, assemblyName, _config.RefTrimming.IgnoreInternalsIfPossible);
+        var data = AllRefDataToExtract(allRefData, compilingAssemblyName, refTrimmingConfig.IgnoreInternalsIfPossible);
         var extract = new LocalFileExtract(fileHashCacheKey, data.Hash);
-        return new SourceFileResult(f, extract);
+        return new InputResult(f, extract);
     }
     
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string assemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, IHash hasher, Action<string>? logTime = null)
+        string compilingAssemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, Action<string>? logTime = null)
     {
-        var _fileInputs = ExtractFileInputs(decomposed);
-        var fileInputs = trimmingConfig.Enabled
-            ? _fileInputs.Other
-            : _fileInputs.Other.Concat(_fileInputs.References).ToArray();
-        var fileExtracts =
-            fileInputs
-                .Chunk(4)
-                // .AsParallel()
-                // .AsOrdered()
-                // .WithDegreeOfParallelism(Math.Max(2, Environment.ProcessorCount / 2))
-                // Preserve original order of files
-                .SelectMany(paths => paths.Select(p => GetLocalFileExtract(p, fileHashCache)))
-                .ToImmutableArray();
-
-        //logTime?.Invoke("file extracts done");
+        string[] fileInputs2, references2;
+        if (trimmingConfig.Enabled)
+        {
+            fileInputs2 = decomposed.FileInputs;
+            references2 = decomposed.References;
+        }
+        else
+        {
+            fileInputs2 = decomposed.FileInputs.Concat(decomposed.References).ToArray();
+            references2 = Array.Empty<string>();
+        }
         
-        var refExtracts = trimmingConfig.Enabled
-            ? decomposed.References
+        var fileTasks = fileInputs2.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache)));
+        var refTasks = references2.Select(r => (Func<Task<InputResult>>)(() => ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig)));
+        var allTaskFuncs = fileTasks.Concat(refTasks).ToArray();
+        var allTasks =
+            allTaskFuncs
                 .Chunk(20)
+                .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
                 .AsParallel()
-                // Preserve original order of files
-                .AsOrdered()
-                .WithDegreeOfParallelism(8)
-                .SelectMany(dlls =>
-                {
-                    return dlls.Select(dll =>
-                    {
-                        var fileInfo = new FileInfo(dll);
-                        var lastWrite = fileInfo.LastWriteTimeUtc;
-                        var length = fileInfo.Length;
-                        var allRefData = GetAllRefData(dll, refCache, fileHashCache, hasher);
-                        var data = AllRefDataToExtract(allRefData, assemblyName, trimmingConfig.IgnoreInternalsIfPossible);
-                        return data with { Info = data.Info with {LastWriteTimeUtc = lastWrite, Length = length} };
-                    }).ToArray();
-                })
-                .ToImmutableArray()
-            : ImmutableArray.Create<LocalFileExtract>();
+                .ToArray();
+        var allItems = System.Threading.Tasks.Task.WhenAll(allTasks).GetAwaiter().GetResult();
 
         //logTime?.Invoke("ref extracts done");
         
-        var allExtracts = fileExtracts.Union(refExtracts).ToArray();
-
         var props = decomposed.PropertyInputs.Select(kvp => (kvp.Key, kvp.Value)).OrderBy(kvp => kvp.Key).ToArray();
         var outputs = decomposed.OutputsToCache.OrderBy(x => x.Name).ToArray();
         
         //logTime?.Invoke("orders done");
 
-        return new LocalInputs(allExtracts, props, outputs);
+        return new LocalInputs(allItems, props, outputs);
     }
 
     private static LocalFileExtract GetLocalFileExtract(FileInfo fileInfo, FileHashCacheKey fileHash)
@@ -323,9 +308,9 @@ public class LocatorAndPopulator
         return Utils.BytesToHashHex(bytes);
     }
 
-    private static LocalFileExtract GetLocalFileExtract(FileHashCacheKey fileKey, IFileHashCache fileHashCache)
+    private static async Task<LocalFileExtract> GetLocalFileExtract(FileHashCacheKey fileKey, IFileHashCache fileHashCache)
     {
-        var hashString = fileHashCache.GetOrSet(fileKey, CreateHashString);
+        var hashString = await fileHashCache.GetOrSet(fileKey, CreateHashString);
         
         return new LocalFileExtract(Info: fileKey, Hash: hashString);
     }
@@ -338,22 +323,7 @@ public class LocatorAndPopulator
             WorkingDirectory: Environment.CurrentDirectory
         );
 
-    internal static AllRefData GetAllRefData2(IRefCache refCache, byte[] content, string hashString, string dllName, LocalFileExtract extract)
-    {
-        var cacheKey = BuildRefCacheKey(dllName, hashString);
-        var cached = refCache.Get(cacheKey);
-        if (cached == null)
-        {
-            var trimmer = new RefTrimmer();
-            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(content));
-            cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-            refCache.Set(cacheKey, cached);
-        }
-
-        return new AllRefData(Original: cached.Original, RefData: cached.Ref);
-    }
-    
-    internal static AllRefData GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache, IHash hasher)
+    internal static async Task<AllRefData> GetAllRefData(string filepath, IRefCache refCache, IFileHashCache fileHashCache, IHash hasher)
     {
         var fileInfo = new FileInfo(filepath);
         if (!fileInfo.Exists)
@@ -362,11 +332,11 @@ public class LocatorAndPopulator
         }
 
         var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
-        var hashString = fileHashCache.Get(fileCacheKey);
-        byte[] bytes = null;
+        var hashString = await fileHashCache.GetAsync(fileCacheKey);
+        byte[]? bytes = null;
         if (hashString == null)
         {
-            bytes = File.ReadAllBytes(filepath);
+            bytes ??= await File.ReadAllBytesAsync(filepath);
             hashString = Utils.BytesToHashHex(bytes, hasher);
             fileHashCache.Set(fileCacheKey, hashString);
         }
@@ -375,12 +345,12 @@ public class LocatorAndPopulator
         var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
 
         var cacheKey = BuildRefCacheKey(name, hashString);
-        var cached = refCache.Get(cacheKey);
+        var cached = refCache.GetAsync(cacheKey).GetAwaiter().GetResult();
         if (cached == null)
         {
-            bytes ??= File.ReadAllBytes(filepath);
+            bytes ??= await File.ReadAllBytesAsync(filepath);
             var trimmer = new RefTrimmer();
-            var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
+            var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
             refCache.Set(cacheKey, cached);
         }
@@ -432,48 +402,7 @@ public class LocatorAndPopulator
         var name = Path.GetFileName(inputs.ProjectFullPath);
         return new CacheKey($"{name}_{hash}");
     }
-    
-    public record struct SomeFileMetadata(long Length, DateTime LastWriteTimeUtc);
 
-    public record struct InputsConsistencyResult(bool Changed,
-        (SomeFileMetadata Before, SomeFileMetadata After)? ChangedFile);
-
-    private string? CheckInputsConsistency(TaskLoggingHelper taskLoggingHelper)
-    {
-        bool FileChanged(FileHashCacheKey file)
-        {
-            var before = new SomeFileMetadata(file.Length, file.LastWriteTimeUtc);
-            var refreshedFile = new FileInfo(file.FullName);
-            var after = new SomeFileMetadata(refreshedFile.Length, refreshedFile.LastWriteTimeUtc);
-            var changed = after != before;
-            if (changed)
-            {
-                taskLoggingHelper.LogWarning($"{file.FullName} changed. Before: {before}, after: {after}");
-            }
-            return changed;
-        }
-
-        var changedFile =
-            _localInputs.Files
-                .Chunk(Math.Max(1, _localInputs.Files.Length / 8))
-                .AsParallel()
-                .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-                .Select(files =>
-                {
-                    foreach (var file in files)
-                    {
-                        if (FileChanged(file.Info))
-                        {
-                            return file.Info.FullName;
-                        }
-                    }
-
-                    return null;
-                })
-                .FirstOrDefault(changedFile => changedFile != null);
-        return changedFile;
-    }
-    
     public UseOrPopulateResult PopulateCache(TaskLoggingHelper log, Action<string>? logTime = null)
     {
         // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
@@ -483,18 +412,18 @@ public class LocatorAndPopulator
         var postCompilationTimeUtc = DateTime.UtcNow;
 
         // TODO Refactor, deduplicate
-        void RefasmCompiledDlls()
+        async System.Threading.Tasks.Task RefasmCompiledDlls()
         {
-            bool RefasmableOutputItem(OutputItem o) => Path.GetExtension(o.LocalPath) is ".dll";
+            static bool RefasmableOutputItem(OutputItem o) => Path.GetExtension(o.LocalPath) is ".dll";
             var dllsToRefasm = _decomposed.OutputsToCache.Where(RefasmableOutputItem).ToArray();
             foreach (var dll in dllsToRefasm)
             {
-                var bytes = File.ReadAllBytes(dll.LocalPath);
+                var bytes = await File.ReadAllBytesAsync(dll.LocalPath);
                 var trimmer = new RefTrimmer();
-                var toBeCached = trimmer.GenerateRefData(ImmutableArray.Create(bytes));
+                var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(bytes));
                 var fileInfo = new FileInfo(dll.LocalPath);
                 var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
-                var hashString = _fileHashCache.GetOrSet(fileCacheKey, CreateHashString);
+                var hashString = await _fileHashCache.GetOrSet(fileCacheKey, CreateHashString);
                 var extract = new LocalFileExtract(fileCacheKey, hashString);
                 var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
                 var cacheKey = BuildRefCacheKey(name, hashString);
@@ -511,28 +440,13 @@ public class LocatorAndPopulator
         
         using var tmpDir = new DisposableDir();
         var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log);
-        
-        var changedFile = CheckInputsConsistency(log);
-        
-        //logTime?.Invoke("Calculated local inputs with hash");
-        var consistent = changedFile == null;
-        var consistencyString = consistent ? "Consistent" : $"Some files changed. Example: {changedFile}";
-        log.LogMessage(MessageImportance.Normal, $"CompilationCache info: {consistencyString}");
 
-        if (consistent)
-        {
-            //logTime?.Invoke("Hashes match");
-            log.LogMessage(MessageImportance.Normal,
-                $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
-            //logTime?.Invoke("Outputs zip created");
-            _cache.Set(_locateResult.CacheKey!.Value, _extract, outputZip);
-            //logTime?.Invoke("cache entry set");
-        }
-        else
-        {
-            log.LogMessage(MessageImportance.Normal,
-                $"CompilationCache miss and inputs changed during compilation. The cache will not be populated as we are not certain what inputs the compiler used.");
-        }
+        //logTime?.Invoke("Hashes match");
+        log.LogMessage(MessageImportance.Normal,
+            $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
+        //logTime?.Invoke("Outputs zip created");
+        _cache.Set(_locateResult.CacheKey!.Value, _extract, outputZip);
+        //logTime?.Invoke("cache entry set");
 
         refasmCompiledDllsTask.GetAwaiter().GetResult();
         
@@ -589,14 +503,12 @@ public class LocatorAndPopulator
 
 [JsonSerializable(typeof(FileExtract[]))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class OutputExtractsJsonContext : JsonSerializerContext
-{ }
+public partial class OutputExtractsJsonContext : JsonSerializerContext;
 
 [JsonSerializable(typeof(AllCompilationMetadata))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class AllCompilationMetadataJsonContext : JsonSerializerContext
-{ }
+public partial class AllCompilationMetadataJsonContext : JsonSerializerContext;
 
 public record struct FileHash(string Hash);
 
-public record SourceFileResult(FileStream f, LocalFileExtract fileHashCacheKey);
+public record InputResult(FileStream f, LocalFileExtract fileHashCacheKey);

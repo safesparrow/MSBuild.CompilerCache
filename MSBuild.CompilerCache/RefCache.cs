@@ -88,7 +88,22 @@ public class RefCache : IRefCache
         }
         return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
+
+    public async Task<bool> SetAsync(CacheKey key, RefDataWithOriginalExtract data)
+    {
+        var entryPath = EntryPath(key);
+        if (File.Exists(entryPath))
+        {
+            return false;
+        }
+
+        using var tmpFile = new TempFile();
+        {
+            await using var fs = tmpFile.File.OpenWrite();
+            await JsonSerializer.SerializeAsync(fs, data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
+        }
+        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+    }
 }
 
-public class InMemoryRefCache : DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>
-{ }
+public class InMemoryRefCache : DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>;
