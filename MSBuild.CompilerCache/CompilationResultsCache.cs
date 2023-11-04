@@ -120,13 +120,12 @@ public record struct CacheKey(string Key)
 public interface ICompilationResultsCache
 {
     bool Exists(CacheKey key);
-    /// <summary>
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="fullExtract"></param>
-    /// <param name="resultZipToBeMoved"></param>
-    void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
-    string? Get(CacheKey key);
+    public sealed void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved) =>
+        SetAsync(key, fullExtract, resultZipToBeMoved).GetAwaiter().GetResult();
+    Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
+
+    sealed string? Get(CacheKey key) => GetAsync(key).GetAwaiter().GetResult();
+    Task<string?> GetAsync(CacheKey key);
 }
 
 public class CompilationResultsCache : ICompilationResultsCache
@@ -201,7 +200,7 @@ public class CompilationResultsCache : ICompilationResultsCache
             .ToArray();
     }
 
-    public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
+    public async Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
     {
         var dir = new DirectoryInfo(CacheDir(key));
         dir.Create();
@@ -218,14 +217,14 @@ public class CompilationResultsCache : ICompilationResultsCache
             // TODO Serialise directly to the cache dir (as a tmp file)
             using var tmpFile = new TempFile();
             {
-                using var fs = tmpFile.File.OpenWrite();
-                JsonSerializer.Serialize(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
+                await using var fs = tmpFile.File.OpenWrite();
+                await JsonSerializer.SerializeAsync(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
             AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
     }
 
-    public string? Get(CacheKey key)
+    public Task<string?> GetAsync(CacheKey key)
     {
         var dir = new DirectoryInfo(CacheDir(key));
         if (dir.Exists)
@@ -244,18 +243,14 @@ public class CompilationResultsCache : ICompilationResultsCache
                     default:
                     {
                         var tmpPath = Path.GetTempFileName();
-                        FileHashCache.IOActionWithRetries(() =>
-                        {
-                            File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
-                            return 0;
-                        });
-                        return tmpPath;
+                        File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
+                        return Task.FromResult(tmpPath)!;
                     }
                 }
             }
         }
 
-        return null;
+        return Task.FromResult<string?>(null);
     }
 
     public int OutputVersionsCount(CacheKey key) => GetOutputVersions(key).Length;

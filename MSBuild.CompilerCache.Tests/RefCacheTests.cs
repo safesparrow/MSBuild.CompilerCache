@@ -13,10 +13,10 @@ public class RefCacheTests
         using var dir = new DisposableDir();
         var cache = new RefCache(dir.FullName);
         var key = new CacheKey("a");
-        Assert.Multiple(() =>
+        Assert.Multiple(async () =>
         {
             Assert.That(cache.Exists(key), Is.False);
-            Assert.That(cache.Get(key), Is.Null);
+            Assert.That(await cache.GetAsync(key), Is.Null);
         });
     }
 
@@ -40,14 +40,13 @@ public class RefCacheTests
                 Hash: null
             )
         );
-        cache.Set(key, data);
-        
-        Assert.Multiple(() =>
+
+        Assert.Multiple(async () =>
         {
             Assert.That(cache.Exists(key), Is.True);
-            var cached = cache.Get(key);
+            var cached = await cache.GetAsync(key);
             Assert.That(cached, Is.Not.Null);
-            Assert.That(cached.ToJson(), Is.EqualTo(data.ToJson()));
+            Assert.That(cached!.ToJson(), Is.EqualTo(data.ToJson()));
             Assert.That(cache.Exists(new CacheKey("b")), Is.False);
         }); 
     }

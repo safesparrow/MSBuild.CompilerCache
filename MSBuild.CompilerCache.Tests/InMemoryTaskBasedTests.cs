@@ -89,7 +89,7 @@ public class InMemoryTaskBasedTests
     }
 
     [Test]
-    public void SimpleCacheHitTest()
+    public async Task SimpleCacheHitTest()
     {
         var outputItems = new[]
         {
@@ -123,7 +123,7 @@ public class InMemoryTaskBasedTests
             File.Move(outputItem.LocalPath, outputItem.LocalPath + ".copy");
         }
 
-        _compilationResultsCache.Set(all.CacheKey, all.FullExtract, zip);
+        await _compilationResultsCache.SetAsync(all.CacheKey, all.FullExtract, zip);
 
         locate.SetInputs(inputs);
         var locateSuccess = locate.Execute();
@@ -145,13 +145,13 @@ public class InMemoryTaskBasedTests
         foreach (var outputItem in outputItems)
         {
             Assert.That(File.Exists(outputItem.LocalPath));
-            Assert.That(File.ReadAllText(outputItem.LocalPath),
-                Is.EqualTo(File.ReadAllText(outputItem.LocalPath + ".copy")));
+            Assert.That(await File.ReadAllTextAsync(outputItem.LocalPath),
+                Is.EqualTo(await File.ReadAllTextAsync(outputItem.LocalPath + ".copy")));
         }
     }
 
     [Test]
-    public void SimpleCacheMissTest()
+    public async Task SimpleCacheMissTest()
     {
         var outputItems = new[]
         {
@@ -199,7 +199,7 @@ public class InMemoryTaskBasedTests
         var allKeys = _compilationResultsCache.GetAllExistingKeys();
         Assert.That(allKeys, Is.EquivalentTo(new[] { all.CacheKey }));
 
-        var zip = _compilationResultsCache.Get(all.CacheKey);
+        var zip = await _compilationResultsCache.GetAsync(all.CacheKey);
         Assert.That(zip, Is.Not.Null);
         var fromCacheDir = tmpDir.Dir.CreateSubdirectory("from_cache");
         ZipFile.ExtractToDirectory(zip, fromCacheDir.FullName);
@@ -208,7 +208,7 @@ public class InMemoryTaskBasedTests
         {
             var cachedFile = fromCacheDir.CombineAsFile(outputItem.CacheFileName);
             Assert.That(File.Exists(cachedFile.FullName));
-            Assert.That(File.ReadAllText(cachedFile.FullName), Is.EqualTo(File.ReadAllText(outputItem.LocalPath)));
+            Assert.That(await File.ReadAllTextAsync(cachedFile.FullName), Is.EqualTo(await File.ReadAllTextAsync(outputItem.LocalPath)));
         }
     }
 

@@ -7,7 +7,7 @@ namespace Tests;
 public class TestOutputBuildAndCache
 {
     [Test]
-    public void Test()
+    public async Task Test()
     {
         using var dir = new DisposableDir();
         var outputsDir = dir.Dir.CreateSubdirectory("outputs");
@@ -25,7 +25,7 @@ public class TestOutputBuildAndCache
                 WorkingDirectory: "e:/foo"),
             LocalInputs:
             new LocalInputs(
-                Files: Array.Empty<LocalFileExtract>(),
+                Files: Array.Empty<InputResult>(),
                 Props: new[]{("a", "b")},
                 OutputFiles: items
             )
@@ -35,13 +35,13 @@ public class TestOutputBuildAndCache
         var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);
 
         var key = new CacheKey("a");
-        cache.Set(key, metadata.LocalInputs.ToFullExtract(), zipPath);
+        await cache.SetAsync(key, metadata.LocalInputs.ToFullExtract(), zipPath);
 
         var count = cache.OutputVersionsCount(key);
 
         Assert.That(count, Is.EqualTo(1));
 
-        var cachedZip = cache.Get(key);
+        var cachedZip = await cache.GetAsync(key);
         Assert.That(cachedZip, Is.Not.Null);
 
         var mainOutputsDir = new DirectoryInfo(outputsDir.FullName);

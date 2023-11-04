@@ -25,7 +25,7 @@ public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue
             var cache2Res = await _cache2.GetAsync(key);
             if (cache2Res != null)
             {
-                _cache1.Set(key, cache2Res);
+                await _cache1.SetAsync(key, cache2Res);
                 return cache2Res;
             }
             else
@@ -35,11 +35,11 @@ public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue
         }
     }
 
-    public bool Set(TKey key, TValue value)
+    public async Task<bool> Set(TKey key, TValue value)
     {
-        if (_cache1.Set(key, value))
+        if (await _cache1.SetAsync(key, value))
         {
-            _cache2.Set(key, value);
+            await _cache2.SetAsync(key, value);
             return true;
         }
         else

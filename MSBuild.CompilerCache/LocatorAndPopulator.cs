@@ -214,7 +214,7 @@ public class LocatorAndPopulator
         {
             var bytes = await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
             hash = Utils.BytesToHashHex(bytes);
-            fileHashCache.Set(fileHashCacheKey, hash);
+            await fileHashCache.SetAsync(fileHashCacheKey, hash);
         }
 
         var localFileExtract = new LocalFileExtract(fileHashCacheKey, hash);
@@ -236,7 +236,7 @@ public class LocatorAndPopulator
         {
             bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
             hash = Utils.BytesToHashHex(bytes);
-            fileHashCache.Set(fileHashCacheKey, hash);
+            await fileHashCache.SetAsync(fileHashCacheKey, hash);
         }
         
         var referenceDllName = Path.GetFileNameWithoutExtension(fileHashCacheKey.FullName);
@@ -250,7 +250,7 @@ public class LocatorAndPopulator
 
             var toBeCached = await new RefTrimmer().GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: originalExtract);
-            refCache.Set(refCacheKey, cached);
+            await refCache.SetAsync(refCacheKey, cached);
         }
 
         var allRefData = new AllRefData(Original: cached.Original, RefData: cached.Ref);
@@ -338,7 +338,7 @@ public class LocatorAndPopulator
         {
             bytes ??= await File.ReadAllBytesAsync(filepath);
             hashString = Utils.BytesToHashHex(bytes, hasher);
-            fileHashCache.Set(fileCacheKey, hashString);
+            await fileHashCache.SetAsync(fileCacheKey, hashString);
         }
 
         var extract = new LocalFileExtract(fileCacheKey, hashString);
@@ -352,7 +352,7 @@ public class LocatorAndPopulator
             var trimmer = new RefTrimmer();
             var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-            refCache.Set(cacheKey, cached);
+            await refCache.SetAsync(cacheKey, cached);
         }
 
         return new AllRefData(Original: cached.Original, RefData: cached.Ref);
@@ -428,7 +428,7 @@ public class LocatorAndPopulator
                 var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
                 var cacheKey = BuildRefCacheKey(name, hashString);
                 var cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-                _refCache.Set(cacheKey, cached);
+                await _refCache.SetAsync(cacheKey, cached);
             }
         }
 

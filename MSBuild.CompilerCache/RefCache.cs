@@ -27,66 +27,23 @@ public class RefCache : IRefCache
         return File.Exists(entryPath);
     }
 
-    public RefDataWithOriginalExtract? Get(CacheKey key)
+    public async Task<RefDataWithOriginalExtract?> GetAsync(CacheKey key)
     {
         var entryPath = EntryPath(key);
         if (File.Exists(entryPath))
         {
-            RefDataWithOriginalExtract Read()
+            async Task<RefDataWithOriginalExtract?> Read()
             {
-                using var fs = File.OpenRead(entryPath);
-                return JsonSerializer.Deserialize(fs,
-                    RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract)!;
+                await using var fs = File.OpenRead(entryPath);
+                return await JsonSerializer.DeserializeAsync(fs,
+                    RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
             }
-            return IOActionWithRetries(Read);
+            return await FileHashCache.IOActionWithRetriesAsync(Read);
         }
         else
         {
             return null;
         }
-    }
-
-    private static T IOActionWithRetries<T>(Func<T> action)
-    {
-        var attempts = 5;
-        var retryDelay = 50;
-        for (int attempt = 1; attempt <= attempts; attempt++)
-        {
-            try
-            {
-                return action();
-            }
-            catch(IOException e) 
-            {
-                if (attempt < attempts)
-                {
-                    var delay = (int)(Math.Pow(2, attempt-1) * retryDelay);
-                    Thread.Sleep(delay);
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        throw new InvalidOperationException("Unexpected code location reached");
-    }
-
-    public bool Set(CacheKey key, RefDataWithOriginalExtract data)
-    {
-        var entryPath = EntryPath(key);
-        if (File.Exists(entryPath))
-        {
-            return false;
-        }
-
-        using var tmpFile = new TempFile();
-        {
-            using var fs = tmpFile.File.OpenWrite();
-            JsonSerializer.Serialize(fs, data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
-        }
-        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
     }
 
     public async Task<bool> SetAsync(CacheKey key, RefDataWithOriginalExtract data)
