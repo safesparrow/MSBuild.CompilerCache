@@ -24,8 +24,8 @@ public class TestOutputBuildAndCache
                 StopTimeUtc: DateTime.Today,
                 WorkingDirectory: "e:/foo"),
             LocalInputs:
-            new LocalInputs(
-                Files: Array.Empty<InputResult>(),
+            new LocalInputsSlim(
+                Files: Array.Empty<LocalFileExtract>(),
                 Props: new[]{("a", "b")},
                 OutputFiles: items
             )

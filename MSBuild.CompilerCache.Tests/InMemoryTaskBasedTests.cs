@@ -60,8 +60,7 @@ public class InMemoryTaskBasedTests
         tmpDir.Dispose();
     }
 
-    public record All(LocateInputs LocateInputs, LocalInputs LocalInputs, CacheKey CacheKey,
-        string LocalInputsHash, FullExtract FullExtract);
+    public record All(LocalInputs LocalInputs, CacheKey CacheKey, FullExtract FullExtract);
 
     public static All AllFromInputs(LocateInputs inputs, IRefCache refCache)
     {
@@ -71,13 +70,9 @@ public class InMemoryTaskBasedTests
         var extract = localInputs.ToFullExtract();
         var hashString = Utils.ObjectToHash(extract, Utils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-        var localInputsHash = Utils.ObjectToHash(localInputs, Utils.DefaultHasher);
 
-        return new All(
-            LocateInputs: inputs,
-            LocalInputs: localInputs,
+        return new All(LocalInputs: localInputs,
             CacheKey: cacheKey,
-            LocalInputsHash: localInputsHash,
             FullExtract: extract
         );
     }
@@ -116,7 +111,7 @@ public class InMemoryTaskBasedTests
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
         var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
-            new AllCompilationMetadata(null, all.LocalInputs), Utils.DefaultHasher);
+            new AllCompilationMetadata(null, all.LocalInputs.ToSlim()), Utils.DefaultHasher);
 
         foreach (var outputItem in outputItems)
         {
@@ -134,7 +129,6 @@ public class InMemoryTaskBasedTests
         {
             Assert.That(locateResult.CacheHit, Is.True);
             Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
-            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
             Assert.That(locateResult.CacheSupported, Is.True);
             Assert.That(locateResult.RunCompilation, Is.False);
         });
@@ -188,7 +182,6 @@ public class InMemoryTaskBasedTests
         {
             Assert.That(locateResult.CacheHit, Is.False);
             Assert.That(locateResult.CacheKey, Is.EqualTo(all.CacheKey));
-            Assert.That(locateResult.LocalInputsHash, Is.EqualTo(all.LocalInputsHash));
             Assert.That(locateResult.CacheSupported, Is.True);
             Assert.That(locateResult.RunCompilation, Is.True);
         });

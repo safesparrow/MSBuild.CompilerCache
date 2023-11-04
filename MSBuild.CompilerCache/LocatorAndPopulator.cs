@@ -31,7 +31,6 @@ public enum LocateOutcome
 public record LocateResult(
     LocateOutcome Outcome,
     CacheKey? CacheKey,
-    string? LocalInputsHash,
     DateTime PreCompilationTimeUtc,
     LocateInputs Inputs,
     DecomposedCompilerProps? DecomposedCompilerProps
@@ -46,14 +45,13 @@ public record LocateResult(
         new(
             Outcome: LocateOutcome.CacheNotSupported,
             CacheKey: null,
-            LocalInputsHash: null,
             PreCompilationTimeUtc: DateTime.MinValue,
             Inputs: inputs,
             DecomposedCompilerProps: null
         );
 }
 
-public class LocatorAndPopulator
+public class LocatorAndPopulator : IDisposable
 {
     private readonly IRefCache _inMemoryRefCache;
 
@@ -83,7 +81,6 @@ public class LocatorAndPopulator
     private FullExtract _extract;
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
-    private string _localInputsHash;
     private readonly IFileHashCache _inMemoryFileHashCache;
     private ICacheBase<FileHashCacheKey,string> _fileHashCache;
     private IHash _hasher;
@@ -117,7 +114,7 @@ public class LocatorAndPopulator
         //logTime?.Invoke("Caches created");
 
         
-        (_localInputs, _localInputsHash) = CalculateLocalInputsWithHash(logTime);
+        (_localInputs) = CalculateLocalInputsWithHash(logTime);
         //logTime?.Invoke("LocalInputs with hash created");
         
         _extract = _localInputs.ToFullExtract();
@@ -163,7 +160,6 @@ public class LocatorAndPopulator
 
         _locateResult = new LocateResult(
             CacheKey: _cacheKey,
-            LocalInputsHash: _localInputsHash,
             PreCompilationTimeUtc: preCompilationTimeUtc,
             Inputs: inputs,
             Outcome: outcome,
@@ -173,14 +169,7 @@ public class LocatorAndPopulator
         return _locateResult;
     }
 
-    private (LocalInputs, string) CalculateLocalInputsWithHash(Action<string>? logTime = null)
-    {
-        var localInputs = CalculateLocalInputs(logTime);
-        //logTime?.Invoke("localinputs done");
-        var localInputsHash = Utils.ObjectToHash(localInputs, _hasher);
-        //logTime?.Invoke("hash done");
-        return (localInputs, localInputsHash);
-    }
+    private LocalInputs CalculateLocalInputsWithHash(Action<string>? logTime = null) => CalculateLocalInputs(logTime);
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
         CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, logTime);
@@ -435,7 +424,7 @@ public class LocatorAndPopulator
         var refasmCompiledDllsTask = System.Threading.Tasks.Task.Factory.StartNew(RefasmCompiledDlls);
 
         var meta = GetCompilationMetadata(postCompilationTimeUtc);
-        var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs);
+        var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
         //logTime?.Invoke("Got stuff");
         
         using var tmpDir = new DisposableDir();
@@ -452,6 +441,8 @@ public class LocatorAndPopulator
         
         return new UseOrPopulateResult();
     }
+    
+    
 
     public static FileInfo BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
         AllCompilationMetadata metadata, IHash hasher,
@@ -499,6 +490,25 @@ public class LocatorAndPopulator
             CompressionLevel.NoCompression, includeBaseDirectory: false);
         return tempZipPath;
     }
+
+    public void Dispose()
+    {
+        var files = _localInputs?.Files;
+        if (files != null)
+        {
+            foreach (var f in files)
+            {
+                try
+                {
+                    f.f.Dispose();
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+            }
+        }
+    }
 }
 
 [JsonSerializable(typeof(FileExtract[]))]
@@ -509,6 +519,5 @@ public partial class OutputExtractsJsonContext : JsonSerializerContext;
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class AllCompilationMetadataJsonContext : JsonSerializerContext;
 
-public record struct FileHash(string Hash);
-
+[Serializable]
 public record InputResult(FileStream f, LocalFileExtract fileHashCacheKey);

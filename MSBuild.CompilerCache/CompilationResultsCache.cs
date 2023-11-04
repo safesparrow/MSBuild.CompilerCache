@@ -96,7 +96,6 @@ public record OutputItem
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
-[Serializable]
 public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
 {
     public FullExtract ToFullExtract()
@@ -104,10 +103,21 @@ public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputI
         return new FullExtract(Files: Files.Select(f => f.fileHashCacheKey.ToFileExtract()).ToArray(), Props: Props,
             OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
     }
+    public LocalInputsSlim ToSlim() => new LocalInputsSlim(Files: Files.Select(f => f.fileHashCacheKey).ToArray(), Props, OutputFiles);
 }
 
 [Serializable]
-public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
+public record LocalInputsSlim(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+{
+    public FullExtract ToFullExtract()
+    {
+        return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
+            OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
+    }
+}
+
+[Serializable]
+public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputsSlim LocalInputs);
 
 public record struct CacheKey(string Key)
 {

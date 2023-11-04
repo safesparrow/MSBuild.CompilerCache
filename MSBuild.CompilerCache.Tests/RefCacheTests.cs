@@ -21,7 +21,7 @@ public class RefCacheTests
     }
 
     [Test]
-    public void AfterSetCacheHits()
+    public async Task AfterSetCacheHits()
     {
         using var dir = new DisposableDir();
         var cache = new RefCache(dir.FullName);
@@ -40,6 +40,8 @@ public class RefCacheTests
                 Hash: null
             )
         );
+        
+        await cache.SetAsync(key, data);
 
         Assert.Multiple(async () =>
         {
