@@ -361,7 +361,10 @@ public class LocatorAndPopulator : IDisposable
         return new CacheKey($"{name}_{hash}");
     }
 
-    public record OutputData(OutputItem Item, byte[] Content);
+    public record OutputData(OutputItem Item, byte[] Content, byte[] BytesHash, string BytesHashString)
+    {
+        public long Length => Content.Length;
+    }
     
     public async Task<UseOrPopulateResult> PopulateCacheAsync(TaskLoggingHelper log, Action<string>? logTime = null)
     {
@@ -370,7 +373,10 @@ public class LocatorAndPopulator : IDisposable
         var outputs = await System.Threading.Tasks.Task.WhenAll(_decomposed.OutputsToCache.Select(async file =>
         {
             await using var f = File.Open(file.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return new OutputData(file, await File.ReadAllBytesAsync(file.LocalPath));
+            byte[] bytes = await File.ReadAllBytesAsync(file.LocalPath);
+            var bytesHash = _hasher.ComputeHash(bytes);
+            var bytesHashString = Utils.BytesToHashHex(bytesHash, _hasher);
+            return new OutputData(file, bytes, bytesHash, bytesHashString);
         }).ToArray());
      
         // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
@@ -398,7 +404,7 @@ public class LocatorAndPopulator : IDisposable
         var allCompMetadata = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
     
         using var tmpDir = new DisposableDir();
-        var outputZip = await BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, allCompMetadata, _hasher, log);
+        var outputZip = await BuildOutputsZip2(tmpDir, outputs, allCompMetadata, _hasher, log);
 
         log.LogMessage(MessageImportance.Normal,
             $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
@@ -430,6 +436,47 @@ public class LocatorAndPopulator : IDisposable
         await _refCache.SetAsync(cacheKey, cached);
     }
 
+    
+    public static async Task<FileInfo> BuildOutputsZip2(DirectoryInfo baseTmpDir, OutputData[] items,
+        AllCompilationMetadata metadata, IHash hasher,
+        TaskLoggingHelper? log = null)
+    {
+        var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
+
+        async Task<byte[]> SaveInputsAndReturnBytesAsync()
+        {
+            string metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
+            await using var fs = File.OpenWrite(metaPath);
+            byte[] bytes2 = JsonSerializer.SerializeToUtf8Bytes(metadata, AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
+            await fs.WriteAsync(bytes2);
+            return bytes2;
+        }
+
+        // Write inputs json in parallel to the rest
+        var saveInputsTask = SaveInputsAndReturnBytesAsync();
+
+        var objectToHash = items.Select(i => (i.Item.Name, i.BytesHash)).ToArray();
+
+        var hashForFileName = Utils.ObjectToHash(objectToHash, hasher);
+
+        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
+        {
+            await using var fs = File.OpenWrite(outputsExtractJsonPath);
+            var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
+            await JsonSerializer.SerializeAsync(fs, outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
+        }
+
+        // Make sure inputs json written before zipping the whole directory
+        var inputsJsonBytes = await saveInputsTask;
+
+        var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
+        // TODO Create zip archive from in-memory data rather than files on disk
+        
+        ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
+            CompressionLevel.NoCompression, includeBaseDirectory: false);
+        return tempZipPath;
+    }
+    
     public static async Task<FileInfo> BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
         AllCompilationMetadata metadata, IHash hasher,
         TaskLoggingHelper? log = null)
