@@ -436,6 +436,7 @@ public class LocatorAndPopulator : IDisposable
         await _refCache.SetAsync(cacheKey, cached);
     }
 
+    record ArchiveEntry(string Name, byte[] Bytes);
     
     public static async Task<FileInfo> BuildOutputsZip2(DirectoryInfo baseTmpDir, OutputData[] items,
         AllCompilationMetadata metadata, IHash hasher,
@@ -460,17 +461,38 @@ public class LocatorAndPopulator : IDisposable
         var hashForFileName = Utils.ObjectToHash(objectToHash, hasher);
 
         var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
+        byte[] outputsJsonBytes;
         {
             await using var fs = File.OpenWrite(outputsExtractJsonPath);
             var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
-            await JsonSerializer.SerializeAsync(fs, outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
+            outputsJsonBytes = JsonSerializer.SerializeToUtf8Bytes(outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
+            await fs.WriteAsync(outputsJsonBytes);
         }
 
         // Make sure inputs json written before zipping the whole directory
         var inputsJsonBytes = await saveInputsTask;
 
+        var metaEntries = new[]
+        {
+            new ArchiveEntry("__inputs.json", inputsJsonBytes),
+            new ArchiveEntry("__outputs.json", outputsJsonBytes),
+        };
+        var outputsEntries = items.Select(o => new ArchiveEntry(o.Item.CacheFileName, o.BytesHash)).ToArray();
+        var archiveEntries = metaEntries.Concat(outputsEntries).ToArray();
+        
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
         // TODO Create zip archive from in-memory data rather than files on disk
+
+        {
+            await using var zip = File.OpenWrite(tempZipPath.FullName);
+            var a = new ZipArchive(zip, ZipArchiveMode.Create);
+            foreach (var ae in archiveEntries)
+            {
+                var e = a.CreateEntry(ae.Name, CompressionLevel.NoCompression);
+                await using var es = e.Open();
+                await es.WriteAsync(ae.Bytes);
+            }
+        }
         
         ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
             CompressionLevel.NoCompression, includeBaseDirectory: false);
