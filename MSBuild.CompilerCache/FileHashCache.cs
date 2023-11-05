@@ -100,8 +100,8 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
     public async Task<bool> SetAsync(FileHashCacheKey originalKey, string value)
     {
         var key = ExtractKey(originalKey);
-        string entryPath = EntryPath(key);
-        if (File.Exists(entryPath))
+        FileInfo entryFile = new FileInfo(EntryPath(key));
+        if (entryFile.Exists)
         {
             return await Task.FromResult(false);
         }
@@ -113,6 +113,6 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
             await sw.WriteAsync(value);
         }
         
-        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+        return CompilationResultsCache.AtomicCopyOrMove(tmpFile.File, entryFile, throwIfDestinationExists: false);
     }
 }

@@ -477,15 +477,14 @@ public class LocatorAndPopulator : IDisposable
             new ArchiveEntry("__inputs.json", inputsJsonBytes),
             new ArchiveEntry("__outputs.json", outputsJsonBytes),
         };
-        var outputsEntries = items.Select(o => new ArchiveEntry(o.Item.CacheFileName, o.BytesHash)).ToArray();
+        var outputsEntries = items.Select(o => new ArchiveEntry(o.Item.CacheFileName, o.Content)).ToArray();
         var archiveEntries = metaEntries.Concat(outputsEntries).ToArray();
         
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
-        // TODO Create zip archive from in-memory data rather than files on disk
 
         {
             await using var zip = File.OpenWrite(tempZipPath.FullName);
-            var a = new ZipArchive(zip, ZipArchiveMode.Create);
+            using var a = new ZipArchive(zip, ZipArchiveMode.Create);
             foreach (var ae in archiveEntries)
             {
                 var e = a.CreateEntry(ae.Name, CompressionLevel.NoCompression);
@@ -494,8 +493,6 @@ public class LocatorAndPopulator : IDisposable
             }
         }
         
-        ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
-            CompressionLevel.NoCompression, includeBaseDirectory: false);
         return tempZipPath;
     }
     

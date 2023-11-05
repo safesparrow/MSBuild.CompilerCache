@@ -163,27 +163,31 @@ public class CompilationResultsCache : ICompilationResultsCache
     /// <param name="source"></param>
     /// <param name="destination"></param>
     /// <param name="throwIfDestinationExists">If true, will throw if the destination already exists</param>
+    /// <param name="moveInsteadOfCopy"></param>
     /// <returns></returns>
-    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true, bool moveInsteadOfCopy = false)
+    public static bool AtomicCopyOrMove(FileInfo source, FileInfo destination, bool throwIfDestinationExists = true, bool moveInsteadOfCopy = false)
     {
-        var dir = Path.GetDirectoryName(destination)!;
+        var dir = destination.DirectoryName!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
+        FileInfo tmp;
         if (moveInsteadOfCopy)
         {
-            File.Move(source, tmpDestination);
+            source.MoveTo(tmpDestination);
+            tmp = source;
         }
         else
         {
-            File.Copy(source, tmpDestination);
+            tmp = source.CopyTo(tmpDestination);
         }
         try
         {
-            File.Move(tmpDestination, destination, overwrite: false);
+            tmp.MoveTo(destination.FullName, overwrite: false);
             return true;
         }
-        catch (IOException e)
+        catch (IOException)
         {
-            if (!throwIfDestinationExists && File.Exists(destination))
+            tmp.Delete();
+            if (!throwIfDestinationExists && File.Exists(destination.FullName))
             {
                 return false;
             }
@@ -191,10 +195,6 @@ public class CompilationResultsCache : ICompilationResultsCache
             {
                 throw;
             }
-        }
-        finally
-        {
-            File.Delete(tmpDestination);
         }
     }
 
@@ -214,15 +214,16 @@ public class CompilationResultsCache : ICompilationResultsCache
     {
         var dir = new DirectoryInfo(CacheDir(key));
         dir.Create();
-        var extractPath = ExtractPath(key);
-        var outputPath = Path.Combine(dir.FullName, resultZipToBeMoved.Name);
+
+        var extractFile = new FileInfo(ExtractPath(key));
+        var outputFile = new FileInfo(Path.Combine(dir.FullName, resultZipToBeMoved.Name));
         
-        if (!File.Exists(outputPath))
+        if (!outputFile.Exists)
         {
-            AtomicCopy(resultZipToBeMoved.FullName, outputPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
+            AtomicCopyOrMove(resultZipToBeMoved, outputFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
         
-        if (!File.Exists(extractPath))
+        if (!extractFile.Exists)
         {
             // TODO Serialise directly to the cache dir (as a tmp file)
             using var tmpFile = new TempFile();
@@ -230,7 +231,7 @@ public class CompilationResultsCache : ICompilationResultsCache
                 await using var fs = tmpFile.File.OpenWrite();
                 await JsonSerializer.SerializeAsync(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
-            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
+            AtomicCopyOrMove(tmpFile.File, extractFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
     }
 

@@ -48,8 +48,8 @@ public class RefCache : IRefCache
 
     public async Task<bool> SetAsync(CacheKey key, RefDataWithOriginalExtract data)
     {
-        var entryPath = EntryPath(key);
-        if (File.Exists(entryPath))
+        var entryFile = new FileInfo(EntryPath(key));
+        if (entryFile.Exists)
         {
             return false;
         }
@@ -59,7 +59,7 @@ public class RefCache : IRefCache
             await using var fs = tmpFile.File.OpenWrite();
             await JsonSerializer.SerializeAsync(fs, data, RefDataWithOriginalExtractJsonContext.Default.RefDataWithOriginalExtract);
         }
-        return CompilationResultsCache.AtomicCopy(tmpFile.FullName, entryPath, throwIfDestinationExists: false);
+        return CompilationResultsCache.AtomicCopyOrMove(tmpFile.File, entryFile, throwIfDestinationExists: false);
     }
 }
 
