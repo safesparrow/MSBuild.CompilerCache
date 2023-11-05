@@ -30,7 +30,7 @@ public class TestOutputBuildAndCache
                 OutputFiles: items
             )
         );
-        var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
+        var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
 
         var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);
 

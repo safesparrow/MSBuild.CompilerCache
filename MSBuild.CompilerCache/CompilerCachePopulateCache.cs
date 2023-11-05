@@ -27,7 +27,7 @@ public class CompilerCachePopulateCache : Microsoft.Build.Utilities.Task
                             throw new Exception("Cached result is of unexpected type");
         var sw = Stopwatch.StartNew();
         void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");
-        var results = locator.PopulateCache(Log, LogTime);
+        UseOrPopulateResult result = locator.PopulateCacheAsync(Log, LogTime).GetAwaiter().GetResult();
         return true;
     }
 }

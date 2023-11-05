@@ -110,7 +110,7 @@ public class InMemoryTaskBasedTests
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
-        var zip = LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
+        var zip = await LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputItems,
             new AllCompilationMetadata(null, all.LocalInputs.ToSlim()), Utils.DefaultHasher);
 
         foreach (var outputItem in outputItems)

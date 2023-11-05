@@ -361,91 +361,74 @@ public class LocatorAndPopulator : IDisposable
         return new CacheKey($"{name}_{hash}");
     }
 
-    public UseOrPopulateResult PopulateCache(TaskLoggingHelper log, Action<string>? logTime = null)
+    public record OutputData(OutputItem Item, byte[] Content);
+    
+    public async Task<UseOrPopulateResult> PopulateCacheAsync(TaskLoggingHelper log, Action<string>? logTime = null)
     {
-        // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
-        // and avoid any duplicate calculations due to multiple dependants redoing the same thing if timings are bad.
-        
-        //logTime?.Invoke("Start");
         var postCompilationTimeUtc = DateTime.UtcNow;
 
-        // TODO Refactor, deduplicate
-        async System.Threading.Tasks.Task RefasmCompiledDlls()
+        var outputs = await System.Threading.Tasks.Task.WhenAll(_decomposed.OutputsToCache.Select(async file =>
         {
-            static bool RefasmableOutputItem(OutputItem o) => Path.GetExtension(o.LocalPath) is ".dll";
-            var dllsToRefasm = _decomposed.OutputsToCache.Where(RefasmableOutputItem).ToArray();
-            foreach (var dll in dllsToRefasm)
-            {
-                var bytes = await File.ReadAllBytesAsync(dll.LocalPath);
-                var trimmer = new RefTrimmer();
-                var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(bytes));
-                var fileInfo = new FileInfo(dll.LocalPath);
-                var fileCacheKey = FileHashCacheKey.FromFileInfo(fileInfo);
-                var dllHash = await _fileHashCache.GetAsync(fileCacheKey);
-                if (dllHash == null)
-                {
-                    dllHash = Utils.BytesToHashHex(bytes);
-                    await _fileHashCache.SetAsync(fileCacheKey, dllHash);
-                }
+            await using var f = File.Open(file.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return new OutputData(file, await File.ReadAllBytesAsync(file.LocalPath));
+        }).ToArray());
+     
+        // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
+        // and avoid any duplicate calculations due to multiple dependants redoing the same thing if timings are bad.
 
-                var extract = new LocalFileExtract(fileCacheKey, dllHash);
-                var name = Path.GetFileNameWithoutExtension(fileInfo.Name);
-                var cacheKey = BuildRefCacheKey(name, dllHash);
-                var cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-                await _refCache.SetAsync(cacheKey, cached);
+        async System.Threading.Tasks.Task RefasmCompiledDllsAsync(OutputData[] outputs)
+        {
+            static bool RefasmableOutputItem(OutputData o) => Path.GetExtension(o.Item.LocalPath) is ".dll";
+            var outputsToRefasm = outputs.Where(RefasmableOutputItem).ToArray();
+            if (outputsToRefasm.Length <= 1)
+            {
+                foreach (var dll in outputsToRefasm)
+                {
+                    await RefasmAndPopulateCacheWithOutputDll(dll);
+                }
+            }
+            else
+            {
+                await Parallel.ForEachAsync(outputsToRefasm, (output, _) => RefasmAndPopulateCacheWithOutputDll(output));
             }
         }
-
-        List<FileStream> streams = new List<FileStream>();
-
-        try
-        {
-            var outputsWithStreams = _decomposed.OutputsToCache.Select(file =>
-            {
-                var f = File.Open(file.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                try
-                {
-                    streams.Add(f);
-                }
-                catch (Exception)
-                {
-                    f.Dispose();
-                    throw;
-                }
-
-                return (f, File.ReadAllBytes(file.LocalPath),
-                    FileHashCacheKey.FromFileInfo(new FileInfo(file.LocalPath)));
-            }).ToArray();
-            
-            
-            var refasmCompiledDllsTask = System.Threading.Tasks.Task.Factory.StartNew(RefasmCompiledDlls);
-
-            var meta = GetCompilationMetadata(postCompilationTimeUtc);
-            var stuff = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
-            //logTime?.Invoke("Got stuff");
         
-            using var tmpDir = new DisposableDir();
-            var outputZip = BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, stuff, Utils.DefaultHasher, log).GetAwaiter().GetResult();
+        var refasmCompiledDllsTask = RefasmCompiledDllsAsync(outputs);
+        var meta = GetCompilationMetadata(postCompilationTimeUtc);
+        var allCompMetadata = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
+    
+        using var tmpDir = new DisposableDir();
+        var outputZip = await BuildOutputsZip(tmpDir, _decomposed.OutputsToCache, allCompMetadata, _hasher, log);
 
-            //logTime?.Invoke("Hashes match");
-            log.LogMessage(MessageImportance.Normal,
-                $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
-            //logTime?.Invoke("Outputs zip created");
-            _cache.Set(_locateResult.CacheKey!.Value, _extract, outputZip);
-            //logTime?.Invoke("cache entry set");
+        log.LogMessage(MessageImportance.Normal,
+            $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
+        //logTime?.Invoke("Outputs zip created");
+        await _cache.SetAsync(_locateResult.CacheKey!.Value, _extract, outputZip);
+        //logTime?.Invoke("cache entry set");
 
-            refasmCompiledDllsTask.GetAwaiter().GetResult();
-        
-            return new UseOrPopulateResult();
-        }
-        finally
-        {
-            // Make sure all opened files are closed
-            foreach(var s in streams) s.Dispose();
-        }
+        await refasmCompiledDllsTask;
+    
+        return new UseOrPopulateResult();
     }
-    
-    
+
+    private async ValueTask RefasmAndPopulateCacheWithOutputDll(OutputData dll)
+    {
+        var trimmer = new RefTrimmer();
+        var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(dll.Content));
+        var fileCacheKey = FileHashCacheKey.FromFileInfo(new FileInfo(dll.Item.LocalPath));
+        var dllHash = await _fileHashCache.GetAsync(fileCacheKey);
+        if (dllHash == null)
+        {
+            dllHash = Utils.BytesToHashHex(dll.Content);
+            await _fileHashCache.SetAsync(fileCacheKey, dllHash);
+        }
+                
+        var extract = new LocalFileExtract(fileCacheKey, dllHash);
+        var name = Path.GetFileNameWithoutExtension(fileCacheKey.FullName);
+        var cacheKey = BuildRefCacheKey(name, dllHash);
+        var cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
+        await _refCache.SetAsync(cacheKey, cached);
+    }
 
     public static async Task<FileInfo> BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
         AllCompilationMetadata metadata, IHash hasher,
