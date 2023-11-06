@@ -37,7 +37,7 @@ public class RefCacheTests
                     Length: 1212,
                     LastWriteTimeUtc: new DateTime(2023, 7, 1, 0, 0, 0, kind: DateTimeKind.Utc)
                 ),
-                Hash: null
+                Hash: "hash"
             )
         );
         

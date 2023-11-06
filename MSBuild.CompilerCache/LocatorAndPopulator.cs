@@ -332,7 +332,7 @@ public class LocatorAndPopulator : IDisposable
                 string.Equals(x, compilingAssemblyName, StringComparison.OrdinalIgnoreCase));
 
         bool ignoreInternals = ignoreInternalsIfPossible && !internalsVisibleToOurAssembly;
-        string? trimmedHash = ignoreInternals ? data.PublicRefHash : data.PublicAndInternalsRefHash;
+        string trimmedHash = ignoreInternals ? data.PublicRefHash : data.PublicAndInternalsRefHash ?? data.PublicRefHash;
 
         // This extract is used to find cached compilation results.
         // We want it to return the same value if the appropriately trimmed version of the dll is the same.
@@ -370,14 +370,7 @@ public class LocatorAndPopulator : IDisposable
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
 
-        var outputs = await System.Threading.Tasks.Task.WhenAll(_decomposed.OutputsToCache.Select(async file =>
-        {
-            await using var f = File.Open(file.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            byte[] bytes = await File.ReadAllBytesAsync(file.LocalPath);
-            var bytesHash = _hasher.ComputeHash(bytes);
-            var bytesHashString = Utils.BytesToHashHex(bytesHash, _hasher);
-            return new OutputData(file, bytes, bytesHash, bytesHashString);
-        }).ToArray());
+        var outputs = await System.Threading.Tasks.Task.WhenAll(_decomposed.OutputsToCache.Select(outputItem => GatherSingleOutputData(outputItem, _hasher)).ToArray());
      
         // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
         // and avoid any duplicate calculations due to multiple dependants redoing the same thing if timings are bad.
@@ -404,8 +397,8 @@ public class LocatorAndPopulator : IDisposable
         var allCompMetadata = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
     
         using var tmpDir = new DisposableDir();
-        var outputZip = await BuildOutputsZip2(tmpDir, outputs, allCompMetadata, _hasher, log);
-
+        var outputZip = await BuildOutputsZip(tmpDir, outputs, allCompMetadata, _hasher, log);
+        
         log.LogMessage(MessageImportance.Normal,
             $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
         //logTime?.Invoke("Outputs zip created");
@@ -415,6 +408,15 @@ public class LocatorAndPopulator : IDisposable
         await refasmCompiledDllsTask;
     
         return new UseOrPopulateResult();
+    }
+
+    internal static async Task<OutputData> GatherSingleOutputData(OutputItem outputItem, IHash hasher)
+    {
+        await using var f = File.Open(outputItem.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        byte[] bytes = await File.ReadAllBytesAsync(outputItem.LocalPath);
+        var bytesHash = hasher.ComputeHash(bytes);
+        var bytesHashString = Utils.BytesToHashHex(bytesHash, hasher);
+        return new OutputData(outputItem, bytes, bytesHash, bytesHashString);
     }
 
     private async ValueTask RefasmAndPopulateCacheWithOutputDll(OutputData dll)
@@ -438,7 +440,7 @@ public class LocatorAndPopulator : IDisposable
 
     record ArchiveEntry(string Name, byte[] Bytes);
     
-    public static async Task<FileInfo> BuildOutputsZip2(DirectoryInfo baseTmpDir, OutputData[] items,
+    public static async Task<FileInfo> BuildOutputsZip(DirectoryInfo baseTmpDir, OutputData[] items,
         AllCompilationMetadata metadata, IHash hasher,
         TaskLoggingHelper? log = null)
     {
@@ -493,55 +495,6 @@ public class LocatorAndPopulator : IDisposable
             }
         }
         
-        return tempZipPath;
-    }
-    
-    public static async Task<FileInfo> BuildOutputsZip(DirectoryInfo baseTmpDir, OutputItem[] items,
-        AllCompilationMetadata metadata, IHash hasher,
-        TaskLoggingHelper? log = null)
-    {
-        var outputsDir = baseTmpDir.CreateSubdirectory("outputs_zip_building");
-
-        async System.Threading.Tasks.Task SaveInputsAsync()
-        {
-            var metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
-            // ReSharper disable once UseAwaitUsing
-            using var fs = File.OpenWrite(metaPath);
-            await JsonSerializer.SerializeAsync(fs, metadata,
-                AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
-        }
-
-        // Write inputs json in parallel to the rest
-        var saveInputsTask = SaveInputsAsync();
-
-        var outputExtracts =
-            items.Select(item =>
-            {
-                var tempPath = outputsDir.CombineAsFile(item.CacheFileName);
-                log?.LogMessage(MessageImportance.Normal,
-                    $"CompilationCache: Copy {item.LocalPath} -> {tempPath.FullName}");
-                File.Copy(item.LocalPath, tempPath.FullName);
-                var fileHashCacheKey = FileHashCacheKey.FromFileInfo(tempPath);
-                string hashString = Utils.FileBytesToHashHex(tempPath.FullName, Utils.DefaultHasher);
-                return new LocalFileExtract(Info: fileHashCacheKey, Hash: hashString).ToFileExtract();
-            }).ToArray();
-
-        var hashForFileName = Utils.ObjectToHash(outputExtracts, hasher);
-
-        var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
-        {
-            await using var fs = File.OpenWrite(outputsExtractJsonPath);
-            await JsonSerializer.SerializeAsync(fs, outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
-        }
-
-        // Make sure inputs json written before zipping the whole directory
-        await saveInputsTask;
-
-        var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
-        // TODO Create zip archive from in-memory data rather than files on disk
-        
-        ZipFile.CreateFromDirectory(outputsDir.FullName, tempZipPath.FullName,
-            CompressionLevel.NoCompression, includeBaseDirectory: false);
         return tempZipPath;
     }
 

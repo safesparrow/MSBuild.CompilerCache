@@ -40,10 +40,10 @@ public record LocalFileExtract
     public string Path => Info.FullName;
     public long Length => Info.Length;
     public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
-    public string? Hash { get; set; }
+    public string Hash { get; set; }
     public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
 
-    public void Deconstruct(out FileHashCacheKey Info, out string? Hash)
+    public void Deconstruct(out FileHashCacheKey Info, out string Hash)
     {
         Info = this.Info;
         Hash = this.Hash;
@@ -215,7 +215,6 @@ public class CompilationResultsCache : ICompilationResultsCache
         var dir = new DirectoryInfo(CacheDir(key));
         dir.Create();
 
-        var extractFile = new FileInfo(ExtractPath(key));
         var outputFile = new FileInfo(Path.Combine(dir.FullName, resultZipToBeMoved.Name));
         
         if (!outputFile.Exists)
@@ -223,15 +222,15 @@ public class CompilationResultsCache : ICompilationResultsCache
             AtomicCopyOrMove(resultZipToBeMoved, outputFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
         
+        var extractFile = new FileInfo(ExtractPath(key));
         if (!extractFile.Exists)
         {
-            // TODO Serialise directly to the cache dir (as a tmp file)
-            using var tmpFile = new TempFile();
+            var tmpFile = new FileInfo(TempFile.GetTempFilePath());
             {
-                await using var fs = tmpFile.File.OpenWrite();
+                await using var fs = tmpFile.OpenWrite();
                 await JsonSerializer.SerializeAsync(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
-            AtomicCopyOrMove(tmpFile.File, extractFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
+            AtomicCopyOrMove(tmpFile, extractFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
     }
 

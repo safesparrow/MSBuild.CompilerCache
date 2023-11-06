@@ -12,7 +12,7 @@ public class TestOutputBuildAndCache
         using var dir = new DisposableDir();
         var outputsDir = dir.Dir.CreateSubdirectory("outputs");
         var foo = outputsDir.CombineAsFile("foo.txt");
-        File.WriteAllText(foo.FullName, "foo");
+        await File.WriteAllTextAsync(foo.FullName, "foo");
         var items = new[]
         {
             new OutputItem("foo", foo.FullName)
@@ -30,7 +30,9 @@ public class TestOutputBuildAndCache
                 OutputFiles: items
             )
         );
-        var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
+        var hasher = Utils.DefaultHasher;
+        var outputData = await Task.WhenAll(items.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher)).ToArray());
+        var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, outputData, metadata, hasher);
 
         var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);
 

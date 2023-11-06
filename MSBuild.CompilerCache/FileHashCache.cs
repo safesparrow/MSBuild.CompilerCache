@@ -100,10 +100,10 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
     public async Task<bool> SetAsync(FileHashCacheKey originalKey, string value)
     {
         var key = ExtractKey(originalKey);
-        FileInfo entryFile = new FileInfo(EntryPath(key));
+        var entryFile = new FileInfo(EntryPath(key));
         if (entryFile.Exists)
         {
-            return await Task.FromResult(false);
+            return false;
         }
 
         using var tmpFile = new TempFile();
