@@ -9,16 +9,18 @@ namespace MSBuild.CompilerCache;
 public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 {
     private readonly string _cacheDir;
+    private readonly IHash _hasher;
 
-    public FileHashCache(string cacheDir)
+    public FileHashCache(string cacheDir, IHash hasher)
     {
+        _hasher = hasher;
         _cacheDir = cacheDir;
         Directory.CreateDirectory(_cacheDir);
     }
 
     public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, key.Key);
 
-    public static CacheKey ExtractKey(FileHashCacheKey key) => new CacheKey(Utils.ObjectToHash(key, Utils.DefaultHasher));
+    public CacheKey ExtractKey(FileHashCacheKey key) => new CacheKey(Utils.ObjectToHash(key, _hasher));
     
     public bool Exists(FileHashCacheKey originalKey)
     {

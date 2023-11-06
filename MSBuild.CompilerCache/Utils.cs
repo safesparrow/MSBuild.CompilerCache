@@ -34,10 +34,10 @@ public static class Utils
 {
     internal static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
     
-    public static string ObjectToHash(object item, IHash? hasher = null)
+    public static string ObjectToHash(object item, IHash hasher)
     {
         var bytes = ObjectToBytes(item);
-        return BytesToHashHex(bytes, hasher);
+        return BytesToHash(bytes, hasher);
     }
 
     public static byte[] ObjectToBytes(object item)
@@ -52,13 +52,13 @@ public static class Utils
         return bytes;
     }
 
-    public static string FileBytesToHashHex(string path, IHash hasher)
+    public static string FileBytesToHash(string path, IHash hasher)
     {
         var bytes = File.ReadAllBytes(path);
-        return BytesToHashHex(bytes, hasher);
+        return BytesToHash(bytes, hasher);
     }
 
-    public static string BytesToHashHex(ReadOnlySpan<byte> bytes, IHash hasher)
+    public static string BytesToHash(ReadOnlySpan<byte> bytes, IHash hasher)
     {
         var hash = hasher.ComputeHash(bytes);
         return Convert.ToHexString(hash);

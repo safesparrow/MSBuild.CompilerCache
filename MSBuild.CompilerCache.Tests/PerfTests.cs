@@ -15,7 +15,7 @@ public class PerfTests
     public void HashCalculationPerfTest()
     {
         var sw = Stopwatch.StartNew();
-        var fileHashCache = new FileHashCache(".filehashcache");
+        var fileHashCache = new FileHashCache(".filehashcache", Utils.DefaultHasher);
         var inMemoryFileHashCache = new DictionaryBasedCache<FileHashCacheKey, string>();
         var combinedFileHashCache = new CacheCombiner<FileHashCacheKey, string>(inMemoryFileHashCache, fileHashCache);
         var inMemoryRefCache = new InMemoryRefCache();

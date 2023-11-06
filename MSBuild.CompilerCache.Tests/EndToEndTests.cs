@@ -249,9 +249,9 @@ public class EndToEndTests
         var dll2 = DllFile(projDir2, proj);
         var dll3 = DllFile(projDir3, proj);
 
-        var hash1 = Utils.FileBytesToHashHex(dll1.FullName, Utils.DefaultHasher);
-        var hash2 = Utils.FileBytesToHashHex(dll2.FullName, Utils.DefaultHasher);
-        var hash3 = Utils.FileBytesToHashHex(dll3.FullName, Utils.DefaultHasher);
+        var hash1 = Utils.FileBytesToHash(dll1.FullName, Utils.DefaultHasher);
+        var hash2 = Utils.FileBytesToHash(dll2.FullName, Utils.DefaultHasher);
+        var hash3 = Utils.FileBytesToHash(dll3.FullName, Utils.DefaultHasher);
         
         Assert.That(hash2, Is.EqualTo(hash1));
         Assert.That(hash3, Is.Not.EqualTo(hash2));

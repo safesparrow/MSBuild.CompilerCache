@@ -104,7 +104,7 @@ public class RefTrimmer
     public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader, IHash hasher)
     {
         var bytes = MakeRefasm(logger, refAsmType, peReader);
-        return Utils.BytesToHashHex(bytes.AsSpan(), hasher);
+        return Utils.BytesToHash(bytes.AsSpan(), hasher);
     }
 
     public async Task<RefData> GenerateRefData(ImmutableArray<byte> content)
