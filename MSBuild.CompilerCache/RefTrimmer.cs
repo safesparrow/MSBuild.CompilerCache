@@ -23,6 +23,13 @@ public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerConte
 
 public class RefTrimmer
 {
+    private IHash _hasher;
+    
+    public RefTrimmer(IHash hasher)
+    {
+        _hasher = hasher;
+    }
+
     public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
     {
         logger.Debug?.Invoke($"Reading assembly {inputPath}");
@@ -94,11 +101,10 @@ public class RefTrimmer
         return ImmutableArray.Create(refBytes);
     }
 
-    public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader)
+    public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader, IHash hasher)
     {
         var bytes = MakeRefasm(logger, refAsmType, peReader);
-        var hash = Utils.BytesToHashHex(bytes.AsSpan());
-        return hash;
+        return Utils.BytesToHashHex(bytes.AsSpan(), hasher);
     }
 
     public async Task<RefData> GenerateRefData(ImmutableArray<byte> content)
@@ -112,9 +118,9 @@ public class RefTrimmer
         // If no assemblies can see the internals, there is no need to generate public+internal ref assembly 
         var internalsNeverAccessible = internalsVisibleToAssemblies.IsEmpty;
         
-        string GetPublicHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.Public, new PEReader(content));
+        string GetPublicHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.Public, new PEReader(content), _hasher);
 
-        string GetPublicAndInternalHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.PublicAndInternal, new PEReader(content));
+        string GetPublicAndInternalHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.PublicAndInternal, new PEReader(content), _hasher);
 
         string? publicRefHash = null, publicAndInternalRefHash = null;
         if (internalsNeverAccessible)

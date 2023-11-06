@@ -4,7 +4,6 @@ namespace MSBuild.CompilerCache;
 
 using System.Collections.Immutable;
 using System.IO.Compression;
-using System.Text.Json;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -112,7 +111,6 @@ public class LocatorAndPopulator : IDisposable
         (_config, _cache, _refCache, _fileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
         _assemblyName = inputs.AssemblyName;
         //logTime?.Invoke("Caches created");
-
         
         _localInputs = CalculateLocalInputsWithHash(logTime);
         //logTime?.Invoke("LocalInputs with hash created");
@@ -172,9 +170,9 @@ public class LocatorAndPopulator : IDisposable
     private LocalInputs CalculateLocalInputsWithHash(Action<string>? logTime = null) => CalculateLocalInputs(logTime);
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, logTime);
+        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher, logTime);
 
-    public static async Task<InputResult> ProcessSourceFile(string relativePath, IFileHashCache fileHashCache)
+    public static async Task<InputResult> ProcessSourceFile(string relativePath, IFileHashCache fileHashCache, IHash hasher)
     {
         // Open the file for reading, and don't allow anyone to modify it.
         var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -184,7 +182,7 @@ public class LocatorAndPopulator : IDisposable
         if (hash == null)
         {
             var bytes = await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
-            hash = Utils.BytesToHashHex(bytes);
+            hash = Utils.BytesToHashHex(bytes, hasher);
             await fileHashCache.SetAsync(fileHashCacheKey, hash);
         }
 
@@ -194,7 +192,7 @@ public class LocatorAndPopulator : IDisposable
     }
     
     
-    public static async Task<InputResult> ProcessReference(string relativePath, string compilingAssemblyName, IFileHashCache fileHashCache, IRefCache refCache, RefTrimmingConfig refTrimmingConfig)
+    public static async Task<InputResult> ProcessReference(string relativePath, string compilingAssemblyName, IFileHashCache fileHashCache, IRefCache refCache, RefTrimmingConfig refTrimmingConfig, IHash hasher)
     {
         // Open the file for reading, and don't allow anyone to modify it.
         var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -206,7 +204,7 @@ public class LocatorAndPopulator : IDisposable
         if (hash == null)
         {
             bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
-            hash = Utils.BytesToHashHex(bytes);
+            hash = Utils.BytesToHashHex(bytes, hasher);
             await fileHashCache.SetAsync(fileHashCacheKey, hash);
         }
         
@@ -219,7 +217,7 @@ public class LocatorAndPopulator : IDisposable
         {
             bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
 
-            var toBeCached = await new RefTrimmer().GenerateRefData(ImmutableArray.Create(bytes));
+            var toBeCached = await new RefTrimmer(hasher).GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: originalExtract);
             await refCache.SetAsync(refCacheKey, cached);
         }
@@ -232,7 +230,7 @@ public class LocatorAndPopulator : IDisposable
     }
     
     internal static LocalInputs CalculateLocalInputs(DecomposedCompilerProps decomposed, IRefCache refCache,
-        string compilingAssemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, Action<string>? logTime = null)
+        string compilingAssemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, IHash hasher, Action<string>? logTime = null)
     {
         string[] fileInputs2, references2;
         if (trimmingConfig.Enabled)
@@ -246,8 +244,8 @@ public class LocatorAndPopulator : IDisposable
             references2 = Array.Empty<string>();
         }
         
-        var fileTasks = fileInputs2.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache)));
-        var refTasks = references2.Select(r => (Func<Task<InputResult>>)(() => ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig)));
+        var fileTasks = fileInputs2.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache, hasher)));
+        var refTasks = references2.Select(r => (Func<Task<InputResult>>)(() => ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig, hasher)));
         var allTaskFuncs = fileTasks.Concat(refTasks).ToArray();
         var allTasks =
             allTaskFuncs
@@ -265,12 +263,6 @@ public class LocatorAndPopulator : IDisposable
         //logTime?.Invoke("orders done");
 
         return new LocalInputs(allItems, props, outputs);
-    }
-
-    public static string CreateHashString(FileHashCacheKey fileHashCacheKey)
-    {
-        var bytes = File.ReadAllBytes(fileHashCacheKey.FullName);
-        return Utils.BytesToHashHex(bytes);
     }
 
     private static CompilationMetadata GetCompilationMetadata(DateTime postCompilationTimeUtc) =>
@@ -307,7 +299,7 @@ public class LocatorAndPopulator : IDisposable
         if (cached == null)
         {
             bytes ??= await File.ReadAllBytesAsync(filepath);
-            var trimmer = new RefTrimmer();
+            var trimmer = new RefTrimmer(hasher);
             var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(bytes));
             cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
             await refCache.SetAsync(cacheKey, cached);
@@ -421,13 +413,13 @@ public class LocatorAndPopulator : IDisposable
 
     private async ValueTask RefasmAndPopulateCacheWithOutputDll(OutputData dll)
     {
-        var trimmer = new RefTrimmer();
+        var trimmer = new RefTrimmer(_hasher);
         var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(dll.Content));
         var fileCacheKey = FileHashCacheKey.FromFileInfo(new FileInfo(dll.Item.LocalPath));
         var dllHash = await _fileHashCache.GetAsync(fileCacheKey);
         if (dllHash == null)
         {
-            dllHash = Utils.BytesToHashHex(dll.Content);
+            dllHash = Utils.BytesToHashHex(dll.Content, _hasher);
             await _fileHashCache.SetAsync(fileCacheKey, dllHash);
         }
                 
@@ -450,22 +442,20 @@ public class LocatorAndPopulator : IDisposable
         {
             string metaPath = outputsDir.CombineAsFile("__inputs.json").FullName;
             await using var fs = File.OpenWrite(metaPath);
-            byte[] bytes2 = JsonSerializer.SerializeToUtf8Bytes(metadata, AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
-            await fs.WriteAsync(bytes2);
-            return bytes2;
+            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(metadata, AllCompilationMetadataJsonContext.Default.AllCompilationMetadata);
+            await fs.WriteAsync(bytes);
+            return bytes;
         }
 
         // Write inputs json in parallel to the rest
         var saveInputsTask = SaveInputsAndReturnBytesAsync();
-
         var objectToHash = items.Select(i => (i.Item.Name, i.BytesHash)).ToArray();
-
         var hashForFileName = Utils.ObjectToHash(objectToHash, hasher);
 
         var outputsExtractJsonPath = outputsDir.CombineAsFile("__outputs.json").FullName;
         byte[] outputsJsonBytes;
+        await using(var fs = File.OpenWrite(outputsExtractJsonPath))
         {
-            await using var fs = File.OpenWrite(outputsExtractJsonPath);
             var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
             outputsJsonBytes = JsonSerializer.SerializeToUtf8Bytes(outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
             await fs.WriteAsync(outputsJsonBytes);
@@ -484,9 +474,9 @@ public class LocatorAndPopulator : IDisposable
         
         var tempZipPath = baseTmpDir.CombineAsFile($"{hashForFileName}.zip");
 
+        await using(var zip = File.OpenWrite(tempZipPath.FullName))
+        using(var a = new ZipArchive(zip, ZipArchiveMode.Create))
         {
-            await using var zip = File.OpenWrite(tempZipPath.FullName);
-            using var a = new ZipArchive(zip, ZipArchiveMode.Create);
             foreach (var ae in archiveEntries)
             {
                 var e = a.CreateEntry(ae.Name, CompressionLevel.NoCompression);

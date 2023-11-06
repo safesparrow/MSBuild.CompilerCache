@@ -52,15 +52,14 @@ public static class Utils
         return bytes;
     }
 
-    public static string FileBytesToHashHex(string path, IHash? hasher = null)
+    public static string FileBytesToHashHex(string path, IHash hasher)
     {
         var bytes = File.ReadAllBytes(path);
         return BytesToHashHex(bytes, hasher);
     }
 
-    public static string BytesToHashHex(ReadOnlySpan<byte> bytes, IHash? hasher = null)
+    public static string BytesToHashHex(ReadOnlySpan<byte> bytes, IHash hasher)
     {
-        hasher ??= DefaultHasher;
         var hash = hasher.ComputeHash(bytes);
         return Convert.ToHexString(hash);
     }

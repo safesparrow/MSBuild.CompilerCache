@@ -2,7 +2,6 @@ using System.Text.Json;
 
 namespace MSBuild.CompilerCache;
 
-using System.Collections.Concurrent;
 using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
 /// <summary>

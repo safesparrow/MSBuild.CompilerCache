@@ -38,7 +38,7 @@ public class Benchmarks
 
         void Act()
         {
-            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>());
+            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), Utils.DefaultHasher);
             if (inputs.Files.Length == 0) throw new Exception();
         }
 
