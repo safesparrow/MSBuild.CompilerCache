@@ -1,11 +1,12 @@
 ﻿using System.Collections;
 using System.Diagnostics;
+using JetBrains.Annotations;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Task = Microsoft.Build.Utilities.Task;
 
 namespace MSBuild.CompilerCache;
 
-using Microsoft.Build.Framework;
-using JetBrains.Annotations;
 using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 
 // ReSharper disable once UnusedType.Global
@@ -13,7 +14,7 @@ using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 /// Task that calculates compilation inputs and uses cached outputs if they exist. 
 /// </summary>
 // ReSharper disable once ClassNeverInstantiated.Global
-public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
+public class CompilerCacheLocate : Task
 {
 #pragma warning disable CS8618
     // Inputs
@@ -43,12 +44,10 @@ public class CompilerCacheLocate : Microsoft.Build.Utilities.Task
             {
                 return cached;
             }
-            else
-            {
-                var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileHashCacheKey, string>());
-                BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
-                return fresh;
-            }
+
+            var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileHashCacheKey, string>());
+            BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
+            return fresh;
         }
     }
     

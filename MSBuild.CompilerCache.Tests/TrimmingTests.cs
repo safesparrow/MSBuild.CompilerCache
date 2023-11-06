@@ -13,7 +13,7 @@ public class TrimmingTests
     {
         var path = Assembly.GetExecutingAssembly().Location.Replace(".Tests.dll", ".dll");
         var bytes = await File.ReadAllBytesAsync(path);
-        var t = new RefTrimmer(Utils.DefaultHasher);
+        var t = new RefTrimmer(TestUtils.DefaultHasher);
         var res = await t.GenerateRefData(bytes.ToImmutableArray());
 
         Assert.That(res.InternalsVisibleTo, Is.EquivalentTo(new[] { "MSBuild.CompilerCache.Tests", "MSBuild.CompilerCache.Benchmarks" }));

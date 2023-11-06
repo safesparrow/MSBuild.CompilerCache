@@ -39,10 +39,8 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
             Task<string> Read() => File.ReadAllTextAsync(entryPath);
             return await IOActionWithRetriesAsync(Read);
         }
-        else
-        {
-            return null;
-        }
+
+        return null;
     }
     
     internal static async Task<T> IOActionWithRetriesAsync<T>(Func<Task<T>> action)

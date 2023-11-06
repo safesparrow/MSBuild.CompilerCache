@@ -4,8 +4,7 @@ using Moq;
 using MSBuild.CompilerCache;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using IRefCache =
-    MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
+using IRefCache = MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
 
 namespace Tests;
 
@@ -35,7 +34,7 @@ public class InMemoryTaskBasedTests
                 dict[(key, life)] = value);
 
         _buildEngine
-            .Setup(x => x.GetRegisteredTaskObject(It.IsAny<object>(), It.IsAny<RegisteredTaskObjectLifetime>()))
+            .Setup(x => x.UnregisterTaskObject(It.IsAny<object>(), It.IsAny<RegisteredTaskObjectLifetime>()))
             .Returns((object key, RegisteredTaskObjectLifetime life) =>
             {
                 var k = (key, life);
@@ -66,9 +65,9 @@ public class InMemoryTaskBasedTests
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, compilingAssemblyName: "",
-            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(), hasher: Utils.DefaultHasher);
+            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(), hasher: TestUtils.DefaultHasher);
         var extract = localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToHash(extract, Utils.DefaultHasher);
+        var hashString = Utils.ObjectToHash(extract, TestUtils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
 
         return new All(LocalInputs: localInputs,
@@ -110,7 +109,7 @@ public class InMemoryTaskBasedTests
         );
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
-        var hasher = Utils.DefaultHasher;
+        var hasher = TestUtils.DefaultHasher;
         var outputData = await Task.WhenAll(outputItems.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher)).ToArray());
         var zip = await LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputData,
             new AllCompilationMetadata(null, all.LocalInputs.ToSlim()), hasher);
@@ -189,6 +188,7 @@ public class InMemoryTaskBasedTests
         });
 
         use.Guid = locate.Guid;
+        use.CompilationSucceeded = true;
         Assert.That(use.Execute(), Is.True);
 
         var allKeys = _compilationResultsCache.GetAllExistingKeys();

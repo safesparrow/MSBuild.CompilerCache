@@ -13,7 +13,10 @@ namespace MSBuild.CompilerCache;
 [Serializable]
 public record struct FileExtract(string Name, string? ContentHash, long Length);
 
-// TODO Use a dictionary to disambiguate files in different Item lists 
+[JsonSerializable(typeof(FileExtract[]))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class FileExtractsJsonContext : JsonSerializerContext;
+
 /// <summary>
 /// All compilation inputs, used to generate a hash for caching.
 /// </summary>
@@ -29,11 +32,11 @@ public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[
 [Serializable]
 public record LocalFileExtract
 {
-    public LocalFileExtract(FileHashCacheKey Info, string? Hash)
+    public LocalFileExtract(FileHashCacheKey Info, string Hash)
     {
         this.Info = Info;
         this.Hash = Hash;
-        if(Info.FullName == null) throw new Exception("File info name empty");
+        if (Info.FullName == null) throw new Exception("File info name empty");
     }
 
     public FileHashCacheKey Info { get; set; }
@@ -41,13 +44,9 @@ public record LocalFileExtract
     public long Length => Info.Length;
     public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
     public string Hash { get; set; }
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
 
-    public void Deconstruct(out FileHashCacheKey Info, out string Hash)
-    {
-        Info = this.Info;
-        Hash = this.Hash;
-    }
+    public FileExtract ToFileExtract() =>
+        new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
 }
 
 /// <summary>
@@ -73,7 +72,7 @@ public record OutputItem
 
         this.Name = Name;
         this.LocalPath = LocalPath;
-        this.CacheFileName = GetCacheFileName();
+        CacheFileName = GetCacheFileName();
     }
 
     public string CacheFileName { get; }
@@ -103,7 +102,9 @@ public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputI
         return new FullExtract(Files: Files.Select(f => f.fileHashCacheKey.ToFileExtract()).ToArray(), Props: Props,
             OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
     }
-    public LocalInputsSlim ToSlim() => new LocalInputsSlim(Files: Files.Select(f => f.fileHashCacheKey).ToArray(), Props, OutputFiles);
+
+    public LocalInputsSlim ToSlim() =>
+        new LocalInputsSlim(Files: Files.Select(f => f.fileHashCacheKey).ToArray(), Props, OutputFiles);
 }
 
 [Serializable]
@@ -119,6 +120,13 @@ public record LocalInputsSlim(LocalFileExtract[] Files, (string, string)[] Props
 [Serializable]
 public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputsSlim LocalInputs);
 
+[JsonSerializable(typeof(AllCompilationMetadata))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class AllCompilationMetadataJsonContext : JsonSerializerContext;
+
+[Serializable]
+public record InputResult(FileStream f, LocalFileExtract fileHashCacheKey);
+
 public record struct CacheKey(string Key)
 {
     public static implicit operator string(CacheKey key) => key.Key;
@@ -130,10 +138,11 @@ public record struct CacheKey(string Key)
 public interface ICompilationResultsCache
 {
     bool Exists(CacheKey key);
+
     public sealed void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved) =>
         SetAsync(key, fullExtract, resultZipToBeMoved).GetAwaiter().GetResult();
-    Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
 
+    Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
     sealed string? Get(CacheKey key) => GetAsync(key).GetAwaiter().GetResult();
     Task<string?> GetAsync(CacheKey key);
 }
@@ -165,7 +174,8 @@ public class CompilationResultsCache : ICompilationResultsCache
     /// <param name="throwIfDestinationExists">If true, will throw if the destination already exists</param>
     /// <param name="moveInsteadOfCopy"></param>
     /// <returns></returns>
-    public static bool AtomicCopyOrMove(FileInfo source, FileInfo destination, bool throwIfDestinationExists = true, bool moveInsteadOfCopy = false)
+    public static bool AtomicCopyOrMove(FileInfo source, FileInfo destination, bool throwIfDestinationExists = true,
+        bool moveInsteadOfCopy = false)
     {
         var dir = destination.DirectoryName!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
@@ -179,6 +189,7 @@ public class CompilationResultsCache : ICompilationResultsCache
         {
             tmp = source.CopyTo(tmpDestination);
         }
+
         try
         {
             tmp.MoveTo(destination.FullName, overwrite: false);
@@ -191,10 +202,8 @@ public class CompilationResultsCache : ICompilationResultsCache
             {
                 return false;
             }
-            else
-            {
-                throw;
-            }
+
+            throw;
         }
     }
 
@@ -216,12 +225,12 @@ public class CompilationResultsCache : ICompilationResultsCache
         dir.Create();
 
         var outputFile = new FileInfo(Path.Combine(dir.FullName, resultZipToBeMoved.Name));
-        
+
         if (!outputFile.Exists)
         {
             AtomicCopyOrMove(resultZipToBeMoved, outputFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
-        
+
         var extractFile = new FileInfo(ExtractPath(key));
         if (!extractFile.Exists)
         {

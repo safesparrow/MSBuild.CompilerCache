@@ -39,10 +39,8 @@ public class RefCache : IRefCache
             }
             return await FileHashCache.IOActionWithRetriesAsync(Read);
         }
-        else
-        {
-            return null;
-        }
+
+        return null;
     }
 
     public async Task<bool> SetAsync(CacheKey key, RefDataWithOriginalExtract data)

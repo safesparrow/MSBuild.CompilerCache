@@ -20,7 +20,7 @@ Caching works in commandline builds as well as in the IDE.
 To use the cache, add the following to your project file (or `Directory.Build.props` in your directory structure):
 ```xml
 <PropertyGroup>
-    <CompilationCacheConfigPath>c:/accessible/filesystem/location/compilation_cache_config.json</CompilationCacheConfigPath>
+    <CompilerCacheConfigPath>c:/accessible/filesystem/location/compilation_cache_config.json</CompilerCacheConfigPath>
 </PropertyGroup>
 
 <ItemGroup>
@@ -37,7 +37,7 @@ and create a config file like the one below:
 
 The above code does two things:
 1. Adds the `MSBuild.CompilerCache` package, which provides custom Task definitions and ships .targets files.
-2. Sets the `CompilationCacheConfigPath` variable, which is used to read the config file.
+2. Sets the `CompilerCacheConfigPath` variable, which is used to read the config file.
 
 ## Local cache vs remote cache
 The location set in `CacheDir` can be either a local path or a network share - the caching logic behaves exactly the same.

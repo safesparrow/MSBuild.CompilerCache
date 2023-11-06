@@ -1,16 +1,17 @@
-using System.Text.Json.Serialization;
+using System.Collections.Immutable;
+using System.IO.Compression;
+using System.Text.Json;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+using Task = System.Threading.Tasks.Task;
 
 namespace MSBuild.CompilerCache;
 
-using System.Collections.Immutable;
-using System.IO.Compression;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using JsonSerializer = JsonSerializer;
 using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
 
-public record UseOrPopulateResult;
+public record UseOrPopulateResult(bool CachePopulated);
 
 public record LocateInputs(
     string ConfigPath,
@@ -93,11 +94,9 @@ public class LocatorAndPopulator : IDisposable
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
     {
-        //logTime?.Invoke("Start Locate");
         var preCompilationTimeUtc = DateTime.UtcNow;
 
         _decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps, log);
-        //logTime?.Invoke("Decomposed compiler props");
         if (_decomposed.UnsupportedPropsSet.Any())
         {
             var s = string.Join(Environment.NewLine,
@@ -111,15 +110,10 @@ public class LocatorAndPopulator : IDisposable
 
         (_config, _cache, _refCache, _fileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
         _assemblyName = inputs.AssemblyName;
-        //logTime?.Invoke("Caches created");
-
-        _localInputs = CalculateLocalInputsWithHash(logTime);
-        //logTime?.Invoke("LocalInputs with hash created");
-
+        _localInputs = CalculateLocalInputs(logTime);
         _extract = _localInputs.ToFullExtract();
         var hashString = Utils.ObjectToHash(_extract, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
-        //logTime?.Invoke("Key generated");
 
         LocateOutcome outcome;
 
@@ -127,7 +121,7 @@ public class LocatorAndPopulator : IDisposable
         {
             outcome = LocateOutcome.OnlyPopulateCache;
             log?.LogMessage(MessageImportance.Normal,
-                $"CompilationCache: CheckCompileOutputAgainstCache is set - not using cached outputs.");
+                "CompilationCache: CheckCompileOutputAgainstCache is set - not using cached outputs.");
         }
         else
         {
@@ -167,8 +161,6 @@ public class LocatorAndPopulator : IDisposable
         //logTime?.Invoke("end");
         return _locateResult;
     }
-
-    private LocalInputs CalculateLocalInputsWithHash(Action<string>? logTime = null) => CalculateLocalInputs(logTime);
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
         CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher,
@@ -237,21 +229,21 @@ public class LocatorAndPopulator : IDisposable
         string compilingAssemblyName, RefTrimmingConfig trimmingConfig, IFileHashCache fileHashCache, IHash hasher,
         Action<string>? logTime = null)
     {
-        string[] fileInputs2, references2;
+        string[] fileInputs, references;
         if (trimmingConfig.Enabled)
         {
-            fileInputs2 = decomposed.FileInputs;
-            references2 = decomposed.References;
+            fileInputs = decomposed.FileInputs;
+            references = decomposed.References;
         }
         else
         {
-            fileInputs2 = decomposed.FileInputs.Concat(decomposed.References).ToArray();
-            references2 = Array.Empty<string>();
+            fileInputs = decomposed.FileInputs.Concat(decomposed.References).ToArray();
+            references = Array.Empty<string>();
         }
 
         var fileTasks =
-            fileInputs2.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache, hasher)));
-        var refTasks = references2.Select(r => (Func<Task<InputResult>>)(() =>
+            fileInputs.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache, hasher)));
+        var refTasks = references.Select(r => (Func<Task<InputResult>>)(() =>
             ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig, hasher)));
         var allTaskFuncs = fileTasks.Concat(refTasks).ToArray();
         var allTasks =
@@ -260,7 +252,7 @@ public class LocatorAndPopulator : IDisposable
                 .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
                 .AsParallel()
                 .ToArray();
-        var allItems = System.Threading.Tasks.Task.WhenAll(allTasks).GetAwaiter().GetResult();
+        var allItems = Task.WhenAll(allTasks).GetAwaiter().GetResult();
 
         //logTime?.Invoke("ref extracts done");
 
@@ -371,13 +363,13 @@ public class LocatorAndPopulator : IDisposable
     {
         var postCompilationTimeUtc = DateTime.UtcNow;
 
-        var outputs = await System.Threading.Tasks.Task.WhenAll(_decomposed.OutputsToCache
+        var outputs = await Task.WhenAll(_decomposed.OutputsToCache
             .Select(outputItem => GatherSingleOutputData(outputItem, _hasher)).ToArray());
 
         // Trigger RefTrimmer for newly-built dlls/exe files - should speed up builds of dependent projects,
         // and avoid any duplicate calculations due to multiple dependants redoing the same thing if timings are bad.
 
-        async System.Threading.Tasks.Task RefasmCompiledDllsAsync(OutputData[] outputs)
+        async Task RefasmCompiledDllsAsync(OutputData[] outputs)
         {
             static bool RefasmableOutputItem(OutputData o) => Path.GetExtension(o.Item.LocalPath) is ".dll";
             var outputsToRefasm = outputs.Where(RefasmableOutputItem).ToArray();
@@ -410,7 +402,7 @@ public class LocatorAndPopulator : IDisposable
 
         await refasmCompiledDllsTask;
 
-        return new UseOrPopulateResult();
+        return new UseOrPopulateResult(CachePopulated: true);
     }
 
     internal static async Task<OutputData> GatherSingleOutputData(OutputItem outputItem, IHash hasher)
@@ -448,7 +440,7 @@ public class LocatorAndPopulator : IDisposable
         TaskLoggingHelper? log = null)
     {
         // Write inputs json in parallel to the rest
-        var saveInputsTask = System.Threading.Tasks.Task.Run(
+        var saveInputsTask = Task.Run(
             () => JsonSerializer.SerializeToUtf8Bytes(metadata,
                 AllCompilationMetadataJsonContext.Default.AllCompilationMetadata));
         var objectToHash = items.Select(i => (i.Item.Name, i.BytesHash)).ToArray();
@@ -456,7 +448,7 @@ public class LocatorAndPopulator : IDisposable
 
         var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
         byte[] outputsJsonBytes =
-            JsonSerializer.SerializeToUtf8Bytes(outputExtracts, OutputExtractsJsonContext.Default.FileExtractArray);
+            JsonSerializer.SerializeToUtf8Bytes(outputExtracts, FileExtractsJsonContext.Default.FileExtractArray);
 
         // Make sure inputs json written before zipping the whole directory
         var inputsJsonBytes = await saveInputsTask;
@@ -487,6 +479,25 @@ public class LocatorAndPopulator : IDisposable
         }
     }
 
+    public async Task<UseOrPopulateResult> PopulateCacheOrJustDispose(TaskLoggingHelper log, Action<string> logTime, bool compilationSucceeded)
+    {
+        try
+        {
+            if (compilationSucceeded)
+            {
+                return await PopulateCacheAsync(log, logTime);
+            }
+            else
+            {
+                return new UseOrPopulateResult(CachePopulated: false);
+            }
+        }
+        finally
+        {
+            Dispose();
+        }
+    }
+
     public void Dispose()
     {
         var files = _localInputs?.Files;
@@ -506,14 +517,3 @@ public class LocatorAndPopulator : IDisposable
         }
     }
 }
-
-[JsonSerializable(typeof(FileExtract[]))]
-[JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class OutputExtractsJsonContext : JsonSerializerContext;
-
-[JsonSerializable(typeof(AllCompilationMetadata))]
-[JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class AllCompilationMetadataJsonContext : JsonSerializerContext;
-
-[Serializable]
-public record InputResult(FileStream f, LocalFileExtract fileHashCacheKey);

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MSBuild.CompilerCache;
 
 namespace Tests;
 
@@ -42,9 +43,17 @@ internal static class TestUtils
         p.WaitForExit();
         if (p.ExitCode != 0)
         {
-            throw new Exception($"Running process failed with non-zero exit code.");
+            throw new Exception("Running process failed with non-zero exit code.");
         }
 
         return output.ToArray();
+    }
+
+    public static readonly IHash DefaultHasher = HasherFactory.CreateHash(HasherType.XxHash64);
+
+    public static string FileBytesToHash(string path, IHash hasher)
+    {
+        var bytes = File.ReadAllBytes(path);
+        return Utils.BytesToHash(bytes, hasher);
     }
 }

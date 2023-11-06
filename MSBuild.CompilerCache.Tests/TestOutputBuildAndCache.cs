@@ -30,7 +30,7 @@ public class TestOutputBuildAndCache
                 OutputFiles: items
             )
         );
-        var hasher = Utils.DefaultHasher;
+        var hasher = TestUtils.DefaultHasher;
         var outputData = await Task.WhenAll(items.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher)).ToArray());
         var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, outputData, metadata, hasher);
 
@@ -58,7 +58,7 @@ public class TestOutputBuildAndCache
         (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>
             dir
                 .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                .Select(x => (x.Name, Hash: Utils.FileBytesToHash(x.FullName, Utils.DefaultHasher)))
+                .Select(x => (x.Name, Hash: TestUtils.FileBytesToHash(x.FullName, TestUtils.DefaultHasher)))
                 .Order()
                 .ToArray();
 
