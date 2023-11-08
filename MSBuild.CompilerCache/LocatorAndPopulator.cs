@@ -112,9 +112,30 @@ public class LocatorAndPopulator : IDisposable
         _assemblyName = inputs.AssemblyName;
         _localInputs = CalculateLocalInputs(logTime);
         _extract = _localInputs.ToFullExtract();
+        var extractBytes  = Utils.ObjectToBytes(_extract);
         var hashString = Utils.ObjectToHash(_extract, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
-
+        var file = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}.json";
+        var binfile = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}.data";
+        File.WriteAllText(file, Newtonsoft.Json.JsonConvert.SerializeObject(_extract));
+        File.WriteAllBytes(binfile, extractBytes);
+        var mymodule = _extract.Files.Where(x => x.Name.Contains("MyModule", StringComparison.OrdinalIgnoreCase)).ToArray();
+        var file2 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule.json";
+        var binfile2 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule.data";
+        File.WriteAllText(file2, Newtonsoft.Json.JsonConvert.SerializeObject(mymodule));
+        var mymoduleBytes  = Utils.ObjectToBytes(mymodule);
+        File.WriteAllBytes(binfile2, mymoduleBytes);
+        int i = 0;
+        foreach (var m in mymodule)
+        {
+            var file5 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule_{i}.json";
+            var binfile5 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule_{i}.data";
+            File.WriteAllText(file5, Newtonsoft.Json.JsonConvert.SerializeObject(m));
+            var mymoduleBytes5  = Utils.ObjectToBytes(m);
+            File.WriteAllBytes(binfile5, mymoduleBytes5);
+            i++;
+        }
+        
         LocateOutcome outcome;
 
         if (_config.CheckCompileOutputAgainstCache)
@@ -194,14 +215,15 @@ public class LocatorAndPopulator : IDisposable
         var f = File.Open(relativePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         var info = new FileInfo(relativePath);
         var fileHashCacheKey = FileHashCacheKey.FromFileInfo(info);
-        var hash = await fileHashCache.GetAsync(fileHashCacheKey);
+        string hash = null;// await fileHashCache.GetAsync(fileHashCacheKey);
+        //var hash = await fileHashCache.GetAsync(fileHashCacheKey);
         byte[]? bytes = null;
 
         if (hash == null)
         {
             bytes ??= await File.ReadAllBytesAsync(fileHashCacheKey.FullName);
             hash = Utils.BytesToHash(bytes, hasher);
-            await fileHashCache.SetAsync(fileHashCacheKey, hash);
+            //await fileHashCache.SetAsync(fileHashCacheKey, hash);
         }
 
         var referenceDllName = Path.GetFileNameWithoutExtension(fileHashCacheKey.FullName);
@@ -222,6 +244,7 @@ public class LocatorAndPopulator : IDisposable
 
         var data = AllRefDataToExtract(allRefData, compilingAssemblyName, refTrimmingConfig.IgnoreInternalsIfPossible);
         var extract = new LocalFileExtract(fileHashCacheKey, data.Hash);
+        extract = originalExtract; // TODO Revert once bug found
         return new InputResult(f, extract);
     }
 

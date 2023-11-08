@@ -5,6 +5,7 @@ using MSBuild.CompilerCache;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using IRefCache = MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Tests;
 
@@ -80,6 +81,22 @@ public class InMemoryTaskBasedTests
     {
         var json = JsonConvert.SerializeObject(config);
         return CreateTmpFile(".config", json);
+    }
+
+    [Test]
+    public async Task CacheFoo()
+    {
+        var extract1 = new FullExtract(Props: new[]{("a", "b")}, Files: new FileExtract[]{}, OutputFiles: new string[]{});
+        var extract2 = new FullExtract(Props: new[]{("a", "c")}, Files: new FileExtract[]{}, OutputFiles: new string[]{});
+        var hasher = HasherFactory.CreateHash(HasherType.XxHash64);
+        var hashString1 = Utils.ObjectToHash(extract1, hasher);
+        var hashString2 = Utils.ObjectToHash(extract2, hasher);
+
+        await using var fs = new MemoryStream();
+        var txt1 = JsonSerializer.Serialize(extract1, FullExtractJsonContext.Default.FullExtract);
+        var txt2 = JsonSerializer.Serialize(extract2, FullExtractJsonContext.Default.FullExtract);
+
+        await _compilationResultsCache.SetAsync(new CacheKey("cachekey"), extract1, new FileInfo("foo"));
     }
 
     [Test]

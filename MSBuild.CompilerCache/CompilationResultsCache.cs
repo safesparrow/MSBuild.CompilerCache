@@ -11,7 +11,19 @@ namespace MSBuild.CompilerCache;
 /// <param name="ContentHash">Strong hash of the contents of the file</param>
 /// <param name="Length"></param>
 [Serializable]
-public record struct FileExtract(string Name, string? ContentHash, long Length);
+public record struct FileExtract
+{
+    public string Name { get; }
+    public string? ContentHash { get; }
+    public long Length { get; }
+
+    public FileExtract(string Name, string? ContentHash, long Length)
+    {
+        this.Name = Name;
+        this.ContentHash = ContentHash ?? throw new Exception($"Null ContentHash for {Name} {Length}");
+        this.Length = Length;
+    }
+}
 
 [JsonSerializable(typeof(FileExtract[]))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
@@ -24,7 +36,12 @@ public partial class FileExtractsJsonContext : JsonSerializerContext;
 /// <param name="Props"></param>
 /// <param name="OutputFiles"></param>
 [Serializable]
-public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
+public record FullExtract(FileExtract[] Files, KeyValuePair<string,string>[] Props, string[] OutputFiles)
+{
+    public FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles)
+    : this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).OrderBy(kvp => kvp.Key).ToArray(), OutputFiles)
+    {}
+}
 
 /// <summary>
 /// An extended version of <see cref="FullExtract" /> 
@@ -95,8 +112,12 @@ public record OutputItem
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
-public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(InputResult[] Files, KeyValuePair<string,string>[] Props, OutputItem[] OutputFiles)
 {
+    public LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+        : this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).ToArray(), OutputFiles)
+    {}
+    
     public FullExtract ToFullExtract()
     {
         return new FullExtract(Files: Files.Select(f => f.fileHashCacheKey.ToFileExtract()).ToArray(), Props: Props,
@@ -108,8 +129,12 @@ public record LocalInputs(InputResult[] Files, (string, string)[] Props, OutputI
 }
 
 [Serializable]
-public record LocalInputsSlim(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputsSlim(LocalFileExtract[] Files, KeyValuePair<string, string>[] Props, OutputItem[] OutputFiles)
 {
+    public LocalInputsSlim(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles):
+        this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).ToArray(), OutputFiles)
+    {}
+    
     public FullExtract ToFullExtract()
     {
         return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
