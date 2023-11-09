@@ -253,6 +253,7 @@ public class LocatorAndPopulator : IDisposable
             allTaskFuncs
                 .Chunk(20)
                 .AsParallel()
+                .AsOrdered()
                 .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
                 .ToArray();
         var allItems = Task.WhenAll(allTasks).GetAwaiter().GetResult();
