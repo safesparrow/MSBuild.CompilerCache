@@ -157,12 +157,12 @@
         PropertyName="CompilerCacheGuid" />
     </CompilerCacheLocate>
     <PropertyGroup>
-      <CacheRunCompilation
-        Condition="'$(CanCache)' != 'true'">true</CacheRunCompilation>
+      <CompilerCacheRunCompilation
+        Condition="'$(CanCache)' != 'true'">true</CompilerCacheRunCompilation>
     </PropertyGroup>
     <!--END OF CACHING EXTENSION CODE-->
     <Csc
-      Condition="'$(CacheRunCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+      Condition="'$(CompilerCacheRunCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
       AdditionalLibPaths="$(AdditionalLibPaths)"
       AddModules="@(AddModules)"
       AdditionalFiles="@(AdditionalFiles)"
@@ -248,8 +248,9 @@
     </Csc>
     <!--START OF CACHING EXTENSION CODE-->
     <CompilerCachePopulateCache
-      Condition="'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"
-      Guid="$(CompilerCacheGuid)" />
+      Condition="'$(CompilerCachePopulateCache)' == 'true'"
+      Guid="$(CompilerCacheGuid)"
+      CompilationSucceeded="$(MSBuildLastTaskResult)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs
