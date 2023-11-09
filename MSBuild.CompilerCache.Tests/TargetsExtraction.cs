@@ -63,6 +63,7 @@ public class TargetsExtraction
 
     internal static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
+            "8.0.100.rc-2",
             "7.0.302",
             "7.0.203",
             "7.0.202",
