@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
 
         <PackageId>MSBuild.CompilerCache</PackageId>
         <Version>0.0.2</Version>
@@ -13,6 +13,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+        <GenerateAssemblyVersionInfo>false</GenerateAssemblyVersionInfo>
     </PropertyGroup>
 
     <ItemGroup>
@@ -35,8 +36,8 @@
     <ItemGroup>
         <None Include="Targets/MSBuild.CompilerCache.targets" Pack="True" PackagePath="build\MSBuild.CompilerCache.targets" />
         <None Include="Targets/*.targets" Pack="True" PackagePath="build\" />
-        <None Include="$(PkgJetBrains_Refasmer)/lib/net6.0/Refasmer.dll" Pack="True" PackagePath="lib\net6.0" />
-        <None Include="$(PkgFastHashes)/lib/netstandard2.1/FastHashes.dll" Pack="True" PackagePath="lib\net6.0" />
+        <None Include="$(PkgJetBrains_Refasmer)/lib/net6.0/Refasmer.dll" Pack="True" PackagePath="lib\net7.0" />
+        <None Include="$(PkgFastHashes)/lib/netstandard2.1/FastHashes.dll" Pack="True" PackagePath="lib\net7.0" />
         <None Include="NuGet.README.md" Pack="True" PackagePath="README.md" />
     </ItemGroup>
 

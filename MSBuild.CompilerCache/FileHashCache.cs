@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 namespace MSBuild.CompilerCache;
 
@@ -20,8 +21,13 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 
     public string EntryPath(CacheKey key) => Path.Combine(_cacheDir, key.Key);
 
-    public CacheKey ExtractKey(FileHashCacheKey key) => new CacheKey(Utils.ObjectToHash(key, _hasher));
-    
+    public CacheKey ExtractKey(FileHashCacheKey key)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(key);
+        string hash = Utils.BytesToHash(bytes, _hasher);
+        return new CacheKey(hash);
+    }
+
     public bool Exists(FileHashCacheKey originalKey)
     {
         var key = ExtractKey(originalKey);

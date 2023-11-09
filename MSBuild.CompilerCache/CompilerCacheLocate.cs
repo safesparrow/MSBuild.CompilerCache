@@ -53,6 +53,7 @@ public class CompilerCacheLocate : Task
     
     public override bool Execute()
     {
+        Log.LogWarning($"GCMode = {System.Runtime.GCSettings.LatencyMode} Server = {System.Runtime.GCSettings.IsServerGC} lohcm={System.Runtime.GCSettings.LargeObjectHeapCompactionMode}");
         var sw = Stopwatch.StartNew();
         var guid = System.Guid.NewGuid();
         var (inMemoryRefCache, fileHashCache) = GetInMemoryCaches();

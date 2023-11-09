@@ -11,7 +11,7 @@ namespace MSBuild.CompilerCache;
 /// <param name="ContentHash">Strong hash of the contents of the file</param>
 /// <param name="Length"></param>
 [Serializable]
-public record struct FileExtract
+public record FileExtract
 {
     public string Name { get; }
     public string? ContentHash { get; }
@@ -23,7 +23,12 @@ public record struct FileExtract
         this.ContentHash = ContentHash ?? throw new Exception($"Null ContentHash for {Name} {Length}");
         this.Length = Length;
     }
+    
+    public FileExtract2 ToFileExtract2() => new(ContentHash);
 }
+
+[Serializable]
+public record FileExtract2(string? ContentHash);
 
 [JsonSerializable(typeof(FileExtract[]))]
 [JsonSourceGenerationOptions(WriteIndented = true)]

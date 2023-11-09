@@ -22,18 +22,6 @@ public static class Utils
         return bytes;
     }
     
-    
-    public static T BytesToObject<T>(byte[] bytes)
-    {
-        using var ms = new MemoryStream();
-        ms.Write(bytes);
-#pragma warning disable SYSLIB0011
-        ms.Position = 0;
-        var binaryFormatter = new BinaryFormatter();
-        return (T) binaryFormatter.Deserialize(ms);
-#pragma warning restore SYSLIB0011
-    }
-
     public static string BytesToHash(ReadOnlySpan<byte> bytes, IHash hasher)
     {
         var hash = hasher.ComputeHash(bytes);

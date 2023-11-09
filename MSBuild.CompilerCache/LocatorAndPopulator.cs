@@ -112,29 +112,9 @@ public class LocatorAndPopulator : IDisposable
         _assemblyName = inputs.AssemblyName;
         _localInputs = CalculateLocalInputs(logTime);
         _extract = _localInputs.ToFullExtract();
-        var extractBytes  = Utils.ObjectToBytes(_extract);
-        var hashString = Utils.ObjectToHash(_extract, _hasher);
+        var extractBytes = JsonSerializer.SerializeToUtf8Bytes(_extract, FullExtractJsonContext.Default.FullExtract);
+        var hashString = Utils.BytesToHash(extractBytes, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
-        var file = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}.json";
-        var binfile = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}.data";
-        File.WriteAllText(file, Newtonsoft.Json.JsonConvert.SerializeObject(_extract));
-        File.WriteAllBytes(binfile, extractBytes);
-        var mymodule = _extract.Files.Where(x => x.Name.Contains("MyModule", StringComparison.OrdinalIgnoreCase)).ToArray();
-        var file2 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule.json";
-        var binfile2 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule.data";
-        File.WriteAllText(file2, Newtonsoft.Json.JsonConvert.SerializeObject(mymodule));
-        var mymoduleBytes  = Utils.ObjectToBytes(mymodule);
-        File.WriteAllBytes(binfile2, mymoduleBytes);
-        int i = 0;
-        foreach (var m in mymodule)
-        {
-            var file5 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule_{i}.json";
-            var binfile5 = $"c:\\projekty\\TestSolutions\\cache\\{_cacheKey.Key}_mymodule_{i}.data";
-            File.WriteAllText(file5, Newtonsoft.Json.JsonConvert.SerializeObject(m));
-            var mymoduleBytes5  = Utils.ObjectToBytes(m);
-            File.WriteAllBytes(binfile5, mymoduleBytes5);
-            i++;
-        }
         
         LocateOutcome outcome;
 
@@ -272,8 +252,8 @@ public class LocatorAndPopulator : IDisposable
         var allTasks =
             allTaskFuncs
                 .Chunk(20)
-                .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
                 .AsParallel()
+                .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
                 .ToArray();
         var allItems = Task.WhenAll(allTasks).GetAwaiter().GetResult();
 
@@ -458,6 +438,8 @@ public class LocatorAndPopulator : IDisposable
 
     record ArchiveEntry(string Name, byte[] Bytes);
 
+    public record struct OutputPair(string Name, string BytesHash);
+
     public static async Task<FileInfo> BuildOutputsZip(DirectoryInfo baseTmpDir, OutputData[] items,
         AllCompilationMetadata metadata, IHash hasher,
         TaskLoggingHelper? log = null)
@@ -466,8 +448,9 @@ public class LocatorAndPopulator : IDisposable
         var saveInputsTask = Task.Run(
             () => JsonSerializer.SerializeToUtf8Bytes(metadata,
                 AllCompilationMetadataJsonContext.Default.AllCompilationMetadata));
-        var objectToHash = items.Select(i => (i.Item.Name, i.BytesHash)).ToArray();
-        var hashForFileName = Utils.ObjectToHash(objectToHash, hasher);
+        var objectToHash = items.Select(i => new OutputPair(i.Item.Name, i.BytesHashString)).ToArray();
+        var extractBytes = JsonSerializer.SerializeToUtf8Bytes(objectToHash);
+        var hashForFileName = Utils.BytesToHash(extractBytes, hasher);
 
         var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
         byte[] outputsJsonBytes =
