@@ -67,8 +67,9 @@ public class InMemoryTaskBasedTests
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, compilingAssemblyName: "",
             trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(), hasher: TestUtils.DefaultHasher);
-        var extract = localInputs.ToFullExtract();
-        var hashString = Utils.ObjectToHash(extract, TestUtils.DefaultHasher);
+        var extract = localInputs.ToSlim().ToFullExtract();
+        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(extract, FullExtractJsonContext.Default.FullExtract);
+        var hashString = Utils.BytesToHash(jsonBytes, TestUtils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
 
         return new All(LocalInputs: localInputs,

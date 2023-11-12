@@ -37,15 +37,18 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 
     public async Task<string?> GetAsync(FileHashCacheKey originalKey)
     {
+        using var activity = Tracing.Source.StartActivity("FileHashCache.GetAsync");
         var key = ExtractKey(originalKey);
         var entryPath = EntryPath(key);
         var fi = new FileInfo(entryPath);
         if (fi.Exists)
         {
+            activity?.SetTag("cache.hit", true);
             Task<string> Read() => File.ReadAllTextAsync(entryPath);
             return await IOActionWithRetriesAsync(Read);
         }
 
+        activity?.SetTag("cache.hit", false);
         return null;
     }
     
@@ -105,15 +108,20 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 
     public async Task<bool> SetAsync(FileHashCacheKey originalKey, string value)
     {
+        using var activity = Tracing.Source.StartActivity("FileHashCache.SetAsync");
         var key = ExtractKey(originalKey);
+        activity?.SetTag("key", key.Key);
         var entryFile = new FileInfo(EntryPath(key));
-        if (entryFile.Exists)
+        bool exists = entryFile.Exists;
+        activity?.SetTag("cache.exists", exists);
+        if (exists)
         {
             return false;
         }
 
         using var tmpFile = new TempFile();
         {
+            using var activity2 = Tracing.Source.StartActivity("WriteTempFile");
             await using var fs = tmpFile.File.OpenWrite();
             await using var sw = new StreamWriter(fs, Encoding.UTF8);
             await sw.WriteAsync(value);

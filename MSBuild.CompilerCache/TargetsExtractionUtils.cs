@@ -142,6 +142,7 @@ public static class TargetsExtractionUtils
 
     public static DecomposedCompilerProps DecomposeCompilerProps(IDictionary<string, string> props, TaskLoggingHelper? log = null)
     {
+        using var activity = Tracing.Source.StartActivity("DecomposeCompilerProps");
         var relevant =
             props
                 .Select(kvp =>

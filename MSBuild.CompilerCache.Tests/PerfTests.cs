@@ -42,7 +42,7 @@ public class PerfTests
                 var localInputs =
                     LocatorAndPopulator.CalculateLocalInputs(decomposed, combinedRefCache, "assembly", refTrimmingConfig,
                         combinedFileHashCache, hasher);
-                var extract = localInputs.ToFullExtract();
+                var extract = localInputs.ToSlim().ToFullExtract();
                 var hashString = Utils.ObjectToHash(extract, hasher);
                 var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
                 var localInputsHash = Utils.ObjectToHash(localInputs, hasher);

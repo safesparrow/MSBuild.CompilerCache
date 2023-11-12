@@ -122,12 +122,6 @@ public record LocalInputs(InputResult[] Files, KeyValuePair<string,string>[] Pro
     public LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
         : this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).ToArray(), OutputFiles)
     {}
-    
-    public FullExtract ToFullExtract()
-    {
-        return new FullExtract(Files: Files.Select(f => f.fileHashCacheKey.ToFileExtract()).ToArray(), Props: Props,
-            OutputFiles: OutputFiles.Select(o => o.Name).ToArray());
-    }
 
     public LocalInputsSlim ToSlim() =>
         new LocalInputsSlim(Files: Files.Select(f => f.fileHashCacheKey).ToArray(), Props, OutputFiles);
@@ -207,6 +201,10 @@ public class CompilationResultsCache : ICompilationResultsCache
     public static bool AtomicCopyOrMove(FileInfo source, FileInfo destination, bool throwIfDestinationExists = true,
         bool moveInsteadOfCopy = false)
     {
+        using var activity = Tracing.Source.StartActivity("AtomicCopyOrMove");
+        activity?.SetTag("source", source.FullName);
+        activity?.SetTag("destination", destination.FullName);
+        activity?.SetTag("moveInsteadOfCopy", moveInsteadOfCopy);
         var dir = destination.DirectoryName!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
         FileInfo tmp;
@@ -252,6 +250,7 @@ public class CompilationResultsCache : ICompilationResultsCache
     public async Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
     {
         var dir = new DirectoryInfo(CacheDir(key));
+        Console.WriteLine($"Cache Set {key}. Dir {dir}");
         dir.Create();
 
         var outputFile = new FileInfo(Path.Combine(dir.FullName, resultZipToBeMoved.Name));
@@ -276,6 +275,7 @@ public class CompilationResultsCache : ICompilationResultsCache
     public Task<string?> GetAsync(CacheKey key)
     {
         var dir = new DirectoryInfo(CacheDir(key));
+        Console.WriteLine($"Cache Get {key}. Dir {dir}");
         if (dir.Exists)
         {
             var extractPath = ExtractPath(key);

@@ -1,13 +1,40 @@
 ﻿using System.Collections;
 using System.Diagnostics;
+using System.Runtime;
 using JetBrains.Annotations;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 using Task = Microsoft.Build.Utilities.Task;
 
 namespace MSBuild.CompilerCache;
 
 using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
+
+public record JitMetrics(double CompilationTimeMs, long MethodCount, long CompiledILBytes)
+{
+    public static JitMetrics CreateFromCurrentState() => new JitMetrics(JitInfo.GetCompilationTime().TotalMilliseconds, JitInfo.GetCompiledMethodCount(), JitInfo.GetCompiledILBytes());
+    
+    public JitMetrics Subtract(JitMetrics other) => new JitMetrics(CompilationTimeMs - other.CompilationTimeMs, MethodCount - other.MethodCount, CompiledILBytes - other.CompiledILBytes);
+}
+
+public record GCStats(long AllocatedBytes)
+{
+    public static GCStats CreateFromCurrentState() => new(GC.GetTotalAllocatedBytes());
+    public GCStats Subtract(GCStats other) => new GCStats(AllocatedBytes - other.AllocatedBytes);
+}
+
+/// <summary>
+/// Per-project metrics used for cache efficiency & efficiency analysis.
+/// </summary>
+public class CompilationMetrics
+{
+    public string ProjectFullPath { get; }
+    public double DurationMs { get; }
+    public JitMetrics JitMetrics { get; }
+    public GCStats GcStats { get; }
+}
 
 // ReSharper disable once UnusedType.Global
 /// <summary>
@@ -33,31 +60,45 @@ public class CompilerCacheLocate : Task
 
     private record InMemoryCaches(InMemoryRefCache InMemoryRefCache, IFileHashCache FileHashCache);
 
-    private readonly object _refCacheLock = new object();
-    
     private InMemoryCaches GetInMemoryCaches()
     {
+        using var activity = Tracing.StartWithMetrics("GetInMemoryCaches");
         var key = "CompilerCache_InMemoryRefCache";
-        lock (_refCacheLock)
+        if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryCaches cached)
         {
-            if (BuildEngine9.GetRegisteredTaskObject(key, RegisteredTaskObjectLifetime.Build) is InMemoryCaches cached)
-            {
-                return cached;
-            }
-
-            var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileHashCacheKey, string>());
-            BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
-            return fresh;
+            return cached;
         }
+        using var activity2 = Tracing.Source.StartActivity("GetInMemoryCachesInner");
+        var fresh = new InMemoryCaches(new InMemoryRefCache(), new DictionaryBasedCache<FileHashCacheKey, string>());
+        BuildEngine9.RegisterTaskObject(key, fresh, RegisteredTaskObjectLifetime.Build, false);
+        return fresh;
+    }
+
+    internal static IDisposable? SetupOtelIfEnabled()
+    {
+        #if DEBUG || RELEASE
+        return Sdk.CreateTracerProviderBuilder()
+                .AddSource(Tracing.ServiceName)
+                .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:4317"))
+                .AddConsoleExporter()
+                .Build();
+        #else
+            return null;
+        #endif
     }
     
     public override bool Execute()
     {
-        Log.LogWarning($"GCMode = {System.Runtime.GCSettings.LatencyMode} Server = {System.Runtime.GCSettings.IsServerGC} lohcm={System.Runtime.GCSettings.LargeObjectHeapCompactionMode}");
-        var sw = Stopwatch.StartNew();
+        using var otel = SetupOtelIfEnabled();
+        using var activity = Tracing.StartWithMetrics("CompilerCacheLocate");
         var guid = System.Guid.NewGuid();
+        activity?.SetTag("guid", guid);
+        activity?.SetTag("assemblyName", AssemblyName);
+        Log.LogWarning($"GCMode = {GCSettings.LatencyMode} Server = {GCSettings.IsServerGC} lohcm={GCSettings.LargeObjectHeapCompactionMode}");
+        var sw = Stopwatch.StartNew();
         var (inMemoryRefCache, fileHashCache) = GetInMemoryCaches();
         var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache);
+        
         var inputs = GatherInputs();
         void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");
         var results = locator.Locate(inputs, Log, LogTime);
@@ -76,6 +117,7 @@ public class CompilerCacheLocate : Task
 
     protected LocateInputs GatherInputs()
     {
+        using var activity = Tracing.Source.StartActivity("GatherInputs");
         var typedAllCompilerProps = GetTypedAllCompilerProps(AllCompilerProperties);
         return new(
             ProjectFullPath: ProjectFullPath ??
