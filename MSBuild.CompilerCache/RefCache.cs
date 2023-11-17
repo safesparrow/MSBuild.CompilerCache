@@ -1,8 +1,11 @@
 using System.Text.Json;
+using Microsoft.Build.Framework;
 
 namespace MSBuild.CompilerCache;
 
 using IRefCache = ICacheBase<CacheKey, RefDataWithOriginalExtract>;
+
+
 
 /// <summary>
 /// File-based implementation of <see cref="IRefCache"/> for storing information about trimmed dlls and their hashes.

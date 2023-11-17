@@ -55,7 +55,8 @@ public class LocatorAndPopulator : IDisposable
 {
     private readonly IRefCache _inMemoryRefCache;
 
-    private (Config config, ICompilationResultsCache Cache, IRefCache RefCache, IFileHashCache FileHashCache, IHash)
+    private (Config config, CompilationResultsCache cache, CacheBaseLoggingDecorator<CacheKey, RefDataWithOriginalExtract> loggingRefCache,
+        CacheBaseLoggingDecorator<CacheKey, RefDataWithOriginalExtract> combinedRefCache, CacheBaseLoggingDecorator<FileHashCacheKey, string> fileHashCache, IHash hasher)
         CreateCaches(string configPath,
             Action<string>? logTime = null)
     {
@@ -64,16 +65,17 @@ public class LocatorAndPopulator : IDisposable
         //logTime?.Invoke("Config deserialized");
         var cache = new CompilationResultsCache(config.CacheDir);
         var refCache = new RefCache(config.InferRefCacheDir());
-        var combinedRefCache = CacheCombiner.Combine(_inMemoryRefCache, refCache);
+        var loggingRefCache = refCache.WithLogging();
+        var combinedRefCache = CacheCombiner.Combine(_inMemoryRefCache, loggingRefCache).WithLogging();
         //logTime?.Invoke("Finish");
         var hasher = HasherFactory.CreateHash(config.Hasher);
         var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir(), hasher);
-        var fileHashCache = new CacheCombiner<FileHashCacheKey, string>(_inMemoryFileHashCache, fileBasedFileHashCache);
-        return (config, cache, combinedRefCache, fileHashCache, hasher);
+        var fileHashCache = CacheCombiner.Combine(_inMemoryFileHashCache, fileBasedFileHashCache).WithLogging();
+        return (config, cache, loggingRefCache, combinedRefCache, fileHashCache, hasher);
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
-    private IRefCache _refCache;
+    private CacheBaseLoggingDecorator<CacheKey, RefDataWithOriginalExtract> _refCache;
     private ICompilationResultsCache _cache;
     private Config _config;
     private DecomposedCompilerProps _decomposed;
@@ -83,13 +85,17 @@ public class LocatorAndPopulator : IDisposable
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private readonly IFileHashCache _inMemoryFileHashCache;
-    private ICacheBase<FileHashCacheKey, string> _fileHashCache;
+    private CacheBaseLoggingDecorator<FileHashCacheKey, string> _fileHashCache;
     private IHash _hasher;
+    private CacheBaseLoggingDecorator<CacheKey,RefDataWithOriginalExtract> _loggingRefCache;
+    public MetricsCollector MetricsCollector { get; }
 
-    public LocatorAndPopulator(IRefCache? inMemoryRefCache = null, IFileHashCache? inMemoryFileHashCache = null)
+    public LocatorAndPopulator(IRefCache inMemoryRefCache, IFileHashCache inMemoryFileHashCache,
+        MetricsCollector metricsMetricsCollector)
     {
-        _inMemoryRefCache = inMemoryRefCache ?? new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
-        _inMemoryFileHashCache = inMemoryFileHashCache ?? new DictionaryBasedCache<FileHashCacheKey, string>();
+        _inMemoryRefCache = inMemoryRefCache;
+        _inMemoryFileHashCache = inMemoryFileHashCache;
+        MetricsCollector = metricsMetricsCollector;
     }
 
     public LocateResult Locate(LocateInputs inputs, TaskLoggingHelper? log = null, Action<string> logTime = null)
@@ -109,12 +115,12 @@ public class LocatorAndPopulator : IDisposable
             return _locateResult;
         }
 
-        (_config, _cache, _refCache, _fileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
+        (_config, _cache, _loggingRefCache, _refCache, _fileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
+        
         _assemblyName = inputs.AssemblyName;
         _localInputs = CalculateLocalInputs(logTime);
         _extract = _localInputs.ToSlim().ToFullExtract();
         var extractBytes = JsonSerializer.SerializeToUtf8Bytes(_extract, FullExtractJsonContext.Default.FullExtract);
-        File.WriteAllBytes("c:/projekty/dwa.json", extractBytes);
         var hashString = Utils.BytesToHash(extractBytes, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
         
@@ -162,11 +168,14 @@ public class LocatorAndPopulator : IDisposable
             DecomposedCompilerProps: _decomposed
         );
         //logTime?.Invoke("end");
+
+        MetricsCollector.EndLocateTask(_locateResult);
+        
         return _locateResult;
     }
 
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _refCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher,
+        CalculateLocalInputs(_decomposed, _loggingRefCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher,
             logTime);
 
     public static async Task<InputResult> ProcessSourceFile(string relativePath, IFileHashCache fileHashCache,
@@ -257,18 +266,18 @@ public class LocatorAndPopulator : IDisposable
         }
 
         var fileTasks =
-            fileInputs.Select(f => (Func<Task<InputResult>>)(() => ProcessSourceFile(f, fileHashCache, hasher)));
-        var refTasks = references.Select(r => (Func<Task<InputResult>>)(() =>
-            ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig, hasher)));
+            fileInputs.Select(f => (Func<InputResult>)(() => ProcessSourceFile(f, fileHashCache, hasher).GetAwaiter().GetResult()));
+        var refTasks = references.Select(r => (Func<InputResult>)(() =>
+            ProcessReference(r, compilingAssemblyName, fileHashCache, refCache, trimmingConfig, hasher).GetAwaiter().GetResult()));
         var allTaskFuncs = fileTasks.Concat(refTasks).ToArray();
-        var allTasks =
+        var allItems =
             allTaskFuncs
-                .Chunk(20)
+                .Chunk(50)
                 .AsParallel()
                 .AsOrdered()
-                .SelectMany(taskFuncs => taskFuncs.Select(tf => tf()))
+                .WithDegreeOfParallelism(3)
+                .SelectMany(taskFuncs => taskFuncs.Select(t => t()).ToArray())
                 .ToArray();
-        var allItems = Task.WhenAll(allTasks).GetAwaiter().GetResult();
 
         //logTime?.Invoke("ref extracts done");
 
@@ -463,7 +472,6 @@ public class LocatorAndPopulator : IDisposable
         var objectToHash = metadata.LocalInputs.ToFullExtract();
         var extractBytes =
             JsonSerializer.SerializeToUtf8Bytes(objectToHash, FullExtractJsonContext.Default.FullExtract);
-        File.WriteAllBytes("c:/projekty/raz.json", extractBytes);
         var hashForFileName = Utils.BytesToHash(extractBytes, hasher);
 
         var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
@@ -515,6 +523,7 @@ public class LocatorAndPopulator : IDisposable
         finally
         {
             Dispose();
+            MetricsCollector.EndPopulateTask();
         }
     }
 
@@ -534,6 +543,9 @@ public class LocatorAndPopulator : IDisposable
                     // This is a best effort attempt to clean up files.
                 }
             }
+            _localInputs = null;
         }
+        
+        MetricsCollector.Collect();
     }
 }

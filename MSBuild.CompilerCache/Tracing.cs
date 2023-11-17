@@ -41,9 +41,9 @@ public sealed class ActivityWithMetrics : IDisposable
         var jitEnd = JitMetrics.CreateFromCurrentState();
         var jit = jitEnd.Subtract(_jitStart);
         var gcEnd = GCStats.CreateFromCurrentState();
-        Activity.SetTag("jit.compilationTime", jitEnd.CompilationTimeMs);
-        Activity.SetTag("jit.methodCount", jitEnd.MethodCount);
-        Activity.SetTag("jit.compiledILBytes", jitEnd.CompiledILBytes);
+        Activity.SetTag("jit.compilationTime", jit.CompilationTimeMs);
+        Activity.SetTag("jit.methodCount", jit.MethodCount);
+        Activity.SetTag("jit.compiledILBytes", jit.CompiledILBytes);
         Activity.SetTag("gc.allocated", gcEnd.AllocatedBytes - _gcStart.AllocatedBytes);
         Activity.Dispose();
     }

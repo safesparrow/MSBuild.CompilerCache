@@ -33,7 +33,7 @@ public class Benchmarks
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var memCache = new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
         var refCacheFileBased = new RefCache("c:/projekty/.refcache");
-        var refCache = new CacheCombiner<CacheKey, RefDataWithOriginalExtract>(memCache, refCacheFileBased);
+        var refCache = CacheCombiner.Combine(memCache, refCacheFileBased);
         var refTrimmingConfig = new RefTrimmingConfig();
 
         void Act()

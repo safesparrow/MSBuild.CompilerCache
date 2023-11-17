@@ -17,23 +17,65 @@ public record JitMetrics(double CompilationTimeMs, long MethodCount, long Compil
     public static JitMetrics CreateFromCurrentState() => new JitMetrics(JitInfo.GetCompilationTime().TotalMilliseconds, JitInfo.GetCompiledMethodCount(), JitInfo.GetCompiledILBytes());
     
     public JitMetrics Subtract(JitMetrics other) => new JitMetrics(CompilationTimeMs - other.CompilationTimeMs, MethodCount - other.MethodCount, CompiledILBytes - other.CompiledILBytes);
+
+    public JitMetrics Add(JitMetrics otherJit) => new JitMetrics(CompilationTimeMs + otherJit.CompilationTimeMs, MethodCount + otherJit.MethodCount, CompiledILBytes + otherJit.CompiledILBytes);
 }
 
 public record GCStats(long AllocatedBytes)
 {
     public static GCStats CreateFromCurrentState() => new(GC.GetTotalAllocatedBytes());
     public GCStats Subtract(GCStats other) => new GCStats(AllocatedBytes - other.AllocatedBytes);
+
+    public GCStats Add(GCStats otherGc) => new(AllocatedBytes + otherGc.AllocatedBytes);
 }
+
+public record GenericMetrics(JitGcMetrics JitGc, StartEnd Times);
+
+public class GenericMetricsCreator
+{
+    private readonly (DateTime, Stopwatch) _start = StartEnd.Init();
+    private readonly JitGcMetrics _startJitGc = JitGcMetrics.FromCurrentState();
+    
+    public GenericMetrics Create() => new GenericMetrics(_startJitGc.DiffWithCurrentState(), StartEnd.CreateFromStart(_start));
+}
+
+public record StartEnd(DateTime Start, DateTime End, TimeSpan Duration)
+{
+    public static StartEnd CreateFromStart((DateTime start, Stopwatch sw) x) => new(x.start, DateTime.Now, x.sw.Elapsed);
+    public static (DateTime, Stopwatch) Init() => (DateTime.Now, Stopwatch.StartNew());
+}
+
+public record LocateMetrics(GenericMetrics Generic, LocateOutcome Outcome);
+public record PopulateMetrics(GenericMetrics Generic);
 
 /// <summary>
 /// Per-project metrics used for cache efficiency & efficiency analysis.
 /// </summary>
 public class CompilationMetrics
 {
-    public string ProjectFullPath { get; }
-    public double DurationMs { get; }
-    public JitMetrics JitMetrics { get; }
-    public GCStats GcStats { get; }
+    public string ProjectFullPath { get; set; }
+    public TimeSpan TotalTime => Locate.Generic.Times.Duration + Populate.Generic.Times.Duration;
+    public CacheIncStats RefCacheStats { get; set; } 
+    public CacheIncStats FileHashCacheStats { get; set; }
+    public LocateMetrics Locate { get; set; }
+    public PopulateMetrics Populate { get; set; }
+}
+
+public class MetricsCollector
+{
+    public void StartLocateTask(){}
+
+    public void EndLocateTask(LocateResult locateResult)
+    {
+    }
+
+    public void StartPopulateTask()
+    {
+    }
+    
+    public void EndPopulateTask(){}
+    
+    public void Collect(){}
 }
 
 // ReSharper disable once UnusedType.Global
@@ -89,6 +131,8 @@ public class CompilerCacheLocate : Task
     
     public override bool Execute()
     {
+        var collector = new MetricsCollector();
+        collector.StartLocateTask();
         using var otel = SetupOtelIfEnabled();
         using var activity = Tracing.StartWithMetrics("CompilerCacheLocate");
         var guid = System.Guid.NewGuid();
@@ -97,7 +141,7 @@ public class CompilerCacheLocate : Task
         Log.LogWarning($"GCMode = {GCSettings.LatencyMode} Server = {GCSettings.IsServerGC} lohcm={GCSettings.LargeObjectHeapCompactionMode}");
         var sw = Stopwatch.StartNew();
         var (inMemoryRefCache, fileHashCache) = GetInMemoryCaches();
-        var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache);
+        var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache, collector);
         
         var inputs = GatherInputs();
         void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");
@@ -107,6 +151,10 @@ public class CompilerCacheLocate : Task
             Guid = guid.ToString();
             BuildEngine4.RegisterTaskObject(guid.ToString(), locator, RegisteredTaskObjectLifetime.Build, false);
             Log.LogMessage($"Locate - registered {nameof(LocatorAndPopulator)} object at Guid key {guid}");
+        }
+        else
+        {
+            locator.Dispose();
         }
         RunCompilation = results.RunCompilation;
         PopulateCache = results.PopulateCache;

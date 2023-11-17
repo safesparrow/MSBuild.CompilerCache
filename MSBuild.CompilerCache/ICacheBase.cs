@@ -4,17 +4,19 @@ public interface ICacheBase<TKey, TValue> where TValue : class
 {
     bool Exists(TKey key);
     Task<TValue?> GetAsync(TKey key);
-    bool Set(TKey key, TValue value) => SetAsync(key, value).GetAwaiter().GetResult();
     Task<bool> SetAsync(TKey key, TValue value);
+}
 
-    sealed async Task<TValue> GetOrSet(TKey key, Func<TKey, TValue> creator)
-    {
-        var value = await GetAsync(key);
-        if (value == null)
-        {
-            value = creator(key);
-            await SetAsync(key, value);
-        }
-        return value;
-    }
+public class CacheIncStats
+{
+    public OperationStats Get { get; } = new();
+    public OperationStats Set { get; } = new();
+}
+
+public class OperationStats
+{
+    public int Count { get; set; }
+    public int Hits { get; set; }
+    public int Misses { get; set; }
+    public TimeCounter Time { get; set; }
 }

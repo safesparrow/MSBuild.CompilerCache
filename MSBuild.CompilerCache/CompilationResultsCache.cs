@@ -34,6 +34,11 @@ public record FileExtract2(string? ContentHash);
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class FileExtractsJsonContext : JsonSerializerContext;
 
+public class CompilationResultsCacheMetrics
+{
+    
+}
+
 /// <summary>
 /// All compilation inputs, used to generate a hash for caching.
 /// </summary>

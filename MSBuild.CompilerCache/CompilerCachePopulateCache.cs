@@ -26,6 +26,7 @@ public class CompilerCachePopulateCache : Task
             BuildEngine4.UnregisterTaskObject(Guid, RegisteredTaskObjectLifetime.Build)
             ?? throw new Exception($"Could not find registered task object for {nameof(LocatorAndPopulator)} from the Locate task, using key {Guid}");
         var locator = _locator as LocatorAndPopulator ?? throw new Exception("Cached result is of unexpected type");
+        locator.MetricsCollector.StartPopulateTask();
         var sw = Stopwatch.StartNew();
         void LogTime(string name) => Log.LogMessage($"[{sw.ElapsedMilliseconds}ms] {name}");
         UseOrPopulateResult result = locator.PopulateCacheOrJustDispose(Log, LogTime, CompilationSucceeded).GetAwaiter().GetResult();
