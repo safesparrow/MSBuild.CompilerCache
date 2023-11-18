@@ -86,7 +86,7 @@ public class LocatorAndPopulator : IDisposable
     }
 
     // These fields are populated in the 'Locate' call and used in a subsequent 'Populate' call
-    private CacheBaseLoggingDecorator<CacheKey, RefDataWithOriginalExtract> _refCache;
+    private CacheBaseLoggingDecorator<CacheKey, RefDataWithOriginalExtract> _combinedRefCache;
     private ICompilationResultsCache _cache;
     private Config _config;
     private DecomposedCompilerProps _decomposed;
@@ -96,7 +96,7 @@ public class LocatorAndPopulator : IDisposable
     private CacheKey _cacheKey;
     private LocalInputs _localInputs;
     private readonly IFileHashCache _inMemoryFileHashCache;
-    private CacheBaseLoggingDecorator<FileHashCacheKey, string> _fileHashCache;
+    private CacheBaseLoggingDecorator<FileHashCacheKey, string> _combinedFileHashCache;
     private IHash _hasher;
     private CacheBaseLoggingDecorator<CacheKey,RefDataWithOriginalExtract> _loggingRefCache;
     private CacheBaseLoggingDecorator<FileHashCacheKey,string> _rawFileHashCache;
@@ -128,11 +128,11 @@ public class LocatorAndPopulator : IDisposable
             return _locateResult;
         }
 
-        (_config, _cache, _loggingRefCache, _refCache, _fileHashCache, _rawFileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
-        MetricsCollector.RefCacheStats = _refCache.Stats;
-        MetricsCollector.InMemoryRefCacheStats = _loggingRefCache.Stats;
-        MetricsCollector.FileHashCacheStats = _fileHashCache.Stats;
-        MetricsCollector.InMemoryFileHashCacheStats = _rawFileHashCache.Stats;
+        (_config, _cache, _loggingRefCache, _combinedRefCache, _combinedFileHashCache, _rawFileHashCache, _hasher) = CreateCaches(inputs.ConfigPath, logTime);
+        MetricsCollector.RefCacheStats = _loggingRefCache.Stats;
+        MetricsCollector.CombinedRefCacheStats = _combinedRefCache.Stats;
+        MetricsCollector.FileHashCacheStats = _rawFileHashCache.Stats;
+        MetricsCollector.CombinedFileHashCacheStats = _combinedFileHashCache.Stats;
         
         MetricsCollector.StartLocateTask();
         
@@ -195,7 +195,7 @@ public class LocatorAndPopulator : IDisposable
     
     
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
-        CalculateLocalInputs(_decomposed, _loggingRefCache, _assemblyName, _config.RefTrimming, _fileHashCache, _hasher, _counters,
+        CalculateLocalInputs(_decomposed, _combinedRefCache, _assemblyName, _config.RefTrimming, _combinedFileHashCache, _hasher, _counters,
             logTime);
 
     public sealed class Counters
@@ -455,7 +455,7 @@ public class LocatorAndPopulator : IDisposable
         var allCompMetadata = new AllCompilationMetadata(Metadata: meta, LocalInputs: _localInputs.ToSlim());
 
         using var tmpDir = new DisposableDir();
-        var outputZip = await BuildOutputsZip(tmpDir, outputs, allCompMetadata, _hasher, log);
+        var outputZip = await BuildOutputsZip(tmpDir, outputs, allCompMetadata, _hasher, log, _counters);
 
         log.LogMessage(MessageImportance.Normal,
             $"CompilationCache - copying {_decomposed.OutputsToCache.Length} files from output to cache");
@@ -484,18 +484,18 @@ public class LocatorAndPopulator : IDisposable
         var trimmer = new RefTrimmer(_hasher);
         var toBeCached = await trimmer.GenerateRefData(ImmutableArray.Create(dll.Content));
         var fileCacheKey = FileHashCacheKey.FromFileInfo(new FileInfo(dll.Item.LocalPath));
-        var dllHash = await _fileHashCache.GetAsync(fileCacheKey);
+        var dllHash = await _combinedFileHashCache.GetAsync(fileCacheKey);
         if (dllHash == null)
         {
             dllHash = Utils.BytesToHash(dll.Content, _hasher);
-            await _fileHashCache.SetAsync(fileCacheKey, dllHash);
+            await _combinedFileHashCache.SetAsync(fileCacheKey, dllHash);
         }
 
         var extract = new LocalFileExtract(fileCacheKey, dllHash);
         var name = Path.GetFileNameWithoutExtension(fileCacheKey.FullName);
         var cacheKey = BuildRefCacheKey(name, dllHash);
         var cached = new RefDataWithOriginalExtract(Ref: toBeCached, Original: extract);
-        var res = await _refCache.SetAsync(cacheKey, cached);
+        var res = await _combinedRefCache.SetAsync(cacheKey, cached);
         _counters?.Refasm.Add(sw.Elapsed);
     }
 
@@ -565,8 +565,8 @@ public class LocatorAndPopulator : IDisposable
         }
         finally
         {
-            Dispose();
             MetricsCollector.EndPopulateTask();
+            Dispose();
         }
     }
 

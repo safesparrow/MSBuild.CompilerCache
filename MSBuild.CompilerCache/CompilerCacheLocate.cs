@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿#if false && RELEASE
+#define OTEL
+#endif
+
+using System.Collections;
 using System.Diagnostics;
 using System.Runtime;
 using System.Text;
@@ -6,8 +10,10 @@ using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-// using OpenTelemetry;
-// using OpenTelemetry.Trace;
+#if OTEL
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+#endif
 using Task = Microsoft.Build.Utilities.Task;
 
 namespace MSBuild.CompilerCache;
@@ -17,7 +23,7 @@ using IFileHashCache = ICacheBase<FileHashCacheKey, string>;
 public record JitMetrics(double CompilationTimeMs, long MethodCount, long CompiledILBytes)
 {
     public static JitMetrics CreateFromCurrentState() => new JitMetrics(JitInfo.GetCompilationTime().TotalMilliseconds, JitInfo.GetCompiledMethodCount(), JitInfo.GetCompiledILBytes());
-    
+     
     public JitMetrics Subtract(JitMetrics other) => new JitMetrics(CompilationTimeMs - other.CompilationTimeMs, MethodCount - other.MethodCount, CompiledILBytes - other.CompiledILBytes);
 
     public JitMetrics Add(JitMetrics otherJit) => new JitMetrics(CompilationTimeMs + otherJit.CompilationTimeMs, MethodCount + otherJit.MethodCount, CompiledILBytes + otherJit.CompiledILBytes);
@@ -57,18 +63,31 @@ public class CompilationMetrics
 {
     public string ProjectFullPath { get; set; }
     public TimeSpan TotalTime => Locate.Generic.Times.Duration + (Populate?.Generic.Times.Duration ?? TimeSpan.Zero);
-    public CacheIncStats InMemoryRefCacheStats { get; set; } 
+    public CacheIncStats CombinedRefCacheStats { get; set; } 
     public CacheIncStats RefCacheStats { get; set; } 
-    public CacheIncStats InMemoryFileHashCacheStats { get; set; } 
+    public CacheIncStats CombinedFileHashCacheStats { get; set; } 
     public CacheIncStats FileHashCacheStats { get; set; }
     public LocateMetrics Locate { get; set; }
     public PopulateMetrics Populate { get; set; }
     public LocatorAndPopulator.Counters Counters { get; set; }
+    public CPUProcessMetrics CPU { get; set; }
 }
 
 [JsonSerializable(typeof(CompilationMetrics))]
 [JsonSourceGenerationOptions(WriteIndented = false)]
 public partial class CompilationMetricsJsonContext : JsonSerializerContext;
+
+public record CPUProcessMetrics(TimeSpan TotalCpuTime, TimeSpan UserCpuTime, TimeSpan PrivilegedCpuTime)
+{
+    public static CPUProcessMetrics CreateFromCurrentState()
+    {
+        var process = Process.GetCurrentProcess();
+        return new CPUProcessMetrics(process.TotalProcessorTime, process.UserProcessorTime, process.PrivilegedProcessorTime);
+    }
+
+    public CPUProcessMetrics Subtract(CPUProcessMetrics other) => new CPUProcessMetrics(TotalCpuTime - other.TotalCpuTime, UserCpuTime - other.UserCpuTime, PrivilegedCpuTime - other.PrivilegedCpuTime);
+    public CPUProcessMetrics Add(CPUProcessMetrics otherCpu) => new CPUProcessMetrics(TotalCpuTime + otherCpu.TotalCpuTime, UserCpuTime + otherCpu.UserCpuTime, PrivilegedCpuTime + otherCpu.PrivilegedCpuTime);
+}
 
 public class MetricsCollector
 {
@@ -78,15 +97,17 @@ public class MetricsCollector
     private PopulateMetrics _populate;
     private LocatorAndPopulator.Counters _counters;
     private LocateResult _locateResult;
+    private CPUProcessMetrics _cpuStart;
 
     public CacheIncStats RefCacheStats { get; set; } = null;
-    public CacheIncStats InMemoryRefCacheStats { get; set; } = null;
+    public CacheIncStats CombinedRefCacheStats { get; set; } = null;
     public CacheIncStats FileHashCacheStats { get; set; } = null;
-    public CacheIncStats InMemoryFileHashCacheStats { get; set; } = null;
+    public CacheIncStats CombinedFileHashCacheStats { get; set; } = null;
 
     public void StartLocateTask()
     {
         _locateStart = new GenericMetricsCreator();
+        _cpuStart = CPUProcessMetrics.CreateFromCurrentState();
     }
 
     public void EndLocateTask(LocateResult locateResult, LocatorAndPopulator.Counters counters)
@@ -114,16 +135,17 @@ public class MetricsCollector
             RefCacheStats = RefCacheStats,
             FileHashCacheStats = FileHashCacheStats,
             Counters = _counters,
-            InMemoryRefCacheStats = InMemoryRefCacheStats,
-            InMemoryFileHashCacheStats = InMemoryFileHashCacheStats,
+            CombinedRefCacheStats = CombinedRefCacheStats,
+            CombinedFileHashCacheStats = CombinedFileHashCacheStats,
             Locate = _locate,
-            Populate = _populate
+            Populate = _populate,
+            CPU = CPUProcessMetrics.CreateFromCurrentState().Subtract(_cpuStart)
         };
         var bytes = JsonSerializerExt.SerializeToUtf8Bytes(m, null, CompilationMetricsJsonContext.Default.CompilationMetrics);
         FileHashCache.IOActionWithRetries(() =>
         {
-            using var fs = File.Open("c:/projekty/MSBuild.CompilerCache/metrics.json", FileMode.Append, FileAccess.Write,
-                FileShare.Read);
+            var path = $"c:/projekty/MSBuild.CompilerCache/metrics.jsonl";
+            using var fs = File.Open(path, FileMode.Append, FileAccess.Write, FileShare.Read);
             fs.Write(bytes);
             fs.Write(Encoding.ASCII.GetBytes(Environment.NewLine));
             return 0;
@@ -171,7 +193,7 @@ public class CompilerCacheLocate : Task
 
     internal static IDisposable? SetupOtelIfEnabled()
     {
-        #if RELEASE
+        #if OTEL
         return Sdk.CreateTracerProviderBuilder()
                 .AddSource(Tracing.ServiceName)
                 .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:4317"))
@@ -186,12 +208,13 @@ public class CompilerCacheLocate : Task
     {
         var collector = new MetricsCollector();
         collector.StartLocateTask();
-        // using var otel = SetupOtelIfEnabled();
+#if OTEL
+        using var otel = SetupOtelIfEnabled();
+#endif
         using var activity = Tracing.StartWithMetrics("CompilerCacheLocate");
         var guid = System.Guid.NewGuid();
         activity?.SetTag("guid", guid);
         activity?.SetTag("assemblyName", AssemblyName);
-        Log.LogWarning($"GCMode = {GCSettings.LatencyMode} Server = {GCSettings.IsServerGC} lohcm={GCSettings.LargeObjectHeapCompactionMode}");
         var sw = Stopwatch.StartNew();
         var (inMemoryRefCache, fileHashCache) = GetInMemoryCaches();
         var locator = new LocatorAndPopulator(inMemoryRefCache, fileHashCache, collector);
