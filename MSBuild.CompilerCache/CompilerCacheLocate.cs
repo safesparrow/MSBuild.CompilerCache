@@ -1,11 +1,13 @@
 ﻿using System.Collections;
 using System.Diagnostics;
 using System.Runtime;
+using System.Text;
+using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using OpenTelemetry;
-using OpenTelemetry.Trace;
+// using OpenTelemetry;
+// using OpenTelemetry.Trace;
 using Task = Microsoft.Build.Utilities.Task;
 
 namespace MSBuild.CompilerCache;
@@ -54,17 +56,28 @@ public record PopulateMetrics(GenericMetrics Generic);
 public class CompilationMetrics
 {
     public string ProjectFullPath { get; set; }
-    public TimeSpan TotalTime => Locate.Generic.Times.Duration + Populate.Generic.Times.Duration;
+    public TimeSpan TotalTime => Locate.Generic.Times.Duration + (Populate?.Generic.Times.Duration ?? TimeSpan.Zero);
+    public CacheIncStats InMemoryRefCacheStats { get; set; } 
     public CacheIncStats RefCacheStats { get; set; } 
+    public CacheIncStats InMemoryFileHashCacheStats { get; set; } 
     public CacheIncStats FileHashCacheStats { get; set; }
     public LocateMetrics Locate { get; set; }
     public PopulateMetrics Populate { get; set; }
+    public LocatorAndPopulator.Counters Counters { get; set; }
 }
+
+[JsonSerializable(typeof(CompilationMetrics))]
+[JsonSourceGenerationOptions(WriteIndented = false)]
+public partial class CompilationMetricsJsonContext : JsonSerializerContext;
 
 public class MetricsCollector
 {
     private GenericMetricsCreator _locateStart;
     private LocateMetrics _locate;
+    private GenericMetricsCreator _populateStart;
+    private PopulateMetrics _populate;
+    private LocatorAndPopulator.Counters _counters;
+    private LocateResult _locateResult;
 
     public CacheIncStats RefCacheStats { get; set; } = null;
     public CacheIncStats InMemoryRefCacheStats { get; set; } = null;
@@ -76,18 +89,46 @@ public class MetricsCollector
         _locateStart = new GenericMetricsCreator();
     }
 
-    public void EndLocateTask(LocateResult locateResult)
+    public void EndLocateTask(LocateResult locateResult, LocatorAndPopulator.Counters counters)
     {
         _locate = new LocateMetrics(_locateStart.Create(), locateResult.Outcome);
+        _locateResult = locateResult;
+        _counters = counters;
     }
 
     public void StartPopulateTask()
     {
+        _populateStart = new GenericMetricsCreator();
     }
-    
-    public void EndPopulateTask(){}
-    
-    public void Collect(){}
+
+    public void EndPopulateTask()
+    {
+        _populate = new PopulateMetrics(_populateStart.Create());
+    }
+
+    public void Collect()
+    {
+        var m = new CompilationMetrics
+        {
+            ProjectFullPath = _locateResult.Inputs.ProjectFullPath,
+            RefCacheStats = RefCacheStats,
+            FileHashCacheStats = FileHashCacheStats,
+            Counters = _counters,
+            InMemoryRefCacheStats = InMemoryRefCacheStats,
+            InMemoryFileHashCacheStats = InMemoryFileHashCacheStats,
+            Locate = _locate,
+            Populate = _populate
+        };
+        var bytes = JsonSerializerExt.SerializeToUtf8Bytes(m, null, CompilationMetricsJsonContext.Default.CompilationMetrics);
+        FileHashCache.IOActionWithRetries(() =>
+        {
+            using var fs = File.Open("c:/projekty/MSBuild.CompilerCache/metrics.json", FileMode.Append, FileAccess.Write,
+                FileShare.Read);
+            fs.Write(bytes);
+            fs.Write(Encoding.ASCII.GetBytes(Environment.NewLine));
+            return 0;
+        });
+    }
 }
 
 // ReSharper disable once UnusedType.Global
@@ -130,7 +171,7 @@ public class CompilerCacheLocate : Task
 
     internal static IDisposable? SetupOtelIfEnabled()
     {
-        #if DEBUG || RELEASE
+        #if RELEASE
         return Sdk.CreateTracerProviderBuilder()
                 .AddSource(Tracing.ServiceName)
                 .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:4317"))
@@ -145,7 +186,7 @@ public class CompilerCacheLocate : Task
     {
         var collector = new MetricsCollector();
         collector.StartLocateTask();
-        using var otel = SetupOtelIfEnabled();
+        // using var otel = SetupOtelIfEnabled();
         using var activity = Tracing.StartWithMetrics("CompilerCacheLocate");
         var guid = System.Guid.NewGuid();
         activity?.SetTag("guid", guid);

@@ -21,6 +21,10 @@ public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original)
 [JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerContext;
 
+[JsonSerializable(typeof(FileHashCacheKey))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class FileHashCacheKeyJsonContext : JsonSerializerContext;
+
 public class RefTrimmer
 {
     private IHash _hasher;

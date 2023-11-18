@@ -11,10 +11,12 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 {
     private readonly string _cacheDir;
     private readonly IHash _hasher;
+    private readonly LocatorAndPopulator.Counters _counters;
 
-    public FileHashCache(string cacheDir, IHash hasher)
+    public FileHashCache(string cacheDir, IHash hasher, LocatorAndPopulator.Counters counters)
     {
         _hasher = hasher;
+        _counters = counters;
         _cacheDir = cacheDir;
         Directory.CreateDirectory(_cacheDir);
     }
@@ -23,7 +25,7 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 
     public CacheKey ExtractKey(FileHashCacheKey key)
     {
-        var bytes = JsonSerializerExt.SerializeToUtf8Bytes(key);
+        var bytes = JsonSerializerExt.SerializeToUtf8Bytes(key, _counters.JsonSerialise, FileHashCacheKeyJsonContext.Default.FileHashCacheKey);
         string hash = Utils.BytesToHash(bytes, _hasher);
         return new CacheKey(hash);
     }

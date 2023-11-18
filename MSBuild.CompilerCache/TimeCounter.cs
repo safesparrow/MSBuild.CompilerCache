@@ -14,11 +14,14 @@ public class TimeCounter
         }
     }
 
-    public TimeSpan Total()
+    public TimeSpan Total
     {
-        lock(_lock)
+        get
         {
-            return TimeSpan.FromMilliseconds(_totalMilliseconds);
+            lock (_lock)
+            {
+                return TimeSpan.FromMilliseconds(_totalMilliseconds);
+            }
         }
     }
     

@@ -19,7 +19,7 @@ public class CompilerCachePopulateCache : Task
 
     public override bool Execute()
     {
-        using var otel = CompilerCacheLocate.SetupOtelIfEnabled();
+        // using var otel = CompilerCacheLocate.SetupOtelIfEnabled();
         using var activity = Tracing.Source.StartActivity("CompilerCacheLocate");
         activity?.SetTag("guid", Guid);
         object _locator =

@@ -80,7 +80,7 @@ public class LocatorAndPopulator : IDisposable
         
         //logTime?.Invoke("Finish");
         var hasher = HasherFactory.CreateHash(config.Hasher);
-        var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir(), hasher).WithLogging();
+        var fileBasedFileHashCache = new FileHashCache(config.InferFileHashCacheDir(), hasher, _counters).WithLogging();
         var fileHashCache = CacheCombiner.Combine(_inMemoryFileHashCache, fileBasedFileHashCache).WithLogging();
         return (config, cache, loggingRefCache, combinedRefCache, fileHashCache, fileBasedFileHashCache, hasher);
     }
@@ -100,7 +100,7 @@ public class LocatorAndPopulator : IDisposable
     private IHash _hasher;
     private CacheBaseLoggingDecorator<CacheKey,RefDataWithOriginalExtract> _loggingRefCache;
     private CacheBaseLoggingDecorator<FileHashCacheKey,string> _rawFileHashCache;
-    private Counters? _counters;
+    private readonly Counters _counters = new Counters();
     public MetricsCollector MetricsCollector { get; }
 
     public LocatorAndPopulator(IRefCache inMemoryRefCache, IFileHashCache inMemoryFileHashCache,
@@ -139,7 +139,7 @@ public class LocatorAndPopulator : IDisposable
         _assemblyName = inputs.AssemblyName;
         _localInputs = CalculateLocalInputs(logTime);
         _extract = _localInputs.ToSlim().ToFullExtract();
-        var extractBytes = JsonSerializerExt.SerializeToUtf8Bytes(_extract, _counters.JsonSerialise, FullExtractJsonContext.Default.FullExtract);
+        var extractBytes = JsonSerializerExt.SerializeToUtf8Bytes(_extract, _counters?.JsonSerialise, FullExtractJsonContext.Default.FullExtract);
         var hashString = Utils.BytesToHash(extractBytes, _hasher);
         _cacheKey = GenerateKey(inputs, hashString);
         
@@ -188,7 +188,7 @@ public class LocatorAndPopulator : IDisposable
         );
         //logTime?.Invoke("end");
 
-        MetricsCollector.EndLocateTask(_locateResult);
+        MetricsCollector.EndLocateTask(_locateResult, _counters);
         
         return _locateResult;
     }
@@ -232,13 +232,13 @@ public class LocatorAndPopulator : IDisposable
         return new InputResult(f, localFileExtract);
     }
 
-    public static Task<byte[]> ReadFileAsync(string path, Counters counters)
+    public static Task<byte[]> ReadFileAsync(string path, Counters? counters)
     {
         var sw = Stopwatch.StartNew();
         using var activity = Tracing.Source.StartActivity("ReadFileAsync");
         activity?.SetTag("path", path);
         var res = File.ReadAllBytesAsync(path);
-        counters.ReadFile.Add(sw.Elapsed);
+        counters?.ReadFile.Add(sw.Elapsed);
         return res;
     }
 
@@ -508,16 +508,16 @@ public class LocatorAndPopulator : IDisposable
         var sw = Stopwatch.StartNew();
         // Write inputs json in parallel to the rest
         var saveInputsTask = Task.Run(
-            () => JsonSerializerExt.SerializeToUtf8Bytes(metadata, counters.JsonSerialise,
+            () => JsonSerializerExt.SerializeToUtf8Bytes(metadata, counters?.JsonSerialise,
                 AllCompilationMetadataJsonContext.Default.AllCompilationMetadata));
         var objectToHash = metadata.LocalInputs.ToFullExtract();
         var extractBytes =
-            JsonSerializerExt.SerializeToUtf8Bytes(objectToHash, counters.JsonSerialise, FullExtractJsonContext.Default.FullExtract);
+            JsonSerializerExt.SerializeToUtf8Bytes(objectToHash, counters?.JsonSerialise, FullExtractJsonContext.Default.FullExtract);
         var hashForFileName = Utils.BytesToHash(extractBytes, hasher);
 
         var outputExtracts = items.Select(i => new FileExtract(i.Item.Name, i.BytesHashString, i.Length)).ToArray();
         byte[] outputsJsonBytes =
-            JsonSerializerExt.SerializeToUtf8Bytes(outputExtracts, counters.JsonSerialise, FileExtractsJsonContext.Default.FileExtractArray);
+            JsonSerializerExt.SerializeToUtf8Bytes(outputExtracts, counters?.JsonSerialise, FileExtractsJsonContext.Default.FileExtractArray);
 
         // Make sure inputs json written before zipping the whole directory
         var inputsJsonBytes = await saveInputsTask;
