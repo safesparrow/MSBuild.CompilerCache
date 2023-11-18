@@ -63,10 +63,22 @@ public class CompilationMetrics
 
 public class MetricsCollector
 {
-    public void StartLocateTask(){}
+    private GenericMetricsCreator _locateStart;
+    private LocateMetrics _locate;
+
+    public CacheIncStats RefCacheStats { get; set; } = null;
+    public CacheIncStats InMemoryRefCacheStats { get; set; } = null;
+    public CacheIncStats FileHashCacheStats { get; set; } = null;
+    public CacheIncStats InMemoryFileHashCacheStats { get; set; } = null;
+
+    public void StartLocateTask()
+    {
+        _locateStart = new GenericMetricsCreator();
+    }
 
     public void EndLocateTask(LocateResult locateResult)
     {
+        _locate = new LocateMetrics(_locateStart.Create(), locateResult.Outcome);
     }
 
     public void StartPopulateTask()

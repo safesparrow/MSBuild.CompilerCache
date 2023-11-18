@@ -39,7 +39,7 @@ public class Benchmarks
         void Act()
         {
             var hasher = HasherFactory.CreateHash(HasherType.XxHash64);
-            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), hasher);
+            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), hasher, null);
             if (inputs.Files.Length == 0) throw new Exception();
         }
 

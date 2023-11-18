@@ -31,7 +31,7 @@ public class TestOutputBuildAndCache
             )
         );
         var hasher = TestUtils.DefaultHasher;
-        var outputData = await Task.WhenAll(items.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher)).ToArray());
+        var outputData = await Task.WhenAll(items.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher, null)).ToArray());
         var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, outputData, metadata, hasher);
 
         var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);

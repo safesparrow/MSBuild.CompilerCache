@@ -12,7 +12,7 @@ public class TrimmingTests
     public async Task InternalsVisibleToAreResolvedCorrectly()
     {
         var path = Assembly.GetExecutingAssembly().Location.Replace(".Tests.dll", ".dll");
-        var bytes = await LocatorAndPopulator.ReadFileAsync(path);
+        var bytes = await LocatorAndPopulator.ReadFileAsync(path, null);
         var t = new RefTrimmer(TestUtils.DefaultHasher);
         var res = await t.GenerateRefData(bytes.ToImmutableArray());
 

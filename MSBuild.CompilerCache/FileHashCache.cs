@@ -23,7 +23,7 @@ public class FileHashCache : ICacheBase<FileHashCacheKey, string>
 
     public CacheKey ExtractKey(FileHashCacheKey key)
     {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(key);
+        var bytes = JsonSerializerExt.SerializeToUtf8Bytes(key);
         string hash = Utils.BytesToHash(bytes, _hasher);
         return new CacheKey(hash);
     }

@@ -66,9 +66,9 @@ public class InMemoryTaskBasedTests
     {
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var localInputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, compilingAssemblyName: "",
-            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(), hasher: TestUtils.DefaultHasher);
+            trimmingConfig: new RefTrimmingConfig(), fileHashCache: new DictionaryBasedCache<FileHashCacheKey, string>(), hasher: TestUtils.DefaultHasher, counters: null);
         var extract = localInputs.ToSlim().ToFullExtract();
-        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(extract, FullExtractJsonContext.Default.FullExtract);
+        var jsonBytes = JsonSerializerExt.SerializeToUtf8Bytes(extract, null, FullExtractJsonContext.Default.FullExtract);
         var hashString = Utils.BytesToHash(jsonBytes, TestUtils.DefaultHasher);
         var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
 
@@ -128,7 +128,7 @@ public class InMemoryTaskBasedTests
         var refCache = new RefCache(tmpDir.Dir.CombineAsDir(".refcache").FullName);
         var all = AllFromInputs(inputs, refCache);
         var hasher = TestUtils.DefaultHasher;
-        var outputData = await Task.WhenAll(outputItems.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher)).ToArray());
+        var outputData = await Task.WhenAll(outputItems.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher, null)).ToArray());
         var zip = await LocatorAndPopulator.BuildOutputsZip(tmpDir.Dir, outputData,
             new AllCompilationMetadata(null, all.LocalInputs.ToSlim()), hasher);
 

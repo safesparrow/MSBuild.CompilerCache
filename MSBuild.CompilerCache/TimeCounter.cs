@@ -10,6 +10,7 @@ public class TimeCounter
         lock (_lock)
         {
             _totalMilliseconds += ts.TotalMilliseconds;
+            Count++;
         }
     }
 
@@ -20,4 +21,6 @@ public class TimeCounter
             return TimeSpan.FromMilliseconds(_totalMilliseconds);
         }
     }
+    
+    public int Count { get; private set; } = 0;
 }

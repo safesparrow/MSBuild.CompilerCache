@@ -18,5 +18,5 @@ public class OperationStats
     public int Count { get; set; }
     public int Hits { get; set; }
     public int Misses { get; set; }
-    public TimeCounter Time { get; set; }
+    public TimeCounter Time { get; } = new TimeCounter();
 }
