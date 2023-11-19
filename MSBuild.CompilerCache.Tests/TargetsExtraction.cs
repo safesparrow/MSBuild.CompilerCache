@@ -63,14 +63,7 @@ public class TargetsExtraction
 
     internal static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
-            "8.0.100-rc.2.23502.2",
-            "7.0.302",
-            "7.0.203",
-            "7.0.202",
-            "7.0.105",
-            "6.0.408",
-            "6.0.301",
-            "6.0.300",
+            "8.0.100"
         }
         .Select(sdk => new SDKVersion(sdk))
         .ToImmutableArray();

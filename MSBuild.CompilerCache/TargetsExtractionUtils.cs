@@ -41,6 +41,8 @@ public static class TargetsExtractionUtils
         Prop("GenerateFullPaths"),
         Prop("HighEntropyVA"),
         Prop("Instrument"),
+        Prop("InterceptorsPreviewNamespaces"),
+        Prop("ReportIVTs"),
         Unsup("KeyContainer"),
         InputFiles("KeyFile"),
         Prop("LangVersion"),

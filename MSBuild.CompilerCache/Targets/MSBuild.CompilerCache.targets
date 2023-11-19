@@ -23,7 +23,7 @@
     </PropertyGroup>
     
     <PropertyGroup Condition="'$(ShouldImportCacheTargets)' == 'true'">
-        <CacheTasksPath>$(MSBuildThisFileDirectory)..\lib\net7.0\MSBuild.CompilerCache.dll</CacheTasksPath>
+        <CacheTasksPath>$(MSBuildThisFileDirectory)..\lib\net8.0\MSBuild.CompilerCache.dll</CacheTasksPath>
     </PropertyGroup>
     
     <UsingTask TaskName="CompilerCacheLocate" AssemblyFile="$(CacheTasksPath)" Condition="'$(ShouldImportCacheTargets)' == 'true'" />
