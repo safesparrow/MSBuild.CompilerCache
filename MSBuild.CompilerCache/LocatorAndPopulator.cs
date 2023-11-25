@@ -125,6 +125,7 @@ public class LocatorAndPopulator : IDisposable
                 $"CompilationCache: Some unsupported MSBuild properties set - the cache will be disabled: {Environment.NewLine}{s}");
             var notSupported = LocateResult.CreateNotSupported(inputs);
             _locateResult = notSupported;
+            MetricsCollector.EndLocateTask(_locateResult, _counters);
             return _locateResult;
         }
 
@@ -186,13 +187,15 @@ public class LocatorAndPopulator : IDisposable
             Outcome: outcome,
             DecomposedCompilerProps: _decomposed
         );
+        
         //logTime?.Invoke("end");
 
         MetricsCollector.EndLocateTask(_locateResult, _counters);
         
         return _locateResult;
     }
-    
+
+    private Task _locateRefasmWarmupTask;
     
     private LocalInputs CalculateLocalInputs(Action<string>? logTime = null) =>
         CalculateLocalInputs(_decomposed, _combinedRefCache, _assemblyName, _config.RefTrimming, _combinedFileHashCache, _hasher, _counters,
@@ -434,8 +437,25 @@ public class LocatorAndPopulator : IDisposable
 
         async Task RefasmCompiledDllsAsync(OutputData[] outputs)
         {
-            static bool RefasmableOutputItem(OutputData o) => Path.GetExtension(o.Item.LocalPath) is ".dll";
-            var outputsToRefasm = outputs.Where(RefasmableOutputItem).ToArray();
+            OutputData[] ToRefasm(OutputData[] outputs)
+            {
+                static bool IsDll(OutputData o) => Path.GetExtension(o.Item.LocalPath) is ".dll";
+                bool IsRefAssemblyPath(string o) => o.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(p => p == "refint");
+                bool IsRefAssemblyItem(OutputData o) => IsRefAssemblyPath(o.Item.LocalPath);
+                var dlls = outputs.Where(IsDll).ToArray();
+                var refints = outputs.Where(IsRefAssemblyItem).ToArray();
+                if (refints.Length > 0)
+                {
+                    return refints;
+                }
+                else
+                {
+                    return dlls;
+                }
+            }
+
+            var outputsToRefasm = ToRefasm(outputs);
+
             if (outputsToRefasm.Length <= 1)
             {
                 foreach (var dll in outputsToRefasm)
@@ -447,7 +467,7 @@ public class LocatorAndPopulator : IDisposable
             {
                 await Parallel.ForEachAsync(outputsToRefasm,
                     (output, _) => RefasmAndPopulateCacheWithOutputDll(output));
-            }
+            } 
         }
 
         var refasmCompiledDllsTask = RefasmCompiledDllsAsync(outputs);
@@ -588,6 +608,8 @@ public class LocatorAndPopulator : IDisposable
             }
             _localInputs = null;
         }
+        
+        _locateRefasmWarmupTask?.GetAwaiter().GetResult();
         
         MetricsCollector.Collect();
     }

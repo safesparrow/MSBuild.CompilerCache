@@ -202,8 +202,7 @@ public static class TargetsExtractionUtils
                 PropNotTrue("EmitCompilerGeneratedFiles") &&
                 PropNotTrue("ProvideCommandLineArgs") &&
                 PropNotTrue("ReportAnalyzer") &&
-                PropNotTrue("SkipCompilerExecution") &&
-                PropEmpty("SourceLink")
+                PropNotTrue("SkipCompilerExecution")
             ;
         }
 

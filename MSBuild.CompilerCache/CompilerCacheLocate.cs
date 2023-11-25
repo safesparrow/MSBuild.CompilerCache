@@ -131,7 +131,7 @@ public class MetricsCollector
     {
         var m = new CompilationMetrics
         {
-            ProjectFullPath = _locateResult.Inputs.ProjectFullPath,
+            ProjectFullPath = _locateResult.Inputs?.ProjectFullPath,
             RefCacheStats = RefCacheStats,
             FileHashCacheStats = FileHashCacheStats,
             Counters = _counters,
