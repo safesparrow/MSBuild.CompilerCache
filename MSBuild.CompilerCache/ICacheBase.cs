@@ -3,17 +3,20 @@ namespace MSBuild.CompilerCache;
 public interface ICacheBase<TKey, TValue> where TValue : class
 {
     bool Exists(TKey key);
-    TValue? Get(TKey key);
-    bool Set(TKey key, TValue value);
+    Task<TValue?> GetAsync(TKey key);
+    Task<bool> SetAsync(TKey key, TValue value);
+}
 
-    sealed TValue GetOrSet(TKey key, Func<TKey, TValue> creator)
-    {
-        var value = Get(key);
-        if (value == null)
-        {
-            value = creator(key);
-            Set(key, value);
-        }
-        return value;
-    }
+public class CacheIncStats
+{
+    public OperationStats Get { get; } = new();
+    public OperationStats Set { get; } = new();
+}
+
+public class OperationStats
+{
+    public int Count { get; set; }
+    public int Hits { get; set; }
+    public int Misses { get; set; }
+    public TimeCounter Time { get; } = new TimeCounter();
 }

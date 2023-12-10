@@ -11,9 +11,34 @@ namespace MSBuild.CompilerCache;
 /// <param name="ContentHash">Strong hash of the contents of the file</param>
 /// <param name="Length"></param>
 [Serializable]
-public record struct FileExtract(string Name, string? ContentHash, long Length);
+public record FileExtract
+{
+    public string Name { get; }
+    public string? ContentHash { get; }
+    public long Length { get; }
 
-// TODO Use a dictionary to disambiguate files in different Item lists 
+    public FileExtract(string Name, string? ContentHash, long Length)
+    {
+        this.Name = Name;
+        this.ContentHash = ContentHash ?? throw new Exception($"Null ContentHash for {Name} {Length}");
+        this.Length = Length;
+    }
+    
+    public FileExtract2 ToFileExtract2() => new(ContentHash);
+}
+
+[Serializable]
+public record FileExtract2(string? ContentHash);
+
+[JsonSerializable(typeof(FileExtract[]))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class FileExtractsJsonContext : JsonSerializerContext;
+
+public class CompilationResultsCacheMetrics
+{
+    
+}
+
 /// <summary>
 /// All compilation inputs, used to generate a hash for caching.
 /// </summary>
@@ -21,7 +46,12 @@ public record struct FileExtract(string Name, string? ContentHash, long Length);
 /// <param name="Props"></param>
 /// <param name="OutputFiles"></param>
 [Serializable]
-public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles);
+public record FullExtract(FileExtract[] Files, KeyValuePair<string,string>[] Props, string[] OutputFiles)
+{
+    public FullExtract(FileExtract[] Files, (string, string)[] Props, string[] OutputFiles)
+    : this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).OrderBy(kvp => kvp.Key).ToArray(), OutputFiles)
+    {}
+}
 
 /// <summary>
 /// An extended version of <see cref="FullExtract" /> 
@@ -29,25 +59,21 @@ public record FullExtract(FileExtract[] Files, (string, string)[] Props, string[
 [Serializable]
 public record LocalFileExtract
 {
-    public LocalFileExtract(FileHashCacheKey Info, string? Hash)
+    public LocalFileExtract(FileHashCacheKey Info, string Hash)
     {
         this.Info = Info;
         this.Hash = Hash;
-        if(Info.FullName == null) throw new Exception("File info name empty");
+        if (Info.FullName == null) throw new Exception("File info name empty");
     }
 
     public FileHashCacheKey Info { get; set; }
     public string Path => Info.FullName;
     public long Length => Info.Length;
     public DateTime LastWriteTimeUtc => Info.LastWriteTimeUtc;
-    public string? Hash { get; set; }
-    public FileExtract ToFileExtract() => new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
+    public string Hash { get; set; }
 
-    public void Deconstruct(out FileHashCacheKey Info, out string? Hash)
-    {
-        Info = this.Info;
-        Hash = this.Hash;
-    }
+    public FileExtract ToFileExtract() =>
+        new(Name: System.IO.Path.GetFileName(Path), ContentHash: Hash, Length: Length);
 }
 
 /// <summary>
@@ -73,7 +99,7 @@ public record OutputItem
 
         this.Name = Name;
         this.LocalPath = LocalPath;
-        this.CacheFileName = GetCacheFileName();
+        CacheFileName = GetCacheFileName();
     }
 
     public string CacheFileName { get; }
@@ -96,9 +122,23 @@ public record OutputItem
 /// Used to describe raw compilation inputs, with absolute paths and machine-specific values.
 /// Used only for debugging purposes, stored alongside cache items.
 /// </summary>
-[Serializable]
-public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+public record LocalInputs(InputResult[] Files, KeyValuePair<string,string>[] Props, OutputItem[] OutputFiles)
 {
+    public LocalInputs(InputResult[] Files, (string, string)[] Props, OutputItem[] OutputFiles)
+        : this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).ToArray(), OutputFiles)
+    {}
+
+    public LocalInputsSlim ToSlim() =>
+        new LocalInputsSlim(Files: Files.Select(f => f.fileHashCacheKey).ToArray(), Props, OutputFiles);
+}
+
+[Serializable]
+public record LocalInputsSlim(LocalFileExtract[] Files, KeyValuePair<string, string>[] Props, OutputItem[] OutputFiles)
+{
+    public LocalInputsSlim(LocalFileExtract[] Files, (string, string)[] Props, OutputItem[] OutputFiles):
+        this(Files, Props.Select(x => new KeyValuePair<string,string>(x.Item1, x.Item2)).ToArray(), OutputFiles)
+    {}
+    
     public FullExtract ToFullExtract()
     {
         return new FullExtract(Files: Files.Select(f => f.ToFileExtract()).ToArray(), Props: Props,
@@ -107,7 +147,14 @@ public record LocalInputs(LocalFileExtract[] Files, (string, string)[] Props, Ou
 }
 
 [Serializable]
-public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputs LocalInputs);
+public record AllCompilationMetadata(CompilationMetadata Metadata, LocalInputsSlim LocalInputs);
+
+[JsonSerializable(typeof(AllCompilationMetadata))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class AllCompilationMetadataJsonContext : JsonSerializerContext;
+
+[Serializable]
+public record InputResult(FileStream f, LocalFileExtract fileHashCacheKey);
 
 public record struct CacheKey(string Key)
 {
@@ -120,13 +167,13 @@ public record struct CacheKey(string Key)
 public interface ICompilationResultsCache
 {
     bool Exists(CacheKey key);
-    /// <summary>
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="fullExtract"></param>
-    /// <param name="resultZipToBeMoved"></param>
-    void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
-    string? Get(CacheKey key);
+
+    public sealed void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved) =>
+        SetAsync(key, fullExtract, resultZipToBeMoved).GetAwaiter().GetResult();
+
+    Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved);
+    sealed string? Get(CacheKey key) => GetAsync(key).GetAwaiter().GetResult();
+    Task<string?> GetAsync(CacheKey key);
 }
 
 public class CompilationResultsCache : ICompilationResultsCache
@@ -154,38 +201,42 @@ public class CompilationResultsCache : ICompilationResultsCache
     /// <param name="source"></param>
     /// <param name="destination"></param>
     /// <param name="throwIfDestinationExists">If true, will throw if the destination already exists</param>
+    /// <param name="moveInsteadOfCopy"></param>
     /// <returns></returns>
-    public static bool AtomicCopy(string source, string destination, bool throwIfDestinationExists = true, bool moveInsteadOfCopy = false)
+    public static bool AtomicCopyOrMove(FileInfo source, FileInfo destination, bool throwIfDestinationExists = true,
+        bool moveInsteadOfCopy = false)
     {
-        var dir = Path.GetDirectoryName(destination)!;
+        using var activity = Tracing.Source.StartActivity("AtomicCopyOrMove");
+        activity?.SetTag("source", source.FullName);
+        activity?.SetTag("destination", destination.FullName);
+        activity?.SetTag("moveInsteadOfCopy", moveInsteadOfCopy);
+        var dir = destination.DirectoryName!;
         var tmpDestination = Path.Combine(dir, $".__tmp_{Guid.NewGuid()}");
+        FileInfo tmp;
         if (moveInsteadOfCopy)
         {
-            File.Move(source, tmpDestination);
+            source.MoveTo(tmpDestination);
+            tmp = source;
         }
         else
         {
-            File.Copy(source, tmpDestination);
+            tmp = source.CopyTo(tmpDestination);
         }
+
         try
         {
-            File.Move(tmpDestination, destination, overwrite: false);
+            tmp.MoveTo(destination.FullName, overwrite: false);
             return true;
         }
-        catch (IOException e)
+        catch (IOException)
         {
-            if (!throwIfDestinationExists && File.Exists(destination))
+            tmp.Delete();
+            if (!throwIfDestinationExists && File.Exists(destination.FullName))
             {
                 return false;
             }
-            else
-            {
-                throw;
-            }
-        }
-        finally
-        {
-            File.Delete(tmpDestination);
+
+            throw;
         }
     }
 
@@ -201,33 +252,35 @@ public class CompilationResultsCache : ICompilationResultsCache
             .ToArray();
     }
 
-    public void Set(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
+    public async Task SetAsync(CacheKey key, FullExtract fullExtract, FileInfo resultZipToBeMoved)
     {
         var dir = new DirectoryInfo(CacheDir(key));
+        Console.WriteLine($"Cache Set {key}. Dir {dir}");
         dir.Create();
-        var extractPath = ExtractPath(key);
-        var outputPath = Path.Combine(dir.FullName, resultZipToBeMoved.Name);
-        
-        if (!File.Exists(outputPath))
+
+        var outputFile = new FileInfo(Path.Combine(dir.FullName, resultZipToBeMoved.Name));
+
+        if (!outputFile.Exists)
         {
-            AtomicCopy(resultZipToBeMoved.FullName, outputPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
+            AtomicCopyOrMove(resultZipToBeMoved, outputFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
-        
-        if (!File.Exists(extractPath))
+
+        var extractFile = new FileInfo(ExtractPath(key));
+        if (!extractFile.Exists)
         {
-            // TODO Serialise directly to the cache dir (as a tmp file)
-            using var tmpFile = new TempFile();
+            var tmpFile = new FileInfo(TempFile.GetTempFilePath());
             {
-                using var fs = tmpFile.File.OpenWrite();
-                JsonSerializer.Serialize(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
+                await using var fs = tmpFile.OpenWrite();
+                await JsonSerializer.SerializeAsync(fs, fullExtract, FullExtractJsonContext.Default.FullExtract);
             }
-            AtomicCopy(tmpFile.FullName, extractPath, throwIfDestinationExists: false, moveInsteadOfCopy: true);
+            AtomicCopyOrMove(tmpFile, extractFile, throwIfDestinationExists: false, moveInsteadOfCopy: true);
         }
     }
 
-    public string? Get(CacheKey key)
+    public Task<string?> GetAsync(CacheKey key)
     {
         var dir = new DirectoryInfo(CacheDir(key));
+        Console.WriteLine($"Cache Get {key}. Dir {dir}");
         if (dir.Exists)
         {
             var extractPath = ExtractPath(key);
@@ -244,18 +297,14 @@ public class CompilationResultsCache : ICompilationResultsCache
                     default:
                     {
                         var tmpPath = Path.GetTempFileName();
-                        FileHashCache.IOActionWithRetries(() =>
-                        {
-                            File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
-                            return 0;
-                        });
-                        return tmpPath;
+                        File.Copy(outputVersionsZips[0], tmpPath, overwrite: true);
+                        return Task.FromResult(tmpPath)!;
                     }
                 }
             }
         }
 
-        return null;
+        return Task.FromResult<string?>(null);
     }
 
     public int OutputVersionsCount(CacheKey key) => GetOutputVersions(key).Length;
@@ -268,5 +317,4 @@ public class CompilationResultsCache : ICompilationResultsCache
 
 [JsonSerializable(typeof(FullExtract))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class FullExtractJsonContext : JsonSerializerContext
-{ }
+public partial class FullExtractJsonContext : JsonSerializerContext;

@@ -24,9 +24,9 @@ public class TargetsExtraction
 {
     private static readonly string ProjFile =
         """
-<Project Sdk="Microsoft.NET.Sdk">
-</Project>
-""";
+        <Project Sdk="Microsoft.NET.Sdk">
+        </Project>
+        """;
 
     public static string LanguageProjExtension(SupportedLanguage lang) =>
         lang == SupportedLanguage.CSharp
@@ -50,7 +50,8 @@ public class TargetsExtraction
 
         var text = File.ReadAllText(targetsPath);
         var text2 = text.Replace(Path.GetTempPath(), "%TempPath%" + Path.DirectorySeparatorChar);
-        text2 = text2.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "%UserProfile%" + Path.DirectorySeparatorChar);
+        text2 = text2.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "%UserProfile%" + Path.DirectorySeparatorChar);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         File.WriteAllText(outputPath, text2);
     }
@@ -62,13 +63,7 @@ public class TargetsExtraction
 
     internal static readonly ImmutableArray<SDKVersion> SupportedSdks = new[]
         {
-            "7.0.302",
-            "7.0.203",
-            "7.0.202",
-            "7.0.105",
-            "6.0.408",
-            "6.0.301",
-            "6.0.300",
+            "8.0.100"
         }
         .Select(sdk => new SDKVersion(sdk))
         .ToImmutableArray();
@@ -141,7 +136,7 @@ public class TargetsExtraction
 
         var originalCompilationConditionValue = condition.Value;
 
-        condition.Value = $"'$(CacheRunCompilation)' == 'true' AND {condition.Value}";
+        condition.Value = $"'$(CompilerCacheRunCompilation)' == 'true' AND {condition.Value}";
 
         var regularAttributes = compilationTask.Attributes()
             .Where(a => a.Name.LocalName != "Condition" && !a.IsNamespaceDeclaration)
@@ -149,7 +144,7 @@ public class TargetsExtraction
 
         var itemgroup2 = Name("ItemGroup");
         var allItemGroup = new XElement(itemgroup2);
-        var all = new XElement(Name("CacheAllCompilerProperties"),
+        var all = new XElement(Name("CompilerCacheAllCompilerProperties"),
             new XAttribute("Include", "___nonexistent___"));
         all.Add(regularAttributes);
         allItemGroup.Add(all);
@@ -178,27 +173,27 @@ public class TargetsExtraction
         var firstPropsGroupElement = new XElement(propertygroup);
         var canCacheElement =
             new XElement(Name("CanCache"), new XAttribute("Condition", doNotUseCacheCondition), "false");
-        var compilationWouldRunElement = new XElement(Name("CompilationWouldRun"),
+        var compilerCacheCompilationWouldRunElement = new XElement(Name("CompilerCacheCompilationWouldRun"),
             new XAttribute("Condition", originalCompilationConditionValue), "true");
-        firstPropsGroupElement.Add(canCacheElement, compilationWouldRunElement);
+        firstPropsGroupElement.Add(canCacheElement, compilerCacheCompilationWouldRunElement);
 
         XElement Elem(string taskParameter, string? propertyName = null) =>
             new XElement(Name("Output"), new XAttribute("TaskParameter", taskParameter),
                 new XAttribute("PropertyName", propertyName ?? taskParameter));
-        
+
         var locateElement = new XElement(Name("CompilerCacheLocate"),
-            new XAttribute("Condition", $"'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"),
-            new XAttribute("ConfigPath", "$(CompilationCacheConfigPath)"),
-            new XAttribute("AllCompilerProperties", "@(CacheAllCompilerProperties)"),
+            new XAttribute("Condition", "'$(CanCache)' == 'true' AND '$(CompilerCacheCompilationWouldRun)' == 'true'"),
+            new XAttribute("ConfigPath", "$(CompilerCacheConfigPath)"),
+            new XAttribute("AllCompilerProperties", "@(CompilerCacheAllCompilerProperties)"),
             new XAttribute("ProjectFullPath", "$(MSBuildProjectFullPath)"),
             new XAttribute("AssemblyName", "$(AssemblyName)"),
-            Elem("RunCompilation", "CacheRunCompilation"),
-            Elem("PopulateCache", "CachePopulateCache"),
+            Elem("RunCompilation", "CompilerCacheRunCompilation"),
+            Elem("PopulateCache", "CompilerCachePopulateCache"),
             Elem("Guid", "CompilerCacheGuid")
         );
 
         var gElement = new XElement(propertygroup,
-            new XElement(Name("CacheRunCompilation"), new XAttribute("Condition", "'$(CanCache)' != 'true'"),
+            new XElement(Name("CompilerCacheRunCompilation"), new XAttribute("Condition", "'$(CanCache)' != 'true'"),
                 "true"));
         var endComment = new XComment("END OF CACHING EXTENSION CODE");
         compilationTask.AddBeforeSelf(startComment, allItemGroup, firstPropsGroupElement, locateElement,
@@ -206,8 +201,9 @@ public class TargetsExtraction
 
         var populateCacheElement =
             new XElement(Name("CompilerCachePopulateCache"),
-                new XAttribute("Condition", "'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"),
-                new XAttribute("Guid", "$(CompilerCacheGuid)")
+                new XAttribute("Condition", "'$(CompilerCachePopulateCache)' == 'true'"),
+                new XAttribute("Guid", "$(CompilerCacheGuid)"),
+                new XAttribute("CompilationSucceeded", "$(MSBuildLastTaskResult)")
             );
 
         compilationTask.AddAfterSelf(startComment, populateCacheElement, endComment);

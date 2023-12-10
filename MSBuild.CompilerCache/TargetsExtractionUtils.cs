@@ -5,14 +5,16 @@ namespace MSBuild.CompilerCache;
 
 public static class TargetsExtractionUtils
 {
-    public static readonly Attr[] Attrs =
+    internal static readonly Attr[] Attrs =
     {
         Unsup("AdditionalLibPaths"),
         Unsup("AddModules"),
         Unsup("AdditionalFiles"),
         Prop("AllowUnsafeBlocks"),
-        Ignore("AnalyzerConfigFiles"), // TODO
-        Ignore("Analyzers"), // TODO
+        // This includes auto-generated .editorconfig files that contain absolute paths
+        // and breaks caching. Ignore it.
+        Ignore("AnalyzerConfigFiles"),
+        InputFiles("Analyzers"),
         InputFiles("ApplicationConfiguration"),
         Prop("BaseAddress"),
         Prop("CheckForOverflowUnderflow"),
@@ -39,6 +41,8 @@ public static class TargetsExtractionUtils
         Prop("GenerateFullPaths"),
         Prop("HighEntropyVA"),
         Prop("Instrument"),
+        Prop("InterceptorsPreviewNamespaces"),
+        Prop("ReportIVTs"),
         Unsup("KeyContainer"),
         InputFiles("KeyFile"),
         Prop("LangVersion"),
@@ -112,9 +116,9 @@ public static class TargetsExtractionUtils
         InputFiles("Win32ResourceFile")
     };
 
-    public static Dictionary<string, Attr> AttrsDictionary = Attrs.ToDictionary(a => a.Name);
+    private static readonly Dictionary<string, Attr> AttrsDictionary = Attrs.ToDictionary(a => a.Name);
 
-    public enum AttrType
+    internal enum AttrType
     {
         SimpleProperty,
         Unsupported,
@@ -126,20 +130,21 @@ public static class TargetsExtractionUtils
         Unknown
     }
 
-    public record Attr(string Name, AttrType Type);
+    internal record Attr(string Name, AttrType Type);
 
-    public static Attr Unsup(string Name) => new Attr(Name, AttrType.Unsupported);
-    public static Attr Ignore(string Name) => new Attr(Name, AttrType.Ignore);
-    public static Attr Prop(string Name) => new Attr(Name, AttrType.SimpleProperty);
-    public static Attr InputFiles(string Name) => new Attr(Name, AttrType.InputFiles);
-    public static Attr OutputFile(string Name) => new Attr(Name, AttrType.OutputFile);
-    public static string[] SplitItemList(string value) =>
+    private static Attr Unsup(string Name) => new Attr(Name, AttrType.Unsupported);
+    private static Attr Ignore(string Name) => new Attr(Name, AttrType.Ignore);
+    private static Attr Prop(string Name) => new Attr(Name, AttrType.SimpleProperty);
+    private static Attr InputFiles(string Name) => new Attr(Name, AttrType.InputFiles);
+    private static Attr OutputFile(string Name) => new Attr(Name, AttrType.OutputFile);
+    private static string[] SplitItemList(string value) =>
         string.IsNullOrEmpty(value)
             ? Array.Empty<string>()
             : value.Split(";").Where(x => !string.IsNullOrEmpty(x)).ToArray();
 
     public static DecomposedCompilerProps DecomposeCompilerProps(IDictionary<string, string> props, TaskLoggingHelper? log = null)
     {
+        using var activity = Tracing.Source.StartActivity("DecomposeCompilerProps");
         var relevant =
             props
                 .Select(kvp =>
@@ -197,8 +202,7 @@ public static class TargetsExtractionUtils
                 PropNotTrue("EmitCompilerGeneratedFiles") &&
                 PropNotTrue("ProvideCommandLineArgs") &&
                 PropNotTrue("ReportAnalyzer") &&
-                PropNotTrue("SkipCompilerExecution") &&
-                PropEmpty("SourceLink")
+                PropNotTrue("SkipCompilerExecution")
             ;
         }
 

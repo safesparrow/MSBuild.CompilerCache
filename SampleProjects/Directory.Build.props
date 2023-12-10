@@ -7,7 +7,7 @@
     </PropertyGroup>
     
     <PropertyGroup>
-        <CompilationCacheConfigPath>$(MSBuildThisFileDirectory)cache_config.json</CompilationCacheConfigPath>
+        <CompilerCacheConfigPath>$(MSBuildThisFileDirectory)cache_config.json</CompilerCacheConfigPath>
     </PropertyGroup>
     
     <ItemGroup>

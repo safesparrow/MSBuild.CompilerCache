@@ -47,21 +47,21 @@ public sealed class BuildEnvironment : IDisposable
 """;
 
     private static readonly string PropsFile =
-        $"""
-<Project>
+        """
+        <Project>
+        
+            <PropertyGroup>
+                <GenerateDocumentationFile>true</GenerateDocumentationFile>
+                <DebugType>Embedded</DebugType>
+                <Deterministic>true</Deterministic>
+            </PropertyGroup>
+            
+            <PropertyGroup>
+                <CompilerCacheConfigPath Condition="'$(CompilerCacheConfigPath)' == ''">$(MSBuildThisFileDirectory).cache/</CompilerCacheConfigPath>
+            </PropertyGroup>
 
-    <PropertyGroup>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <DebugType>Embedded</DebugType>
-        <Deterministic>true</Deterministic>
-    </PropertyGroup>
-    
-    <PropertyGroup>
-        <CompilationCacheConfigPath Condition="'$(CompilationCacheConfigPath)' == ''">$(MSBuildThisFileDirectory).cache/</CompilationCacheConfigPath>
-    </PropertyGroup>
-
-</Project>
-""";
+        </Project>
+        """;
 
     public void Dispose()
     {
@@ -133,9 +133,9 @@ public record ProjectFileBuilder
     public bool GenerateDocumentationFile { get; init; } = true;
     public bool ProduceReferenceAssembly { get; init; } = true;
     public string? AssemblyName { get; init; } = null;
-    public string? CompilationCacheConfigPath { get; init; } = null;
+    public string? CompilerCacheConfigPath { get; init; }
     public string TargetFramework { get; init; } = "net6.0";
-    public string Name { get; init; } = null;
+    public string Name { get; init; }
 
     public ProjectFileBuilder(string name) => Name = name;
 
@@ -176,7 +176,7 @@ public record ProjectFileBuilder
         }
 
         AddIfNotNull("AssemblyName", AssemblyName);
-        AddIfNotNull("CompilationCacheConfigPath", CompilationCacheConfigPath);
+        AddIfNotNull("CompilerCacheConfigPath", CompilerCacheConfigPath);
 
         return properties;
     }
@@ -249,9 +249,9 @@ public class EndToEndTests
         var dll2 = DllFile(projDir2, proj);
         var dll3 = DllFile(projDir3, proj);
 
-        var hash1 = Utils.FileBytesToHashHex(dll1.FullName, Utils.DefaultHasher);
-        var hash2 = Utils.FileBytesToHashHex(dll2.FullName, Utils.DefaultHasher);
-        var hash3 = Utils.FileBytesToHashHex(dll3.FullName, Utils.DefaultHasher);
+        var hash1 = TestUtils.FileBytesToHash(dll1.FullName, TestUtils.DefaultHasher);
+        var hash2 = TestUtils.FileBytesToHash(dll2.FullName, TestUtils.DefaultHasher);
+        var hash3 = TestUtils.FileBytesToHash(dll3.FullName, TestUtils.DefaultHasher);
         
         Assert.That(hash2, Is.EqualTo(hash1));
         Assert.That(hash3, Is.Not.EqualTo(hash2));
@@ -269,7 +269,7 @@ public class Class { }
             var proj =
                 new ProjectFileBuilder("C.csproj")
                     {
-                        CompilationCacheConfigPath = configFile.FullName,
+                        CompilerCacheConfigPath = configFile.FullName,
                         ProduceReferenceAssembly = produceRefAssembly
                     }
                     .WithSource(source);
@@ -285,7 +285,7 @@ type Foo = int
             var proj =
                 new ProjectFileBuilder("F.fsproj")
                     {
-                        CompilationCacheConfigPath = configFile.FullName,
+                        CompilerCacheConfigPath = configFile.FullName,
                         ProduceReferenceAssembly = produceRefAssembly
                     }
                     .WithSource(source);
@@ -313,7 +313,7 @@ type Foo = int
     {
         Environment.SetEnvironmentVariable("MSBuildSDKsPath", null);
         Environment.SetEnvironmentVariable("MSBuildExtensionsPath", null);
-        TestUtils.RunProcess("dotnet", $"add package MSBuild.CompilerCache --prerelease", dir);
-        return TestUtils.RunProcess("dotnet", $"build -verbosity:normal", dir);
+        TestUtils.RunProcess("dotnet", "add package MSBuild.CompilerCache --prerelease", dir);
+        return TestUtils.RunProcess("dotnet", "build -verbosity:normal", dir);
     }
 }

@@ -52,7 +52,7 @@
     <!-- Condition is to filter out the _CoreCompileResourceInputs so that it doesn't pass in culture resources to the compiler -->
     <!--START OF CACHING EXTENSION CODE-->
     <ItemGroup>
-      <CacheAllCompilerProperties
+      <CompilerCacheAllCompilerProperties
         Include="___nonexistent___"
         AdditionalLibPaths="$(AdditionalLibPaths)"
         AddModules="@(AddModules)"
@@ -137,32 +137,32 @@
     <PropertyGroup>
       <CanCache
         Condition="'$(EmitCompilerGeneratedFiles)' == 'true'">false</CanCache>
-      <CompilationWouldRun
-        Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'">true</CompilationWouldRun>
+      <CompilerCacheCompilationWouldRun
+        Condition="'%(_CoreCompileResourceInputs.WithCulture)' != 'true'">true</CompilerCacheCompilationWouldRun>
     </PropertyGroup>
     <CompilerCacheLocate
-      Condition="'$(CanCache)' == 'true' AND '$(CompilationWouldRun)' == 'true'"
-      ConfigPath="$(CompilationCacheConfigPath)"
-      AllCompilerProperties="@(CacheAllCompilerProperties)"
+      Condition="'$(CanCache)' == 'true' AND '$(CompilerCacheCompilationWouldRun)' == 'true'"
+      ConfigPath="$(CompilerCacheConfigPath)"
+      AllCompilerProperties="@(CompilerCacheAllCompilerProperties)"
       ProjectFullPath="$(MSBuildProjectFullPath)"
       AssemblyName="$(AssemblyName)">
       <Output
         TaskParameter="RunCompilation"
-        PropertyName="CacheRunCompilation" />
+        PropertyName="CompilerCacheRunCompilation" />
       <Output
         TaskParameter="PopulateCache"
-        PropertyName="CachePopulateCache" />
+        PropertyName="CompilerCachePopulateCache" />
       <Output
         TaskParameter="Guid"
         PropertyName="CompilerCacheGuid" />
     </CompilerCacheLocate>
     <PropertyGroup>
-      <CacheRunCompilation
-        Condition="'$(CanCache)' != 'true'">true</CacheRunCompilation>
+      <CompilerCacheRunCompilation
+        Condition="'$(CanCache)' != 'true'">true</CompilerCacheRunCompilation>
     </PropertyGroup>
     <!--END OF CACHING EXTENSION CODE-->
     <Csc
-      Condition="'$(CacheRunCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
+      Condition="'$(CompilerCacheRunCompilation)' == 'true' AND '%(_CoreCompileResourceInputs.WithCulture)' != 'true'"
       AdditionalLibPaths="$(AdditionalLibPaths)"
       AddModules="@(AddModules)"
       AdditionalFiles="@(AdditionalFiles)"
@@ -248,8 +248,9 @@
     </Csc>
     <!--START OF CACHING EXTENSION CODE-->
     <CompilerCachePopulateCache
-      Condition="'$(CachePopulateCache)' == 'true' AND '$(MSBuildLastTaskResult)' == 'True'"
-      Guid="$(CompilerCacheGuid)" />
+      Condition="'$(CompilerCachePopulateCache)' == 'true'"
+      Guid="$(CompilerCacheGuid)"
+      CompilationSucceeded="$(MSBuildLastTaskResult)" />
     <!--END OF CACHING EXTENSION CODE-->
     <ItemGroup>
       <_CoreCompileResourceInputs

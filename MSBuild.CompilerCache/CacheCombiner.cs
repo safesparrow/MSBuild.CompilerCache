@@ -1,5 +1,3 @@
-using IRefCache = MSBuild.CompilerCache.ICacheBase<MSBuild.CompilerCache.CacheKey, MSBuild.CompilerCache.RefDataWithOriginalExtract>;
-
 namespace MSBuild.CompilerCache;
 
 public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue : class
@@ -15,39 +13,33 @@ public class CacheCombiner<TKey, TValue> : ICacheBase<TKey, TValue> where TValue
 
     public bool Exists(TKey key) => _cache1.Exists(key) || _cache2.Exists(key);
 
-    public TValue? Get(TKey key)
+    public async Task<TValue?> GetAsync(TKey key)
     {
-        var cache1Res = _cache1.Get(key);
+        var cache1Res = await _cache1.GetAsync(key);
         if (cache1Res != null)
         {
             return cache1Res;
         }
-        else
+
+        var cache2Res = await _cache2.GetAsync(key);
+        if (cache2Res != null)
         {
-            var cache2Res = _cache2.Get(key);
-            if (cache2Res != null)
-            {
-                _cache1.Set(key, cache2Res);
-                return cache2Res;
-            }
-            else
-            {
-                return null;
-            }
+            await _cache1.SetAsync(key, cache2Res);
+            return cache2Res;
         }
+
+        return null;
     }
 
-    public bool Set(TKey key, TValue value)
+    public async Task<bool> SetAsync(TKey key, TValue value)
     {
-        if (_cache1.Set(key, value))
+        if (await _cache1.SetAsync(key, value))
         {
-            _cache2.Set(key, value);
+            await _cache2.SetAsync(key, value);
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 }
 

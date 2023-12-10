@@ -14,7 +14,7 @@ It extends the `CoreCompile` targets from the .NET SDK with caching steps and us
 To use the cache, add the following to your project file (or `Directory.Build.props` in your directory structure):
 ```xml
 <PropertyGroup>
-    <CompilationCacheConfigPath>c:/accessible/filesystem/location/compilation_cache_config.json</CompilationCacheConfigPath>
+    <CompilerCacheConfigPath>c:/accessible/filesystem/location/compilation_cache_config.json</CompilerCacheConfigPath>
 </PropertyGroup>
 
 <ItemGroup>

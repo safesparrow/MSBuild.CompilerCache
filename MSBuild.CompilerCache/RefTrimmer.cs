@@ -11,20 +11,29 @@ namespace MSBuild.CompilerCache;
 /// Information about an assembly used for hash calculations in dependant projects' compilation.
 /// </summary>
 /// <param name="PublicRefHash">Hash of a reference assembly for this assembly, that excluded internal symbols. </param>
-/// <param name="PublicAndInternalRefHash">Hash of a reference assembly for this assembly, that included internal symbols. </param>
+/// <param name="PublicAndInternalRefHash">Hash of a reference assembly for this assembly, that included internal symbols. Can be null if internals are not visible to any assemblies.</param>
 /// <param name="InternalsVisibleTo">A list of assembly names that can access internal symbols from this assembly, via the InternalsVisibleTo attribute.</param>
-public record RefData(string PublicRefHash, string PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
+public record RefData(string PublicRefHash, string? PublicAndInternalRefHash, ImmutableArray<string> InternalsVisibleTo);
 
 public record RefDataWithOriginalExtract(RefData Ref, LocalFileExtract Original);
 
 [JsonSerializable(typeof(RefDataWithOriginalExtract))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
-public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerContext
-{ }
+public partial class RefDataWithOriginalExtractJsonContext : JsonSerializerContext;
 
+[JsonSerializable(typeof(FileHashCacheKey))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class FileHashCacheKeyJsonContext : JsonSerializerContext;
 
 public class RefTrimmer
 {
+    private IHash _hasher;
+    
+    public RefTrimmer(IHash hasher)
+    {
+        _hasher = hasher;
+    }
+
     public static void MakeRefasm(string inputPath, string outputPath, LoggerBase logger, IImportFilter filter)
     {
         logger.Debug?.Invoke($"Reading assembly {inputPath}");
@@ -96,14 +105,13 @@ public class RefTrimmer
         return ImmutableArray.Create(refBytes);
     }
 
-    public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader)
+    public static string MakeRefasmAndGetHash(LoggerBase logger, RefAsmType refAsmType, PEReader peReader, IHash hasher)
     {
         var bytes = MakeRefasm(logger, refAsmType, peReader);
-        var hash = Utils.BytesToHashHex(bytes.AsSpan());
-        return hash;
+        return Utils.BytesToHash(bytes.AsSpan(), hasher);
     }
 
-    public RefData GenerateRefData(ImmutableArray<byte> content)
+    public async Task<RefData> GenerateRefData(ImmutableArray<byte> content)
     {
         var logger = new VerySimpleLogger(Console.Out, LogLevel.Warning);
         var loggerBase = new LoggerBase(logger);
@@ -114,22 +122,15 @@ public class RefTrimmer
         // If no assemblies can see the internals, there is no need to generate public+internal ref assembly 
         var internalsNeverAccessible = internalsVisibleToAssemblies.IsEmpty;
         
-        string GetPublicHash()
-        {
-            var peReader2 = new PEReader(content);
-            return MakeRefasmAndGetHash(loggerBase, RefAsmType.Public, peReader2);
-        }
-        
-        string GetPublicAndInternalHash()
-        {
-            var peReader3 = new PEReader(content);
-            return MakeRefasmAndGetHash(loggerBase, RefAsmType.PublicAndInternal, peReader3);
-        }
+        string GetPublicHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.Public, new PEReader(content), _hasher);
 
-        string? publicRefHash = null; string? publicAndInternalRefHash = null;
+        string GetPublicAndInternalHash() => MakeRefasmAndGetHash(loggerBase, RefAsmType.PublicAndInternal, new PEReader(content), _hasher);
+
+        string? publicRefHash = null, publicAndInternalRefHash = null;
         if (internalsNeverAccessible)
         {
-            publicRefHash = publicAndInternalRefHash = GetPublicHash();
+            publicRefHash = GetPublicHash();
+            publicAndInternalRefHash = null;
         }
         else
         {
@@ -138,12 +139,12 @@ public class RefTrimmer
                 Task.Factory.StartNew(() => { publicRefHash = GetPublicHash();}),
                 Task.Factory.StartNew(() => { publicAndInternalRefHash = GetPublicAndInternalHash();})
             };
-            Task.WaitAll(tasks);
+            await Task.WhenAll(tasks);
         }
         
         return new RefData(
             PublicRefHash: publicRefHash!,
-            PublicAndInternalRefHash: publicAndInternalRefHash!,
+            PublicAndInternalRefHash: publicAndInternalRefHash,
             InternalsVisibleTo: internalsVisibleToAssemblies
         );
     }

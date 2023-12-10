@@ -15,12 +15,12 @@ public class PerfTests
     public void HashCalculationPerfTest()
     {
         var sw = Stopwatch.StartNew();
-        var fileHashCache = new FileHashCache(".filehashcache");
+        var fileHashCache = new FileHashCache(".filehashcache", TestUtils.DefaultHasher, null);
         var inMemoryFileHashCache = new DictionaryBasedCache<FileHashCacheKey, string>();
-        var combinedFileHashCache = new CacheCombiner<FileHashCacheKey, string>(inMemoryFileHashCache, fileHashCache);
+        var combinedFileHashCache = CacheCombiner.Combine(inMemoryFileHashCache, fileHashCache);
         var inMemoryRefCache = new InMemoryRefCache();
         var refCache = new RefCache(".refcache");
-        var combinedRefCache = new CacheCombiner<CacheKey, RefDataWithOriginalExtract>(inMemoryRefCache, refCache);
+        var combinedRefCache = CacheCombiner.Combine(inMemoryRefCache, refCache);
 
         // var refCacheDir = new DisposableDir();
         for (int i = 0; i < 20; i++)
@@ -38,13 +38,14 @@ public class PerfTests
                 );
                 var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
                 var refTrimmingConfig = new RefTrimmingConfig();
+                var hasher = TestUtils.DefaultHasher;
                 var localInputs =
                     LocatorAndPopulator.CalculateLocalInputs(decomposed, combinedRefCache, "assembly", refTrimmingConfig,
-                        combinedFileHashCache, Utils.DefaultHasher);
-                var extract = localInputs.ToFullExtract();
-                var hashString = Utils.ObjectToHash(extract);
+                        combinedFileHashCache, hasher, null);
+                var extract = localInputs.ToSlim().ToFullExtract();
+                var hashString = Utils.ObjectToHash(extract, hasher);
                 var cacheKey = LocatorAndPopulator.GenerateKey(inputs, hashString);
-                var localInputsHash = Utils.ObjectToHash(localInputs);
+                var localInputsHash = Utils.ObjectToHash(localInputs, hasher);
             }
             Console.WriteLine($"[{i}] {sw.ElapsedMilliseconds}ms");
         }

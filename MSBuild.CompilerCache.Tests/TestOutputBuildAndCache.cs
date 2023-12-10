@@ -7,12 +7,12 @@ namespace Tests;
 public class TestOutputBuildAndCache
 {
     [Test]
-    public void Test()
+    public async Task Test()
     {
         using var dir = new DisposableDir();
         var outputsDir = dir.Dir.CreateSubdirectory("outputs");
         var foo = outputsDir.CombineAsFile("foo.txt");
-        File.WriteAllText(foo.FullName, "foo");
+        await File.WriteAllTextAsync(foo.FullName, "foo");
         var items = new[]
         {
             new OutputItem("foo", foo.FullName)
@@ -24,24 +24,26 @@ public class TestOutputBuildAndCache
                 StopTimeUtc: DateTime.Today,
                 WorkingDirectory: "e:/foo"),
             LocalInputs:
-            new LocalInputs(
+            new LocalInputsSlim(
                 Files: Array.Empty<LocalFileExtract>(),
                 Props: new[]{("a", "b")},
                 OutputFiles: items
             )
         );
-        var zipPath = LocatorAndPopulator.BuildOutputsZip(dir, items, metadata, Utils.DefaultHasher);
+        var hasher = TestUtils.DefaultHasher;
+        var outputData = await Task.WhenAll(items.Select(i => LocatorAndPopulator.GatherSingleOutputData(i, hasher, null)).ToArray());
+        var zipPath = await LocatorAndPopulator.BuildOutputsZip(dir, outputData, metadata, hasher);
 
         var cache = new CompilationResultsCache(dir.Dir.CombineAsDir(".cache").FullName);
 
         var key = new CacheKey("a");
-        cache.Set(key, metadata.LocalInputs.ToFullExtract(), zipPath);
+        await cache.SetAsync(key, metadata.LocalInputs.ToFullExtract(), zipPath);
 
         var count = cache.OutputVersionsCount(key);
 
         Assert.That(count, Is.EqualTo(1));
 
-        var cachedZip = cache.Get(key);
+        var cachedZip = await cache.GetAsync(key);
         Assert.That(cachedZip, Is.Not.Null);
 
         var mainOutputsDir = new DirectoryInfo(outputsDir.FullName);
@@ -56,7 +58,7 @@ public class TestOutputBuildAndCache
         (string Name, string Hash)[] GetInfo(DirectoryInfo dir) =>
             dir
                 .EnumerateFileSystemInfos("*", SearchOption.AllDirectories)
-                .Select(x => (x.Name, Hash: Utils.FileBytesToHashHex(x.FullName, Utils.DefaultHasher)))
+                .Select(x => (x.Name, Hash: TestUtils.FileBytesToHash(x.FullName, TestUtils.DefaultHasher)))
                 .Order()
                 .ToArray();
 

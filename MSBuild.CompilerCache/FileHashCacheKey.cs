@@ -16,7 +16,7 @@ public record struct FileHashCacheKey
 
     public static FileHashCacheKey FromFileInfo(FileInfo file) => new FileHashCacheKey(FullName: file.FullName, Length: file.Length,
         LastWriteTimeUtc: file.LastWriteTimeUtc);
-
+    
     public string FullName { get; set; }
     public long Length { get; set; }
     public DateTime LastWriteTimeUtc { get; set; }

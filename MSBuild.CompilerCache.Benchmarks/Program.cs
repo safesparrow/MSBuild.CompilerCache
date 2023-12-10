@@ -33,12 +33,13 @@ public class Benchmarks
         var decomposed = TargetsExtractionUtils.DecomposeCompilerProps(inputs.AllProps);
         var memCache = new DictionaryBasedCache<CacheKey, RefDataWithOriginalExtract>();
         var refCacheFileBased = new RefCache("c:/projekty/.refcache");
-        var refCache = new CacheCombiner<CacheKey, RefDataWithOriginalExtract>(memCache, refCacheFileBased);
+        var refCache = CacheCombiner.Combine(memCache, refCacheFileBased);
         var refTrimmingConfig = new RefTrimmingConfig();
 
         void Act()
         {
-            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), Utils.DefaultHasher);
+            var hasher = HasherFactory.CreateHash(HasherType.XxHash64);
+            var inputs = LocatorAndPopulator.CalculateLocalInputs(decomposed, refCache, "assembly", refTrimmingConfig, new DictionaryBasedCache<FileHashCacheKey, string>(), hasher, null);
             if (inputs.Files.Length == 0) throw new Exception();
         }
 

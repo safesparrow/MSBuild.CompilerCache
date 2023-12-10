@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.Build.Framework;
 
 namespace MSBuild.CompilerCache;
@@ -26,3 +27,8 @@ public class Config
 
     public HasherType Hasher { get; set; } = HasherType.XxHash64;
 }
+
+
+[JsonSerializable(typeof(Config))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+public partial class ConfigJsonContext : JsonSerializerContext;

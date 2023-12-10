@@ -8,11 +8,11 @@ public class DictionaryBasedCache<TKey, TValue> : ICacheBase<TKey, TValue> where
     
     public bool Exists(TKey key) => _cache.ContainsKey(key);
     
-    public TValue Get(TKey key)
+    public Task<TValue?> GetAsync(TKey key)
     {
         _cache.TryGetValue(key, out var value);
-        return value;
+        return Task.FromResult(value);
     }
 
-    public bool Set(TKey key, TValue value) => _cache.TryAdd(key, value);
+    public Task<bool> SetAsync(TKey key, TValue value) => Task.FromResult(_cache.TryAdd(key, value));
 }
